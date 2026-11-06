@@ -1,3 +1,6 @@
+/*
+ * THIS PART OF THE CODE IS MEANT FOR DEVELOPERS
+ * */
 package com.genesiz.hexacreatecore.virtual;
 
 public class SmoothPositionState {
@@ -21,13 +24,10 @@ public class SmoothPositionState {
     this.currentY += (targetY - this.currentY) * posFactor;
     this.currentZ += (targetZ - this.currentZ) * posFactor;
 
-    // --- EXPONENTIAL EASE-OUT FOR ROTATION YAW ---
-    // A slower speed factor (e.g., 5.0f instead of 12.0f) forces the panel 
-    // to lag slightly behind the player's movement, exposing the 3D prisms
+    // :TODO: change smoothing through a setter function
     float rotationSmoothing = 5.0f; 
     float rotFactor = 1.0f - (float) Math.exp(-rotationSmoothing * deltaSeconds);
 
-    // Standardize the delta tracking across the -180 to 180 wrapping thresholds
     float yawDelta = targetYaw - this.currentYaw;
     while (yawDelta < -180.0F) yawDelta += 360.0F;
     while (yawDelta >= 180.0F) yawDelta -= 360.0F;

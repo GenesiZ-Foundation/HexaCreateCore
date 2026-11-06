@@ -1,3 +1,6 @@
+/*
+ * THIS PART OF THE CODE IS MEANT FOR DEVELOPERS
+ * */
 package com.genesiz.hexacreatecore.virtual;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -10,7 +13,6 @@ public final class RawGeometry {
     float halfW = width / 2.0f;
     float halfH = height / 2.0f;
 
-    // Unpack ARGB channels cleanly
     int a = (hexColor >> 24) & 0xFF;
     int r = (hexColor >> 16) & 0xFF;
     int g = (hexColor >> 8) & 0xFF;
