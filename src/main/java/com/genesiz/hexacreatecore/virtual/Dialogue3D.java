@@ -10,5 +10,6 @@ import net.minecraft.world.entity.player.Player;
 public interface Dialogue3D {
   boolean shouldShowDialogue();
   InteractionResult mobInteract(Player player, InteractionHand hand);
-  SmoothPositionState getDialogueStateTracker();
+  DialogueTransformState getDialogueTransform();
+  DialoguePlaybackState getDialoguePlayback();
 }

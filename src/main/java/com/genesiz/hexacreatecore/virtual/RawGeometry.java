@@ -3,11 +3,30 @@
  * */
 package com.genesiz.hexacreatecore.virtual;
 
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.blaze3d.vertex.VertexFormat;
+import net.minecraft.client.renderer.RenderStateShard;
+import net.minecraft.client.renderer.RenderType;
+
 import org.joml.Matrix4f;
 
 public final class RawGeometry {
   private RawGeometry() {} // Prevent instantiation
+  public static final RenderType DIALOGUE_SOLID = RenderType.create(
+    "dialogue_solid",
+    DefaultVertexFormat.POSITION_COLOR,
+    VertexFormat.Mode.QUADS,
+    256,
+    false,
+    true,
+    RenderType.CompositeState.builder()
+    .setShaderState(RenderStateShard.POSITION_COLOR_SHADER)
+    .setTransparencyState(RenderStateShard.TRANSLUCENT_TRANSPARENCY)
+    .setCullState(RenderStateShard.NO_CULL)
+    .createCompositeState(false)
+  );
+
 
   public static void drawRectangle(VertexConsumer consumer, Matrix4f matrix, float width, float height, int hexColor) {
     float halfW = width / 2.0f;
