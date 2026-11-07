@@ -5,6 +5,6 @@ package com.genesiz.hexacreatecore.decorators.annotations;
 
 import java.lang.annotation.*;
 
-@Target(ElementType.CONSTRUCTOR)
 @Retention(RetentionPolicy.SOURCE)
+@Target({ElementType.CONSTRUCTOR, ElementType.METHOD})
 public @interface Overload {}

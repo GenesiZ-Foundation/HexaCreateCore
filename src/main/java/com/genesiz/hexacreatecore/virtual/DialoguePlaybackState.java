@@ -18,9 +18,19 @@ public class DialoguePlaybackState {
   public float boxWidth;
   public float boxHeight;
 
+  private boolean wasShowing = false;
   public float revealedChars = 0.0f;
   private int lastVisibleInt = 0;
-  private int lastTicks = 0;
+
+  public void setShowing(boolean isShowing) {
+    if (isShowing && !this.wasShowing) {
+      // Transitioned from hidden -> visible: start fresh!
+      this.revealedChars = 0.0f;
+      this.lastVisibleInt = 0;
+      this.cachedVisibleLines = Collections.emptyList();
+    }
+    this.wasShowing = isShowing;
+  }
 
   public void update(Font font, String text, int maxPixelWidth, float deltaSeconds, float charsPerSecond, SoundEvent blipSound) {
     if (!text.equals(this.cachedText) || maxPixelWidth != this.cachedMaxWidth) {
@@ -60,16 +70,16 @@ public class DialoguePlaybackState {
     }
   }
 
+  public void resetTypewriter() {
+    this.revealedChars = 0.0f;
+    this.lastVisibleInt = 0;
+    this.cachedVisibleLines = Collections.emptyList();
+  }
+
   public List<FormattedCharSequence> getVisibleLines() {
     return this.cachedVisibleLines;
   }
-
-  public void onTicksSynced(int newTicks) {
-    if (newTicks > this.lastTicks) {
-      this.revealedChars = 0.0f;
-      this.lastVisibleInt = 0;
-      this.cachedVisibleLines = Collections.emptyList();
-    }
-    this.lastTicks = newTicks;
+  public List<FormattedCharSequence> getFullLines() {
+    return this.cachedFullLines;
   }
 }

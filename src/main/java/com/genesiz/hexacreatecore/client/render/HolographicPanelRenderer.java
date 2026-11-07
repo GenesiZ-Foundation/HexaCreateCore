@@ -6,10 +6,9 @@ import com.genesiz.hexacreatecore.virtual.DialoguePlaybackState;
 import com.genesiz.hexacreatecore.virtual.DialogueTransformState;
 import com.genesiz.hexacreatecore.virtual.RawGeometry;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -18,10 +17,9 @@ import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 
 import java.util.List;
 
-import org.joml.Matrix4f;
-
 @EventBusSubscriber(modid = HexaCreateCore.MODID, value = Dist.CLIENT)
 public class HolographicPanelRenderer {
+  private static List<FormattedCharSequence> lines = null;
 
   @SubscribeEvent
   public static void onRenderLevelStage(RenderLevelStageEvent event) {
@@ -33,15 +31,19 @@ public class HolographicPanelRenderer {
     PoseStack poseStack = event.getPoseStack();
     MultiBufferSource.BufferSource bufferSource = mc.renderBuffers().bufferSource();
 
+    var camera = mc.getEntityRenderDispatcher().camera;
+    float realTick = mc.getTimer().getGameTimeDeltaTicks();
+    float partialTick = mc.getTimer().getRealtimeDeltaTicks() / 20.0f;
+
     for (net.minecraft.world.entity.Entity entity : mc.level.entitiesForRendering()) {
       if (!(entity instanceof Dialogue3D dialogueEntity)) continue;
-      if (!dialogueEntity.shouldShowDialogue()) continue;
+
+      boolean isShowing = dialogueEntity.shouldShowDialogue();
+      dialogueEntity.getDialoguePlayback().setShowing(isShowing);
+      if (!isShowing) continue;
 
       poseStack.pushPose();
 
-      var camera = mc.getEntityRenderDispatcher().camera;
-      float realTick = mc.getTimer().getGameTimeDeltaTicks();
-      float partialTick = mc.getTimer().getRealtimeDeltaTicks() / 20.0f;
 
       DialogueTransformState transform = dialogueEntity.getDialogueTransform();
       DialoguePlaybackState playback = dialogueEntity.getDialoguePlayback();
@@ -67,6 +69,7 @@ public class HolographicPanelRenderer {
         25.0f,
         net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK.value()
       );
+
       poseStack.translate(transform.renderX, transform.renderY, transform.renderZ);
 
       poseStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(-transform.currentYaw - 180.0F));
@@ -74,62 +77,46 @@ public class HolographicPanelRenderer {
 
       poseStack.scale(0.015F, -0.015F, 0.015F);
 
-      float rectW = playback.boxWidth;
-      float rectH = playback.boxHeight;
-      float borderThickness = 4.0f;
-      float borderDepth = 4.0f;
-
-      int bg_color = 0xFF000000;
-      int border_color = 0xFFFFFFFF;
-      Matrix4f matrix = poseStack.last().pose();
-      VertexConsumer consumer = bufferSource.getBuffer(RawGeometry.DIALOGUE_SOLID);
-
-      RawGeometry.drawRectangle(consumer, matrix, rectW, rectH, bg_color);
-      poseStack.pushPose();
-      poseStack.translate(0.0f, -(rectH / 2.0f + borderThickness / 2.0f), 0.0f);
-      RawGeometry.drawPrism(consumer, poseStack.last().pose(), rectW + (borderThickness * 2.0f), borderThickness, borderDepth, border_color);
-      poseStack.popPose();
-
-      // Bottom Border
-      poseStack.pushPose();
-      poseStack.translate(0.0f, (rectH / 2.0f + borderThickness / 2.0f), 0.0f);
-      RawGeometry.drawPrism(consumer, poseStack.last().pose(), rectW + (borderThickness * 2.0f), borderThickness, borderDepth, border_color);
-      poseStack.popPose();
-
-      // Left Border
-      poseStack.pushPose();
-      poseStack.translate(-(rectW / 2.0f + borderThickness / 2.0f), 0.0f, 0.0f);
-      RawGeometry.drawPrism(consumer, poseStack.last().pose(), borderThickness, rectH, borderDepth, border_color);
-      poseStack.popPose();
-
-      // Right Border
-      poseStack.pushPose();
-      poseStack.translate((rectW / 2.0f + borderThickness / 2.0f), 0.0f, 0.0f);
-      RawGeometry.drawPrism(consumer, poseStack.last().pose(), borderThickness, rectH, borderDepth, border_color);
-      poseStack.popPose();
-
-      poseStack.translate(0.0f, 0.0f, 0.5f);
-
-      float textStartY = -(rectH / 2.0f) + 6.0f; 
-
-      List<FormattedCharSequence> lines = playback.getVisibleLines();
-      for (int i = 0; i < lines.size(); i++) {
-        FormattedCharSequence lineText = lines.get(i);
-        float textStartX = -(mc.font.width(lineText) / 2.0f); // Center line horizontally
-
-        mc.font.drawInBatch(
-          lineText, 
-          textStartX, 
-          textStartY + (i * mc.font.lineHeight), 
-          0xFFFFFF,
-          false,
-          poseStack.last().pose(), 
-          bufferSource, 
-          Font.DisplayMode.NORMAL, 
-          0, 
-          15728880
-        );
+      //RawGeometry.drawBorderedPanel(poseStack, consumer, rectW, rectH, borderThickness, borderDepth, bg_color, border_color);
+      if (lines == null) {
+        lines = mc.font.split(Component.literal("Yes, forge it"), 100);
       }
+
+      RawGeometry.drawDialogueNode(
+        poseStack,
+        bufferSource,
+        mc.font,
+        0.0f,
+        0.0f,
+        0.0f,
+        playback.boxWidth,
+        playback.boxHeight,
+        4.0f,
+        4.0f,
+        0xFF000000,
+        0xFFFFFFFF,
+        playback,
+        true,
+        false
+      );
+
+      float buttonY = (playback.boxHeight * 0.5f) + 18.0f;
+      RawGeometry.drawDialogueNode(
+        poseStack,
+        bufferSource,
+        mc.font,
+        0.0f,
+        buttonY,
+        2.0f,
+        90.0f,
+        20.0f,
+        3.0f,
+        4.0f,
+        0xFF111111,
+        0xFFFFAA00,
+        lines,
+        true
+      );
 
       poseStack.popPose();
     }

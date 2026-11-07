@@ -1,6 +1,6 @@
 package com.genesiz.hexacreatecore.entity.custom;
 
-import com.genesiz.hexacreatecore.virtual.Dialogue3DTypewriter;
+import com.genesiz.hexacreatecore.virtual.Dialogue3D;
 import com.genesiz.hexacreatecore.virtual.DialoguePlaybackState;
 import com.genesiz.hexacreatecore.virtual.DialogueTransformState;
 import com.genesiz.hexacreatecore.virtual.SmoothPositionState;
@@ -27,7 +27,7 @@ import software.bernie.geckolib.animation.AnimationController;
 import software.bernie.geckolib.animation.RawAnimation;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
-public class CursedBlacksmithEntity extends Monster implements GeoEntity,Dialogue3DTypewriter {
+public class CursedBlacksmithEntity extends Monster implements GeoEntity,Dialogue3D {
   private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
   private static final EntityDataAccessor<Integer> DIALOGUE_TICKS = 
   SynchedEntityData.defineId(CursedBlacksmithEntity.class, EntityDataSerializers.INT);
@@ -49,11 +49,6 @@ public class CursedBlacksmithEntity extends Monster implements GeoEntity,Dialogu
       .add(Attributes.MOVEMENT_SPEED, 0.0D)
       .add(Attributes.KNOCKBACK_RESISTANCE, 1.0D)
     ;
-  }
-
-  @Override
-  public EntityDataAccessor<Integer> getDialogueTicksAccessor() {
-    return DIALOGUE_TICKS;
   }
 
   @Override
@@ -102,13 +97,12 @@ public class CursedBlacksmithEntity extends Monster implements GeoEntity,Dialogu
 
   @Override
   public InteractionResult mobInteract(Player player, InteractionHand hand) {
-    if (this.level().isClientSide) {
-      this.dialogueState.resetTypewriter();
-    }
-
     if (hand == InteractionHand.MAIN_HAND) {
-      if (!this.level().isClientSide) {
-        // Sets dialogue state window active for 100 ticks (5 seconds)
+      if (this.level().isClientSide) {
+        // Immediately restart typewriter on the client when interacted with
+        this.dialoguePlayback.resetTypewriter();
+      } else {
+        // Sets dialogue state window active for 100 ticks (5 seconds) on server
         this.entityData.set(DIALOGUE_TICKS, 100);
       }
       return InteractionResult.sidedSuccess(this.level().isClientSide);
@@ -135,10 +129,5 @@ public class CursedBlacksmithEntity extends Monster implements GeoEntity,Dialogu
   protected void defineSynchedData(SynchedEntityData.Builder builder) {
     super.defineSynchedData(builder);
     builder.define(DIALOGUE_TICKS, 0);
-  }
-  @Override
-  public void onSyncedDataUpdated(EntityDataAccessor<?> key) {
-    super.onSyncedDataUpdated(key);
-    this.handleDialogueSync(key);
   }
 }
