@@ -207,17 +207,19 @@ public class DialoguePlaybackState {
       node.borderColor = optData.borderColor();
       node.hoverBorderColor = optData.hoverColor();
 
-      // Left-click: advance to next_node (and trigger action_id if present)
-      node.onLeftClick = (targetEntity, player) -> {
+      // Right-click: advance to next_node (and trigger action_id if present)
+      node.onRightClick = (targetEntity, player) -> {
         if (!optData.actionId().isEmpty()) {
           PacketDistributor.sendToServer(
-              new DialogueActionPayload(targetEntity.getId(), optData.actionId(), false)
+            new DialogueActionPayload(targetEntity.getId(), optData.actionId(), true)
           );
         }
         loadStep(font, targetEntity, tree, optData.nextNode());
       };
+
+      // Left-click: show inspect hint if defined in JSON
       if (!optData.rightClickLabel().isEmpty()) {
-        node.onRightClick = (targetEntity, player) -> {
+        node.onLeftClick = (targetEntity, player) -> {
           player.displayClientMessage(Component.literal(optData.rightClickLabel()), true);
         };
       }

@@ -12,4 +12,5 @@ public interface Dialogue3D {
   InteractionResult mobInteract(Player player, InteractionHand hand);
   DialogueTransformState getDialogueTransform();
   DialoguePlaybackState getDialoguePlayback();
+  default boolean hasCustomRenderer(){return false;}
 }

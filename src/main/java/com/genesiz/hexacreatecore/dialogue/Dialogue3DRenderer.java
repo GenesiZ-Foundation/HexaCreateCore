@@ -33,6 +33,7 @@ public class Dialogue3DRenderer {
 
     for (net.minecraft.world.entity.Entity entity : mc.level.entitiesForRendering()) {
       if (!(entity instanceof Dialogue3D dialogueEntity)) continue;
+      if (dialogueEntity.hasCustomRenderer()) continue;
 
       DialoguePlaybackState playback = dialogueEntity.getDialoguePlayback();
       boolean isShowing = dialogueEntity.shouldShowDialogue();
