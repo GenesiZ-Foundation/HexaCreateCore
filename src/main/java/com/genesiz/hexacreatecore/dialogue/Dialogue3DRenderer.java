@@ -1,3 +1,6 @@
+/*
+ * THIS PART OF THE CODE IS MEANT FOR DEVELOPERS
+ * */
 package com.genesiz.hexacreatecore.dialogue;
 
 import com.genesiz.hexacreatecore.HexaCreateCore;
@@ -12,6 +15,7 @@ import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 
 import java.util.List;
 
+// DEFAULT RENDERER
 @EventBusSubscriber(modid = HexaCreateCore.MODID, value = Dist.CLIENT)
 public class Dialogue3DRenderer {
   private static List<FormattedCharSequence> lines = null;
@@ -98,7 +102,7 @@ public class Dialogue3DRenderer {
         }
 
         boolean isHeld = isHovered && (mc.options.keyAttack.isDown() || mc.options.keyUse.isDown());
-        button.updatePressScale(isHeld, partialTick);
+        button.updatePressScale(isHeld, 0.85f, partialTick);
 
         float buttonZ = isHeld ? 1.0f : (isHovered ? 5.0f : 2.0f);
         int borderColor = isHovered ? button.hoverBorderColor : button.borderColor;

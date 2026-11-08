@@ -1,3 +1,6 @@
+/*
+ * THIS PART OF THE CODE IS MEANT FOR DEVELOPERS
+ * */
 package com.genesiz.hexacreatecore.dialogue;
 
 import net.minecraft.client.Minecraft;
@@ -20,28 +23,88 @@ import com.genesiz.hexacreatecore.dialogue.data.DialogueReloadListener;
 import com.genesiz.hexacreatecore.dialogue.data.DialogueTreeData;
 import com.genesiz.hexacreatecore.dialogue.network.DialogueActionPayload;
 
+/* FULL BREAKDOWN:
+ *
+ * -> This is where your dialogues lives, it is a cache holding every information of it
+ *
+ * (take your time to read the names of the different variables)
+ *
+ * [.update()] is meant to update the text and size of the text, as well as
+ * updating if the text should be written with a typewriter effect and how fast
+ * it goes
+ *
+ *
+ * [.buildPreWrappedString()] is a helper method meant to be used by other methods
+ * as the name implies, it builds a string for the dialogue boxes
+ *
+ *
+ * [.updateFromEntity] is the method responsible for JSON bridging,
+ *   ->if no JSON is found it will return the text: "..." with the
+ *     Click sound and typewriter effect as a default
+ *
+ *   ->if a JSON is found it will run for the each nodes for the first time (and cache it)
+ *     or when F3+T is pressed, it grabs various informations from the JSON through
+ *     DialogueReloadListener;
+ *
+ *     It will check the current node it is in and will use the .update() methode
+ *     with the information available
+ *
+ *    -> calls .loadStep() on the initial load (or after F3 + T) to load the
+ *    JSON's entry_node
+ *
+ *  [.loadStep()] is responsible for the "next" action of the dialogue in the
+ *  dialogue tree,
+ *  -it clears the text on the next dialogue,
+ *  -it resets the typewriter effect if there is one,
+ *  -it auto-binds the action_id to a right click,
+ *  -it auto-binds the left click to show the label on the action bar (text above the Exp Bar)
+ *  -it rebuilds the option buttons for the new node
+ *   (option in the JSON is a list, it will remake the option list with the insides
+ *   of the JSON options block, all of them are customizable the same way the base
+ *   dialogue box is, so you can have different kinds of buttons)
+ *
+ *
+ * [.setShowing()] detects open and close states transitions for when a dialogue is
+ * ended or there is another text to be shown (so it resets the typewriter effect, the text, etc...)
+ *
+ *
+ * [.triggerLeftClick()] and .triggerRightClick() are self explanatory
+ *
+ *
+ * [.resetTypewriter()] is self explanatory
+ *
+ *
+ * [.isForceClosed()] is self explanatory, though it may be used as an other type of
+ * check in custom renderers (be warned that it is not advised to modify it's intended purpose)
+ *
+ *
+ * [.getVisibleLines() and .getFullLines()] are helper methods meant for other methods in
+ * the class, however you can use them to fetch the currently visible text
+ * and the full text within the node, mostly if you'd want to add your own
+ * custom effects;
+ * */
 public class DialoguePlaybackState {
-  private String cachedText = "";
-  private String preWrappedText = "";
-  private int cachedMaxWidth = -1;
-  private List<FormattedCharSequence> cachedFullLines = Collections.emptyList();
-  private List<FormattedCharSequence> cachedVisibleLines = Collections.emptyList();
-  public float boxWidth;
-  public float boxHeight;
+  private       String                        cachedText = "";
+  private       String                        preWrappedText = "";
+  private       int                           cachedMaxWidth = -1;
+  private       List<FormattedCharSequence>   cachedFullLines = Collections.emptyList();
+  private       List<FormattedCharSequence>   cachedVisibleLines = Collections.emptyList();
+  public        float                         boxWidth;
+  public        float                         boxHeight;
 
-  private boolean wasShowing = false;
-  public float revealedChars = 0.0f;
-  private int lastVisibleInt = 0;
-  public int hoveredOptionIndex = -1;
+  private       boolean                       wasShowing = false;
+  public        float                         revealedChars = 0.0f;
+  private       int                           lastVisibleInt = 0;
+  public        int                           hoveredOptionIndex = -1;
 
-  private DialogueTreeData activeTree = null;
-  private String currentNodeId = null;
-  private boolean forceClosed = false;
-  public final java.util.List<DialogueNode> options = new java.util.ArrayList<>(4);
-  private SoundEvent cachedBlipSound = SoundEvents.UI_BUTTON_CLICK.value();
+  private       DialogueTreeData              activeTree = null;
+  private       String                        currentNodeId = null;
+  private       boolean                       forceClosed = false;
+  public final  java.util.List<DialogueNode>  options = new java.util.ArrayList<>(4);
+  private       SoundEvent                    cachedBlipSound = SoundEvents.UI_BUTTON_CLICK.value();
 
-  public int currentBgColor = 0xFF000000;
-  public int currentBorderColor = 0xFFFFFFFF;
+  public        int                           currentBgColor = 0xFF000000;
+  public        int                           currentBorderColor = 0xFFFFFFFF;
 
 
 
@@ -164,7 +227,7 @@ public class DialoguePlaybackState {
     if (!isShowing) {
       this.hoveredOptionIndex = -1;
       this.forceClosed = false;
-      this.currentNodeId = null; // Reset to entry node for next interaction
+      this.currentNodeId = null;
     } else if (!this.wasShowing) {
       this.revealedChars = 0.0f;
       this.lastVisibleInt = 0;

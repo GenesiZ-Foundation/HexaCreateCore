@@ -1,3 +1,6 @@
+/*
+ * THIS PART OF THE CODE IS MEANT FOR DEVELOPERS
+ * */
 package com.genesiz.hexacreatecore.dialogue;
 
 import net.minecraft.client.gui.Font;
@@ -6,6 +9,21 @@ import net.minecraft.util.FormattedCharSequence;
 import java.util.Collections;
 import java.util.List;
 
+/* FULL BREAKDOWN:
+ *
+ * -> stores a size, bg_color, border_color, hover_color, text, left/right click callbacks
+ *
+ * baseHeight and baseWidth are the normal sizes of the dialogue box
+ *
+ * width and height are the "modified" sizes intended to be used with updatePressScale
+ *
+ * onLeftClick is the Left Click callback that is going to be used in the DialoguePlaybackState class
+ * with the .triggerLeftClick() method
+ *
+ * onRightClick is the Right Click callback that is going to be used in the DialoguePlaybackState class
+ * with the .triggerRightClick() method
+ * 
+ * */
 public class DialogueNode {
   public float baseWidth;
   public float baseHeight;
@@ -30,8 +48,8 @@ public class DialogueNode {
     this.width = this.baseWidth;
     this.height = this.baseHeight;
   }
-  public void updatePressScale(boolean isHeldDown, float deltaSeconds) {
-    float targetScale = isHeldDown ? 0.85f : 1.0f;
+  public void updatePressScale(boolean isHeldDown, float toScale, float deltaSeconds) {
+    float targetScale = isHeldDown ? toScale : 1.0f;
     float targetW = this.baseWidth * targetScale;
     float targetH = this.baseHeight * targetScale;
 

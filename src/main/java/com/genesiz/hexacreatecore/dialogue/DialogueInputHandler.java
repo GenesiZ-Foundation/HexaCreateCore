@@ -1,3 +1,6 @@
+/*
+ * THIS PART OF THE CODE IS MEANT FOR DEVELOPERS
+ * */
 package com.genesiz.hexacreatecore.dialogue;
 
 import net.minecraft.client.Minecraft;
@@ -9,6 +12,7 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 
+// LEFT/RIGHT CLICK HANDLER
 @EventBusSubscriber(modid = "hexacreatecore", value = Dist.CLIENT)
 public final class DialogueInputHandler {
   private static boolean wasUseDown = false;
