@@ -1,9 +1,9 @@
 package com.genesiz.hexacreatecore.entity.custom;
 
-import com.genesiz.hexacreatecore.virtual.Dialogue3D;
-import com.genesiz.hexacreatecore.virtual.DialoguePlaybackState;
-import com.genesiz.hexacreatecore.virtual.DialogueTransformState;
-import com.genesiz.hexacreatecore.virtual.SmoothPositionState;
+import com.genesiz.hexacreatecore.dialogue.Dialogue3D;
+import com.genesiz.hexacreatecore.dialogue.DialoguePlaybackState;
+import com.genesiz.hexacreatecore.dialogue.DialogueTransformState;
+import com.genesiz.hexacreatecore.dialogue.SmoothPositionState;
 
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -84,15 +84,15 @@ public class CursedBlacksmithEntity extends Monster implements GeoEntity,Dialogu
     this.setYRot(fixedSpawnDirection);
     this.yRotO = fixedSpawnDirection;
   }
-  @Override
-  public void tick() {
-    super.tick();
-    // Count down dialogue timers safely on server & client ticks
-    int activeTicks = this.entityData.get(DIALOGUE_TICKS);
-    if (activeTicks > 0) {
-      this.entityData.set(DIALOGUE_TICKS, activeTicks - 1);
-    }
-  }
+  //@Override
+  //public void tick() {
+  //  super.tick();
+  //  // Count down dialogue timers safely on server & client ticks
+  //  int activeTicks = this.entityData.get(DIALOGUE_TICKS);
+  //  if (activeTicks > 0) {
+  //    this.entityData.set(DIALOGUE_TICKS, activeTicks - 1);
+  //  }
+  //}
 
 
   @Override

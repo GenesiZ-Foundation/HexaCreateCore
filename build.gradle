@@ -169,6 +169,7 @@ dependencies {
   // http://www.gradle.org/docs/current/userguide/artifact_dependencies_tutorial.html
   // http://www.gradle.org/docs/current/userguide/dependency_management.html
   implementation("vazkii.patchouli:Patchouli:$minecraft_version-$patchouli_version-NEOFORGE")
+    implementation("libs:Jade-1.21.1-NeoForge-15.10.6")
     implementation("libs:AstralSorcery-2.0.3.59")
     implementation("libs:curios-neoforge-9.5.1+1.21.1")
     implementation("libs:create-1.21.1-6.0.10")

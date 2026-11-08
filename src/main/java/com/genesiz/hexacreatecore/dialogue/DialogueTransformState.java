@@ -1,4 +1,4 @@
-package com.genesiz.hexacreatecore.virtual;
+package com.genesiz.hexacreatecore.dialogue;
 
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;

@@ -1,0 +1,43 @@
+{
+  "npc_id": "hexacreatecore:cursed_blacksmith",
+  "blip_sound": "minecraft:ui.button.click",
+  "chars_per_second": 28.0,
+  "max_width": 130,
+  "bg_color": "#DD0D0814",
+  "border_color": "#FFFF6600",
+  "button_bg_color": "#EE1A1124",
+  "button_border_color": "#FFFFAA00",
+  "button_hover_color": "#FF00FFAA",
+  "entry_node": "start",
+  "nodes": {
+    "start": {
+      "text": "The forge grows cold, traveler.",
+      "options": [
+        {
+          "label": "Yes, forge it",
+          "next_node": "forge_offer",
+          "action_id": "hexacreatecore:start_forging"
+        },
+        {
+          "label": "Need a Hand ?",
+          "next_node": "close",
+          "action_id": "hexacreatecore:show_tutorial",
+          "bg_color": "#EE0A1F2E",
+          "border_color": "#FF00AAFF",
+          "hover_color": "#FF66FFFF"
+        }
+      ]
+    },
+    "forge_offer": {
+      "text": "Step back before the sparks take your eyes!",
+      "bg_color": "#EE2A0808",
+      "border_color": "#FFFF2222",
+      "options": [
+        {
+          "label": "Step back",
+          "next_node": "close"
+        }
+      ]
+    }
+  }
+}
