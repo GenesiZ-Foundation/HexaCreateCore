@@ -6,14 +6,12 @@ import com.genesiz.hexacreatecore.datagen.ModModelProvider;
 import com.genesiz.hexacreatecore.dialogue.data.DialogueReloadListener;
 import com.genesiz.hexacreatecore.dialogue.hologram.BlueprintReloadListener;
 import com.genesiz.hexacreatecore.dialogue.network.DialogueNetworking;
-import com.genesiz.hexacreatecore.dialogue.network.HologramProjectionPayload;
 import com.genesiz.hexacreatecore.entity.ModEntities;
 import com.genesiz.hexacreatecore.entity.custom.CursedBlacksmithEntity;
 import com.genesiz.hexacreatecore.item.HexaCreateCoreItems;
 import com.mojang.logging.LogUtils;
 import com.genesiz.hexacreatecore.item.ModCreativeModeTabs;
 
-import net.minecraft.core.BlockPos;
 import net.minecraft.data.DataGenerator;
 import net.minecraft.data.PackOutput;
 import net.neoforged.bus.api.IEventBus;

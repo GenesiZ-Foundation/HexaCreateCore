@@ -33,7 +33,20 @@ public class Dialogue3DRenderer {
     var camera = mc.getEntityRenderDispatcher().camera;
     float realTick = mc.getTimer().getGameTimeDeltaTicks();
     float partialTick = mc.getTimer().getRealtimeDeltaTicks() / 20.0f;
-    org.joml.Vector3f lookDir = camera.getLookVector();
+        net.minecraft.world.phys.Vec3 camPos = camera.getPosition();
+    net.minecraft.world.phys.Vec3 eyePos = mc.player.getEyePosition(realTick);
+    float rayOriginX = (float) (eyePos.x - camPos.x);
+    float rayOriginY = (float) (eyePos.y - camPos.y);
+    float rayOriginZ = (float) (eyePos.z - camPos.z);
+
+    net.minecraft.world.phys.Vec3 playerView = mc.player.getViewVector(realTick);
+    org.joml.Vector3f lookDir = new org.joml.Vector3f(
+        (float) playerView.x,
+        (float) playerView.y,
+        (float) playerView.z
+    );
+
+    //org.joml.Vector3f lookDir = camera.getLookVector();
 
     for (net.minecraft.world.entity.Entity entity : mc.level.entitiesForRendering()) {
       if (!(entity instanceof Dialogue3D dialogueEntity)) continue;
@@ -89,8 +102,18 @@ public class Dialogue3DRenderer {
         DialogueNode button = playback.options.get(i);
         float buttonCenterY = currentY + (button.height * 0.5f);
 
+        // EXAMPLE IF YOU WANT TO USE .isLookingAtNode() instead
+        //boolean isHovered = DialogueRaycaster.isLookingAtNode(
+        //  poseStack.last().pose(),
+        //  lookDir,
+        //  0.0f, buttonCenterY, 2.0f,
+        //  button.baseWidth, button.baseHeight,
+        //  5.0D
+        //);
+
         boolean isHovered = DialogueRaycaster.isLookingAtNode(
           poseStack.last().pose(),
+          rayOriginX, rayOriginY, rayOriginZ,
           lookDir,
           0.0f, buttonCenterY, 2.0f,
           button.baseWidth, button.baseHeight,

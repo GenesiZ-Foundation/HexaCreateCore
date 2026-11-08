@@ -99,16 +99,19 @@ public class CursedBlacksmithEntity extends Monster implements GeoEntity,Dialogu
   public InteractionResult mobInteract(Player player, InteractionHand hand) {
     if (hand == InteractionHand.MAIN_HAND) {
       if (this.level().isClientSide) {
-        // Immediately restart typewriter on the client when interacted with
-        this.dialoguePlayback.resetTypewriter();
+        if ((!this.shouldShowDialogue() || this.dialoguePlayback.isForceClosed())
+            && this.dialoguePlayback.hoveredOptionIndex == -1) {
+          this.dialoguePlayback.resetTypewriter();
+        }
       } else {
-        // Sets dialogue state window active for 100 ticks (5 seconds) on server
         this.entityData.set(DIALOGUE_TICKS, 100);
       }
       return InteractionResult.sidedSuccess(this.level().isClientSide);
     }
     return super.mobInteract(player, hand);
   }
+
+
   @Override
   public AnimatableInstanceCache getAnimatableInstanceCache() {
     return this.cache;

@@ -16,19 +16,27 @@ import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 @EventBusSubscriber(modid = "hexacreatecore", value = Dist.CLIENT)
 public final class DialogueInputHandler {
   private static boolean wasUseDown = false;
+  private static boolean consumedUseThisTick = false;
 
   @SubscribeEvent
   public static void onClientTick(ClientTickEvent.Pre event) {
+    consumedUseThisTick = false;
     Minecraft mc = Minecraft.getInstance();
-    if (mc.level == null || mc.player == null) {
+    if (mc.level == null || mc.player == null || mc.screen != null) {
       wasUseDown = false;
       return;
     }
 
     boolean isUseDown = mc.options.keyUse.isDown();
-    // Rising edge: fires ONLY on the first tick right-click is pressed
     if (isUseDown && !wasUseDown) {
-      handleRightClick(mc);
+      for (Entity entity : mc.level.entitiesForRendering()) {
+        if (entity instanceof Dialogue3D dialogueEntity && dialogueEntity.shouldShowDialogue()) {
+          if (dialogueEntity.getDialoguePlayback().triggerRightClick(entity, mc.player)) {
+            consumedUseThisTick = true;
+            break;
+          }
+        }
+      }
     }
     wasUseDown = isUseDown;
   }
@@ -38,24 +46,47 @@ public final class DialogueInputHandler {
     Minecraft mc = Minecraft.getInstance();
     if (mc.level == null || mc.player == null) return;
 
+    // Left-click -> triggerLeftClick (inspect label)
     if (event.isAttack()) {
-      if (handleLeftClick(mc)) {
-        event.setSwingHand(false);
-        event.setCanceled(true);
+      for (Entity entity : mc.level.entitiesForRendering()) {
+        if (entity instanceof Dialogue3D dialogueEntity && dialogueEntity.shouldShowDialogue()) {
+          if (dialogueEntity.getDialoguePlayback().triggerLeftClick(entity, mc.player)) {
+            event.setSwingHand(true);
+            event.setCanceled(true);
+            return;
+          }
+        }
       }
-    } else if (event.isUseItem()) {
-      // Cancel all vanilla repeat-use ticks while hovering over any 3D dialogue button
-      if (isHoveringAnyOption(mc)) {
-        event.setSwingHand(false);
+    }
+
+    // Right-click -> if onClientTick already handled a button click this tick, cancel vanilla mobInteract!
+    if (event.isUseItem()) {
+      if (consumedUseThisTick) {
+        event.setSwingHand(true);
         event.setCanceled(true);
+        return;
+      }
+      for (Entity entity : mc.level.entitiesForRendering()) {
+        if (entity instanceof Dialogue3D dialogueEntity && dialogueEntity.shouldShowDialogue()) {
+          if (dialogueEntity.getDialoguePlayback().triggerRightClick(entity, mc.player)) {
+            wasUseDown = true;
+            consumedUseThisTick = true;
+            event.setSwingHand(true);
+            event.setCanceled(true);
+            return;
+          }
+        }
       }
     }
   }
 
   @SubscribeEvent
-  public static void onEntityInteract(PlayerInteractEvent.EntityInteract event) {
-    if (event.getLevel().isClientSide && isHoveringAnyOption(Minecraft.getInstance())) {
-      event.setCanceled(true);
+  public static void onEntityInteract(net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.EntityInteract event) {
+    if (!event.getLevel().isClientSide) return;
+    if (event.getEntity() instanceof Dialogue3D dialogueEntity && dialogueEntity.shouldShowDialogue()) {
+      if (dialogueEntity.getDialoguePlayback().hoveredOptionIndex != -1) {
+        event.setCanceled(true);
+      }
     }
   }
 

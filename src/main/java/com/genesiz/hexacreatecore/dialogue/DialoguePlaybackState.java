@@ -77,11 +77,14 @@ import com.genesiz.hexacreatecore.dialogue.network.DialogueActionPayload;
  * [.isForceClosed()] is self explanatory, though it may be used as an other type of
  * check in custom renderers (be warned that it is not advised to modify it's intended purpose)
  *
+ * [.wasJustClosed()] is self explanatory, is meant to be used when the dialogue calls
+ * for the action "close"
  *
  * [.getVisibleLines() and .getFullLines()] are helper methods meant for other methods in
  * the class, however you can use them to fetch the currently visible text
  * and the full text within the node, mostly if you'd want to add your own
  * custom effects;
+ *
  * */
 public class DialoguePlaybackState {
   private       String                        cachedText = "";
@@ -105,6 +108,7 @@ public class DialoguePlaybackState {
 
   public        int                           currentBgColor = 0xFF000000;
   public        int                           currentBorderColor = 0xFFFFFFFF;
+  private       long                          closedAtGameTime = -100L;
 
 
 
@@ -243,6 +247,9 @@ public class DialoguePlaybackState {
     if ("close".equals(nodeId)) {
       this.forceClosed = true;
       this.hoveredOptionIndex = -1;
+      if (entity.level() != null) {
+        this.closedAtGameTime = entity.level().getGameTime();
+      }
       return;
     }
 
@@ -291,7 +298,10 @@ public class DialoguePlaybackState {
     }
   }
 
-
+  public boolean wasJustClosed(Entity entity) {
+    if (entity.level() == null) return false;
+    return 4L > (entity.level().getGameTime() - this.closedAtGameTime);
+  }
 
   public List<FormattedCharSequence> getVisibleLines() {
     return this.cachedVisibleLines;
