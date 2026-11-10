@@ -3,7 +3,6 @@ package com.genesiz.hexacreatecore.dialogue.network;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
-import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
@@ -20,7 +19,7 @@ import java.util.function.BiConsumer;
 import com.genesiz.hexacreatecore.HexaCreateCore;
 import com.genesiz.hexacreatecore.dialogue.hologram.MultiblockHologramRenderer;
 
-@EventBusSubscriber(modid = HexaCreateCore.MODID, value = Dist.CLIENT)
+@EventBusSubscriber(modid = HexaCreateCore.MODID)
 public final class DialogueNetworking {
   private static final Map<String, BiConsumer<ServerPlayer, Entity>> SERVER_ACTIONS = new HashMap<>();
   private static final Map<UUID, PendingProjection> PENDING_PLACEMENTS = new HashMap<>();
@@ -31,19 +30,14 @@ public final class DialogueNetworking {
     SERVER_ACTIONS.put(actionId, handler);
   }
 
-  @SubscribeEvent
-  public static void onRegisterPayloads(RegisterPayloadHandlersEvent event) {
-    final PayloadRegistrar registrar = event.registrar("1.0");
-    registrar.playToServer(
-      DialogueActionPayload.TYPE,
-      DialogueActionPayload.STREAM_CODEC,
-      DialogueNetworking::handleOnServer
-    );
-    registrar.playToClient(
-      HologramProjectionPayload.TYPE,
-      HologramProjectionPayload.STREAM_CODEC,
-    (payload, context) -> context.enqueueWork(() -> MultiblockHologramRenderer.setProjection(payload))
-    );
+  /**
+   * Universally commands any GeoEntity's specified animation controller to force-switch
+   * its active data-driven JSON sequence over the network pipeline.
+   */
+  public static void syncAnimationOverride(Entity npc, String controllerName, String sequenceName) {
+    if (npc instanceof software.bernie.geckolib.animatable.GeoEntity geoEntity) {
+      geoEntity.triggerAnim(controllerName, "override:" + sequenceName);
+    }
   }
 
   private static void handleOnServer(DialogueActionPayload payload, IPayloadContext context) {
@@ -65,15 +59,15 @@ public final class DialogueNetworking {
 
   public static void queueHologramPlacement(ServerPlayer player, String structureId, int durationTicks) {
     PENDING_PLACEMENTS.put(
-        player.getUUID(),
-        new PendingProjection(structureId, durationTicks, player.level().getGameTime())
+      player.getUUID(),
+      new PendingProjection(structureId, durationTicks, player.level().getGameTime())
     );
+    // Sends a dummy confirmation down to client to visually indicate ghost placement mode is active
     PacketDistributor.sendToPlayer(
-        player,
-        new HologramProjectionPayload(structureId, BlockPos.ZERO, -1)
+      player,
+      new HologramProjectionPayload(structureId, BlockPos.ZERO, -1)
     );
   }
-
 
   @SubscribeEvent
   public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
@@ -93,10 +87,33 @@ public final class DialogueNetworking {
     BlockPos anchor = event.getPos().above();
 
     PacketDistributor.sendToPlayer(
-        serverPlayer,
-        new HologramProjectionPayload(pending.structureId(), anchor, pending.durationTicks())
+      serverPlayer,
+      new HologramProjectionPayload(pending.structureId(), anchor, pending.durationTicks())
     );
 
     event.setCanceled(true);
+  }
+
+  /**
+   * Internal specialized bus handler dedicated purely to the Mod Event Bus lifecycle events.
+   */
+  @EventBusSubscriber(modid = HexaCreateCore.MODID)
+  public static final class ModBusRegistry {
+    @SubscribeEvent
+    public static void onRegisterPayloads(RegisterPayloadHandlersEvent event) {
+      final PayloadRegistrar registrar = event.registrar("1.0");
+
+      registrar.playToServer(
+        DialogueActionPayload.TYPE,
+        DialogueActionPayload.STREAM_CODEC,
+        DialogueNetworking::handleOnServer
+      );
+
+      registrar.playToClient(
+        HologramProjectionPayload.TYPE,
+        HologramProjectionPayload.STREAM_CODEC,
+      (payload, context) -> context.enqueueWork(() -> MultiblockHologramRenderer.setProjection(payload))
+      );
+    }
   }
 }

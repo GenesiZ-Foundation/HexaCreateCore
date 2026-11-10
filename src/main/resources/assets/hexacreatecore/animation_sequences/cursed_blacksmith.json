@@ -1,0 +1,19 @@
+{
+  "affected_entity": "hexacreatecore:cursed_blacksmith",
+  "sequences": {
+    "idle": {
+      "loop": "idle"
+    },
+    "talking": {
+      "pre": "talking_transition",
+      "loop": "is_talking",
+      "wait_for_completion": true
+    },
+    "forge": {
+      "pre": "lift_hammer",
+      "loop": "hammer_smash",
+      "post": "lower_hammer",
+      "wait_for_completion": true
+    }
+  }
+}

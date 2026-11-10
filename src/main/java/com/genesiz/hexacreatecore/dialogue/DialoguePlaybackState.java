@@ -80,6 +80,8 @@ import com.genesiz.hexacreatecore.dialogue.network.DialogueActionPayload;
  * [.wasJustClosed()] is self explanatory, is meant to be used when the dialogue calls
  * for the action "close"
  *
+ * [.getCurrentNodeId] is self explanatory
+ *
  * [.getVisibleLines() and .getFullLines()] are helper methods meant for other methods in
  * the class, however you can use them to fetch the currently visible text
  * and the full text within the node, mostly if you'd want to add your own
@@ -109,6 +111,8 @@ public class DialoguePlaybackState {
   public        int                           currentBgColor = 0xFF000000;
   public        int                           currentBorderColor = 0xFFFFFFFF;
   private       long                          closedAtGameTime = -100L;
+  public        String                        actionAnimOverride = "";
+
 
 
 
@@ -183,8 +187,8 @@ public class DialoguePlaybackState {
     // Runs once on conversation start AND immediately after every F3 + T hot-reload
     if (this.activeTree != tree || this.currentNodeId == null) {
       this.cachedBlipSound = BuiltInRegistries.SOUND_EVENT
-          .getOptional(tree.blipSoundId())
-          .orElse(SoundEvents.UI_BUTTON_CLICK.value());
+      .getOptional(tree.blipSoundId())
+      .orElse(SoundEvents.UI_BUTTON_CLICK.value());
       loadStep(font, entity, tree, tree.entryNode());
     }
 
@@ -279,6 +283,16 @@ public class DialoguePlaybackState {
 
       // Right-click: advance to next_node (and trigger action_id if present)
       node.onRightClick = (targetEntity, player) -> {
+        // 1. Reset any old action animation overrides before moving to the next step
+        this.actionAnimOverride = "";
+
+        // 2. Parse if the action_id contains an animation sequence directive!
+        // Example format: "hexacreatecore:show_tutorial" -> we can check a prefix or map it.
+        // Even cleaner: if the actionId contains "idle" or a specific tag, set it:
+        if (optData.actionId().equals("hexacreatecore:show_tutorial")) {
+          this.actionAnimOverride = "idle";
+        }
+
         if (!optData.actionId().isEmpty()) {
           PacketDistributor.sendToServer(
             new DialogueActionPayload(targetEntity.getId(), optData.actionId(), true)
@@ -286,6 +300,7 @@ public class DialoguePlaybackState {
         }
         loadStep(font, targetEntity, tree, optData.nextNode());
       };
+
 
       // Left-click: show inspect hint if defined in JSON
       if (!optData.rightClickLabel().isEmpty()) {
@@ -301,6 +316,10 @@ public class DialoguePlaybackState {
   public boolean wasJustClosed(Entity entity) {
     if (entity.level() == null) return false;
     return 4L > (entity.level().getGameTime() - this.closedAtGameTime);
+  }
+
+  public String getCurrentNodeId() {
+    return this.currentNodeId != null ? this.currentNodeId : "";
   }
 
   public List<FormattedCharSequence> getVisibleLines() {
