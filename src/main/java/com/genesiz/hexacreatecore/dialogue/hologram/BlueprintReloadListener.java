@@ -21,7 +21,7 @@ public final class BlueprintReloadListener extends SimpleJsonResourceReloadListe
   private static boolean hasLoadedOnce = false;
 
   public BlueprintReloadListener() {
-    super(GSON, "blueprints"); // Scans assets/<namespace>/blueprints/*.json
+    super(GSON, "blueprints");
   }
 
   public static void onRegisterClientReloadListeners(RegisterClientReloadListenersEvent event) {
@@ -51,6 +51,16 @@ public final class BlueprintReloadListener extends SimpleJsonResourceReloadListe
     }
   }
 
+  private static int parseHexColor(String hex, int fallback) {
+    if (hex == null || hex.isEmpty()) return fallback;
+    try {
+      String clean = hex.startsWith("#") ? hex.substring(1) : hex;
+      return (int) Long.parseLong(clean, 16);
+    } catch (NumberFormatException e) {
+      return fallback;
+    }
+  }
+
   @Override
   protected void apply(Map<ResourceLocation, JsonElement> objects, ResourceManager manager, ProfilerFiller profiler) {
     BLUEPRINTS.clear();
@@ -63,6 +73,10 @@ public final class BlueprintReloadListener extends SimpleJsonResourceReloadListe
   private static void parseAndStore(JsonElement element) {
     JsonObject root = GsonHelper.convertToJsonObject(element, "blueprint");
     String structureId = GsonHelper.getAsString(root, "structure_id");
+
+    int bgColor = parseHexColor(GsonHelper.getAsString(root, "bg_color", "#DD0D0814"), 0xDD0D0814);
+    int borderColor = parseHexColor(GsonHelper.getAsString(root, "border_color", "#FFFF6600"), 0xFFFF6600);
+    int progressColor = parseHexColor(GsonHelper.getAsString(root, "progress_color", "FF21B7D1"), 0xFF21B7D1);
 
     JsonObject legendObj = GsonHelper.getAsJsonObject(root, "legend");
     Map<Character, BlockState> legendMap = new HashMap<>();
@@ -113,7 +127,6 @@ public final class BlueprintReloadListener extends SimpleJsonResourceReloadListe
       arrStates[i] = listStates.get(i);
     }
 
-    BLUEPRINTS.put(structureId, new MultiblockBlueprintData(structureId, arrX, arrY, arrZ, arrStates));
-
+    BLUEPRINTS.put(structureId, new MultiblockBlueprintData(structureId, bgColor, borderColor, progressColor, arrX, arrY, arrZ, arrStates));
   }
 }

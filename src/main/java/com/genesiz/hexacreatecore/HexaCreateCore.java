@@ -43,6 +43,11 @@ public class HexaCreateCore {
       DialogueNetworking.queueHologramPlacement(serverPlayer, "cobble_frame", 600);
       DialogueNetworking.syncAnimationOverride(npcEntity, "cursed_blacksmith_controller", "idle");
     });
+    DialogueNetworking.registerAction("hexacreatecore:clear_completed_hologram", (serverPlayer, dummyEntity) -> {
+      // Completely purges the player's pending structural blueprints data tracks out of memory frames
+      // This is a direct invocation to wipe out the active PENDING_PLACEMENTS map entry for this UUID
+      DialogueNetworking.clearPendingPlayerPlacement(serverPlayer);
+    });
   }
 
   public HexaCreateCore(IEventBus modEventBus, ModContainer modContainer) {

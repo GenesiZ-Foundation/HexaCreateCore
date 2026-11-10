@@ -1,5 +1,8 @@
 {
   "structure_id": "cobble_frame",
+  "bg_color": "#DD0D0814",
+  "border_color": "#FFFF6600",
+  "progress_color": "FF21B7D1",
   "legend": {
     "C": "minecraft:cobblestone"
   },

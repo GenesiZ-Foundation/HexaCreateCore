@@ -69,6 +69,10 @@ public final class DialogueNetworking {
     );
   }
 
+  public static void clearPendingPlayerPlacement(ServerPlayer player) {
+    PENDING_PLACEMENTS.remove(player.getUUID());
+  }
+
   @SubscribeEvent
   public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
     if (event.getLevel().isClientSide) return;

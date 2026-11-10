@@ -4,6 +4,9 @@ import net.minecraft.world.level.block.state.BlockState;
 
 public record MultiblockBlueprintData(
     String structureId,
+    int bgColor,
+    int borderColor,
+    int progressColor,
     int[] offsetX,
     int[] offsetY,
     int[] offsetZ,

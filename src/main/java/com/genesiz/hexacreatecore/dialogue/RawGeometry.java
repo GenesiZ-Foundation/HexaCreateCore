@@ -230,6 +230,37 @@ public final class RawGeometry {
     );
   }
 
+  public static void drawProgressBar(
+    com.mojang.blaze3d.vertex.PoseStack poseStack,
+    net.minecraft.client.renderer.MultiBufferSource bufferSource,
+    float x, float y, float z,
+    float width, float height,
+    float borderWidth,
+    int bgColor, int borderColor, int progressColor,
+    float progressRatio
+  ) {
+    drawDialogueNode(
+      poseStack, bufferSource, net.minecraft.client.Minecraft.getInstance().font,
+      x, y, z, width, height, borderWidth, 0.0f,
+      bgColor, borderColor, java.util.Collections.emptyList(), false
+    );
+    //Compute inner boundary coordinates for progress tracking strip
+    float padding = borderWidth + 2.0f;
+    float innerW = width - (padding * 2.0f);
+    float innerH = height - (padding * 2.0f);
+
+    float activeBarW = innerW * Math.max(0.0f, Math.min(1.0f, progressRatio));
+    if (activeBarW <= 0.0f) return;
+
+    float startX = x - (innerW * 0.5f) + (activeBarW * 0.5f);
+
+    drawDialogueNode(
+      poseStack, bufferSource, net.minecraft.client.Minecraft.getInstance().font,
+      startX, y, z + 0.5f, activeBarW, innerH, 0.0f, 0.0f,
+      progressColor, 0, java.util.Collections.emptyList(), false
+    );
+  }
+
   private static void vertex(VertexConsumer c, Matrix4f m, float x, float y, float z, int r, int g, int b, int a) {
     c.addVertex(m, x, y, z).setColor(r, g, b, a);
   }
