@@ -166,9 +166,8 @@ public final class HexagonalGridManager {
         camZ = centerAnchorPoint.z + (dz * scale);
       }
 
-      // Vertical clamp: cannot go below player feet (center.y) or more than 4 blocks above head (+5.8D)
-      double minY = centerAnchorPoint.y;
-      double maxY = centerAnchorPoint.y + 5.8D;
+      double minY = centerAnchorPoint.y + 0.5D;
+      double maxY = centerAnchorPoint.y + 5.0D;
       camY = net.minecraft.util.Mth.clamp(camY, minY, maxY);
     }
   }
