@@ -159,6 +159,32 @@ public class HexaCreateCore {
         new com.genesiz.hexacreatecore.dialogue.network.LiveStackUpdatePayload(java.util.List.of())
       );
     });
+
+    DialogueNetworking.registerAction("hexacreatecore:overreach_penalty", (serverPlayer, proxyEntity) -> {
+      var darkness = serverPlayer.getEffect(net.minecraft.world.effect.MobEffects.DARKNESS);
+      if (darkness == null || darkness.getDuration() < 60) {
+        serverPlayer.addEffect(new net.minecraft.world.effect.MobEffectInstance(
+          net.minecraft.world.effect.MobEffects.DARKNESS, 60, 0, false, false, false
+        ));
+      }
+
+      var blindness = serverPlayer.getEffect(net.minecraft.world.effect.MobEffects.BLINDNESS);
+      if (blindness == null || blindness.getDuration() < 60) {
+        serverPlayer.addEffect(new net.minecraft.world.effect.MobEffectInstance(
+          net.minecraft.world.effect.MobEffects.BLINDNESS, 60, 0, false, false, false
+        ));
+      }
+
+      String rawAction = serverPlayer.getPersistentData().getString("hexacreatecore_raw_action");
+      if (rawAction != null && rawAction.endsWith(";wither")) {
+        var wither = serverPlayer.getEffect(net.minecraft.world.effect.MobEffects.WITHER);
+        if (wither == null || wither.getAmplifier() < 1 || wither.getDuration() < 60) {
+          serverPlayer.addEffect(new net.minecraft.world.effect.MobEffectInstance(
+            net.minecraft.world.effect.MobEffects.WITHER, 60, 1, false, false, false
+          ));
+        }
+      }
+    });
   }
 
   public HexaCreateCore(IEventBus modEventBus, ModContainer modContainer) {

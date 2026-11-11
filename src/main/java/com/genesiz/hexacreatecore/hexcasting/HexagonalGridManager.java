@@ -47,6 +47,10 @@ public final class HexagonalGridManager {
   private static float configOutlineSizeMultiplier = 2.0f;
   private static double configWobbleIntensity = 0.015D;
 
+  private static int activeShellLayers = 1;
+  private static long lastPenaltyTick = 0L;
+  private static int penaltyZoneTicks = 0;
+
   public static Vec3 getFreeCamPos() { return new Vec3(camX, camY, camZ); }
   public static float getFreeCamYaw() { return camYaw; }
   public static float getFreeCamPitch() { return camPitch; }
@@ -90,6 +94,7 @@ public final class HexagonalGridManager {
     int targetShellLayersCount = (int) Math.ceil(gridZoomAttributeValue);
     if (gridZoomAttributeValue > 1.0D && targetShellLayersCount == 1) targetShellLayersCount = 2;
     if (targetShellLayersCount < 1) targetShellLayersCount = 1;
+    activeShellLayers = targetShellLayersCount;
 
     int nodeId = 0;
     double[] yOffsets = {-0.5D, 0.0D, 0.5D, 1.0D, 1.5D, 2.0D, 2.5D, 3.0D};
@@ -119,6 +124,7 @@ public final class HexagonalGridManager {
       }
     }
   }
+
   public static void deactivateGrid() {
     isGridActive = false;
     ACTIVE_GRID_NODES.clear(); ACTIVE_DRAWING_PATH.clear(); PERSISTENT_SPELL_LINES.clear(); STACK_DISPLAY_STRINGS.clear();
@@ -146,7 +152,27 @@ public final class HexagonalGridManager {
       moveVector = moveVector.normalize().scale(FLY_SPEED_MOD);
       camX += moveVector.x; camY += moveVector.y; camZ += moveVector.z;
     }
+
+    if (centerAnchorPoint != null) {
+      // Horizontal cylinder clamp: 3 blocks for 1 ring, 5 blocks for 2 rings, 7 blocks for 3 rings, etc.
+      double maxHorizontalRadius = (HEX_RADIUS * activeShellLayers) + 1.0D;
+      double dx = camX - centerAnchorPoint.x;
+      double dz = camZ - centerAnchorPoint.z;
+      double horizDist = Math.sqrt((dx * dx) + (dz * dz));
+
+      if (horizDist > maxHorizontalRadius) {
+        double scale = maxHorizontalRadius / horizDist;
+        camX = centerAnchorPoint.x + (dx * scale);
+        camZ = centerAnchorPoint.z + (dz * scale);
+      }
+
+      // Vertical clamp: cannot go below player feet (center.y) or more than 4 blocks above head (+5.8D)
+      double minY = centerAnchorPoint.y;
+      double maxY = centerAnchorPoint.y + 5.8D;
+      camY = net.minecraft.util.Mth.clamp(camY, minY, maxY);
+    }
   }
+
 
   @SubscribeEvent
   public static void onClientTick(ClientTickEvent.Pre event) {
@@ -174,6 +200,25 @@ public final class HexagonalGridManager {
       cameraDistanceToCenter = Math.sqrt(deltaX * deltaX + deltaZ * deltaZ);
     }
     int currentActiveZoneShell = (int) (cameraDistanceToCenter / HEX_RADIUS);
+
+    double outerRingRadius = HEX_RADIUS * activeShellLayers;
+    if (cameraDistanceToCenter > outerRingRadius) {
+      penaltyZoneTicks++;
+      long gameTime = mc.level.getGameTime();
+      if (gameTime - lastPenaltyTick >= 20L) {
+        lastPenaltyTick = gameTime;
+        String actionPayload = (penaltyZoneTicks >= 200)
+          ? "hexacreatecore:overreach_penalty;wither"
+          : "hexacreatecore:overreach_penalty;normal";
+
+        net.neoforged.neoforge.network.PacketDistributor.sendToServer(
+          new com.genesiz.hexacreatecore.dialogue.network.DialogueActionPayload(mc.player.getId(), actionPayload, false)
+        );
+      }
+    } else {
+      penaltyZoneTicks = 0;
+    }
+
 
     int highlightedNodeId = -1;
     double closestDistSq = Double.MAX_VALUE;

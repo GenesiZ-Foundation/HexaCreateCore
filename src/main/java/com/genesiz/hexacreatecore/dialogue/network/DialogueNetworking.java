@@ -55,7 +55,9 @@ public final class DialogueNetworking {
       BiConsumer<ServerPlayer, Entity> handler = SERVER_ACTIONS.get(lookupKey);
       if (handler != null) {
         // Special Case: Spatial spell actions do not require validation of world entity instances
-        if ("hexacreatecore:cast_3d_spell".equals(lookupKey) || "hexacreatecore:clear_3d_stack".equals(lookupKey)) {
+        if ("hexacreatecore:cast_3d_spell".equals(lookupKey)
+            || "hexacreatecore:clear_3d_stack".equals(lookupKey)
+            || "hexacreatecore:overreach_penalty".equals(lookupKey)) {
           serverPlayer.getPersistentData().putString("hexacreatecore_raw_action", rawActionId);
           serverPlayer.getPersistentData().putInt("hexacreatecore_raw_entity_id", payload.entityId());
 
