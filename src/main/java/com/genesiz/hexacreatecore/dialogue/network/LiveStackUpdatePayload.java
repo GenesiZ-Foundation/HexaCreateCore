@@ -6,8 +6,12 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import java.util.List;
 
-public record LiveStackUpdatePayload(List<String> stackDescs) implements CustomPacketPayload {
+public record LiveStackUpdatePayload(List<String> stackDescs, String ravensmind) implements CustomPacketPayload {
   public static final Type<LiveStackUpdatePayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath("hexacreatecore", "live_stack_update"));
+
+  public LiveStackUpdatePayload(List<String> stackDescs) {
+    this(stackDescs, "");
+  }
 
   public static final StreamCodec<FriendlyByteBuf, LiveStackUpdatePayload> STREAM_CODEC = StreamCodec.of(
   (buf, payload) -> {
@@ -15,6 +19,7 @@ public record LiveStackUpdatePayload(List<String> stackDescs) implements CustomP
       for (String str : payload.stackDescs()) {
         buf.writeUtf(str);
       }
+      buf.writeUtf(payload.ravensmind() != null ? payload.ravensmind() : "");
     },
     buf -> {
       int size = buf.readInt();
@@ -22,7 +27,8 @@ public record LiveStackUpdatePayload(List<String> stackDescs) implements CustomP
       for (int i = 0; size > i; i++) {
         list.add(buf.readUtf());
       }
-      return new LiveStackUpdatePayload(list);
+      String raven = buf.readUtf();
+      return new LiveStackUpdatePayload(list, raven);
     }
   );
 
@@ -31,3 +37,4 @@ public record LiveStackUpdatePayload(List<String> stackDescs) implements CustomP
     return TYPE;
   }
 }
+

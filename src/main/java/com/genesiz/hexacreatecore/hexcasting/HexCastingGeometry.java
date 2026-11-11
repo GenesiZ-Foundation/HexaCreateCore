@@ -58,7 +58,10 @@ public final class HexCastingGeometry {
     }
 
     List<String> allItems = HexagonalGridManager.getStackStrings();
-    if (allItems.isEmpty()) {
+    String activeRavensmind = HexagonalGridManager.getRavensmindString();
+    boolean hasRavensmind = (activeRavensmind != null && !activeRavensmind.isEmpty());
+
+    if (allItems.isEmpty() && !hasRavensmind) {
       smoothedHudPos = null;
       return;
     }
@@ -91,17 +94,13 @@ public final class HexCastingGeometry {
       goalZ = center.z + (lookZ * orbitRadius);
     }
 
-    // Gentle vertical sine bob matching NPC dialogue boxes
     double sineBob = Math.sin(System.currentTimeMillis() / 900.0D) * 0.06D;
     double goalY = center.y + 4.50D + sineBob;
     Vec3 goalPos = new Vec3(goalX, goalY, goalZ);
 
-
-    // Sine-eased interpolation toward the target point on the orbit
     float dt = mc.getTimer().getRealtimeDeltaTicks() / 20.0f;
     double linearAlpha = Math.min(1.0D, dt * 2.5D);
     double sineEase = Math.sin(linearAlpha * (Math.PI / 2.0D));
-
 
     if (smoothedHudPos == null || smoothedHudPos.distanceToSqr(goalPos) > 100.0D) {
       smoothedHudPos = goalPos;
@@ -115,12 +114,32 @@ public final class HexCastingGeometry {
     poseStack.pushPose();
     poseStack.translate(smoothedHudPos.x - cameraPos.x, smoothedHudPos.y - cameraPos.y, smoothedHudPos.z - cameraPos.z);
     poseStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(-smoothedHudYaw - 180.0F));
-    // 1.5x smaller than 0.015F -> 0.010F
     poseStack.scale(0.010F, -0.010F, 0.010F);
 
     float currentPanelLocalY = 0.0f;
     int fixedBoxWidth = 150;
 
+    // 1. Pinned Raven's Mind box at the very top of the floating list
+    if (hasRavensmind) {
+      String ravenLabel = "§6[Raven's Mind] §f" + activeRavensmind;
+      List<FormattedCharSequence> ravenLines = font.split(Component.literal(ravenLabel), fixedBoxWidth - 16);
+      float ravenHeight = (ravenLines.size() * font.lineHeight) + 12.0f;
+
+      poseStack.pushPose();
+      poseStack.translate(0.0f, currentPanelLocalY, 0.0f);
+
+      RawGeometry.drawDialogueNode(
+        poseStack, bufferSource, font,
+        0.0f, 0.0f, 0.0f,
+        fixedBoxWidth, ravenHeight, 3.0f, 3.0f,
+        0x1A241808, 0x1AFFD700, ravenLines, false
+      );
+
+      poseStack.popPose();
+      currentPanelLocalY += ravenHeight + 10.0f;
+    }
+
+    // 2. Scrollable 10-slot stack boxes below Raven's Mind
     for (int i = startIndex; i < endIndex; i++) {
       String label = "§e[" + i + "] §f" + allItems.get(i);
       List<FormattedCharSequence> formattedLines = font.split(Component.literal(label), fixedBoxWidth - 16);
@@ -129,7 +148,6 @@ public final class HexCastingGeometry {
       poseStack.pushPose();
       poseStack.translate(0.0f, currentPanelLocalY, 0.0f);
 
-      // 10% opacity (0x1A alpha) preserving the exact same purple colors
       RawGeometry.drawDialogueNode(
         poseStack, bufferSource, font,
         0.0f, 0.0f, 0.0f,
@@ -143,6 +161,7 @@ public final class HexCastingGeometry {
 
     poseStack.popPose();
   }
+
 
   private static void renderScenePrisms(PoseStack poseStack, VertexConsumer consumer, List<List<Integer>> persistentLines, List<Integer> activePath, List<ArcaneNode3D> gridNodes, Vec3 cameraPos, float thickness, int colorHex) {
     drawSingleLineStream(poseStack, consumer, activePath, gridNodes, cameraPos, thickness, colorHex);

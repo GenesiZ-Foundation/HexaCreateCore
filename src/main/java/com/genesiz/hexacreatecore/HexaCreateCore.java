@@ -58,10 +58,6 @@ public class HexaCreateCore {
         if (directionOrdinal < 0 || directionOrdinal >= directionValues.length) directionOrdinal = 0;
         at.petrak.hexcasting.api.casting.math.HexDir startDir = directionValues[directionOrdinal];
 
-        serverPlayer.sendSystemMessage(net.minecraft.network.chat.Component.literal(
-          "§d[3D Grid] Drawn Angle Path: §e" + anglesSignature + " §7(Start: " + startDir.name() + ")"
-        ));
-
         at.petrak.hexcasting.api.casting.math.HexPattern pattern = null;
         try {
           Class<?> signatureClass = Class.forName("at.petrak.hexcasting.api.casting.math.HexSignature");
@@ -79,13 +75,10 @@ public class HexaCreateCore {
           fatalAllocationError.printStackTrace();
         }
 
-        if (pattern == null) {
-          serverPlayer.sendSystemMessage(net.minecraft.network.chat.Component.literal("§c[3D Grid Error] Critical Allocation Failure: HexPattern initialization blocked."));
-          return;
-        }
+        if (pattern == null) return;
 
         at.petrak.hexcasting.api.casting.eval.vm.CastingVM liveCastingVM = 
-        at.petrak.hexcasting.xplat.IXplatAbstractions.INSTANCE.getStaffcastVM(serverPlayer, net.minecraft.world.InteractionHand.MAIN_HAND);
+          at.petrak.hexcasting.xplat.IXplatAbstractions.INSTANCE.getStaffcastVM(serverPlayer, net.minecraft.world.InteractionHand.MAIN_HAND);
 
         if (liveCastingVM != null) {
           try {
@@ -97,28 +90,40 @@ public class HexaCreateCore {
             if (updatedImageSnapshot != null) {
               java.util.List<at.petrak.hexcasting.api.casting.iota.Iota> activeIotaStack = updatedImageSnapshot.getStack();
               java.util.List<String> synchronizedStackList = new java.util.ArrayList<>();
-              
-              if (activeIotaStack != null && !activeIotaStack.isEmpty()) {
-                serverPlayer.sendSystemMessage(net.minecraft.network.chat.Component.literal("§a[3D Grid Stack Output]:"));
-                int stackIndexValue = 0;
 
+              if (activeIotaStack != null && !activeIotaStack.isEmpty()) {
                 for (at.petrak.hexcasting.api.casting.iota.Iota activeItemIota : activeIotaStack) {
                   if (activeItemIota == null) continue;
-
                   net.minecraft.network.chat.Component localizedDisplayComponent = activeItemIota.display();
                   String readableIotaText = (localizedDisplayComponent != null) ? localizedDisplayComponent.getString() : activeItemIota.toString();
-
-                  serverPlayer.sendSystemMessage(net.minecraft.network.chat.Component.literal("  §e[" + stackIndexValue + "] §f" + readableIotaText));
-                  
                   synchronizedStackList.add(readableIotaText);
-                  stackIndexValue++;
                 }
               }
 
-              // TRANSMIT SECURELY: Broadcast the list using our dedicated client-bound update payload channel!
+              String readableRavensmind = "";
+              try {
+                java.lang.reflect.Field compField = updatedImageSnapshot.getClass().getDeclaredField("components");
+                compField.setAccessible(true);
+                Object compObj = compField.get(updatedImageSnapshot);
+
+                if (compObj instanceof java.util.Map<?, ?> componentsMap) {
+                  for (java.util.Map.Entry<?, ?> entry : componentsMap.entrySet()) {
+                    if (entry.getKey() != null && entry.getKey().toString().contains("ravenmind")) {
+                      if (entry.getValue() instanceof at.petrak.hexcasting.api.casting.iota.Iota ravenIota) {
+                        net.minecraft.network.chat.Component comp = ravenIota.display();
+                        readableRavensmind = (comp != null) ? comp.getString() : ravenIota.toString();
+                      }
+                      break;
+                    }
+                  }
+                }
+              } catch (Throwable t) {
+                t.printStackTrace();
+              }
+
               net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(
                 serverPlayer,
-                new com.genesiz.hexacreatecore.dialogue.network.LiveStackUpdatePayload(synchronizedStackList)
+                new com.genesiz.hexacreatecore.dialogue.network.LiveStackUpdatePayload(synchronizedStackList, readableRavensmind)
               );
             }
           } catch (Exception executionProcessingException) {
@@ -136,6 +141,10 @@ public class HexaCreateCore {
       at.petrak.hexcasting.xplat.IXplatAbstractions.INSTANCE.setStaffcastImage(
         serverPlayer,
         new at.petrak.hexcasting.api.casting.eval.vm.CastingImage()
+      );
+      net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(
+        serverPlayer,
+        new com.genesiz.hexacreatecore.dialogue.network.LiveStackUpdatePayload(java.util.List.of(), "")
       );
 
       // Broadcast HexCasting's native spiral-clear packet to remove orbiting runes on all clients
@@ -199,6 +208,9 @@ public class HexaCreateCore {
       modEventBus.addListener(DialogueReloadListener::onRegisterClientReloadListeners);
       modEventBus.addListener(BlueprintReloadListener::onRegisterClientReloadListeners);
       modEventBus.addListener(com.genesiz.hexacreatecore.animations.AnimationSequenceReloadListener::onRegisterClientReloadListeners);
+      modEventBus.addListener((net.neoforged.fml.event.lifecycle.FMLClientSetupEvent event) -> {
+        event.enqueueWork(com.genesiz.hexacreatecore.hexcasting.HexagonalGridManager::loadExternalGridConfig);
+      });
     }
   }
 

@@ -132,19 +132,18 @@ public final class DialogueNetworking {
         DialogueNetworking::handleOnServer
       );
 
-      // FIXED ACTION: Register our dedicated client-bound update packet with correct directional authorization
-      registrar.playToClient(
-        LiveStackUpdatePayload.TYPE,
-        LiveStackUpdatePayload.STREAM_CODEC.cast(),
-        (payload, context) -> context.enqueueWork(() -> {
-            com.genesiz.hexacreatecore.hexcasting.HexagonalGridManager.updateLiveCastingStack(payload.stackDescs(), "");
-        })
-      );
-
       registrar.playToClient(
         HologramProjectionPayload.TYPE,
         HologramProjectionPayload.STREAM_CODEC.cast(),
         (payload, context) -> context.enqueueWork(() -> MultiblockHologramRenderer.setProjection(payload))
+      );
+
+      registrar.playToClient(
+        LiveStackUpdatePayload.TYPE,
+        LiveStackUpdatePayload.STREAM_CODEC.cast(),
+        (payload, context) -> context.enqueueWork(() -> {
+          com.genesiz.hexacreatecore.hexcasting.HexagonalGridManager.updateLiveCastingStack(payload.stackDescs(), payload.ravensmind());
+        })
       );
     }
   }

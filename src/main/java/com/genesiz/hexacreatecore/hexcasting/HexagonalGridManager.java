@@ -372,7 +372,29 @@ public final class HexagonalGridManager {
       net.minecraft.client.Minecraft.getInstance().gameDirectory, 
       "config/hexacreatecore/grid_config.json"
     );
-    if (!configFile.exists()) return;
+
+    if (!configFile.exists()) {
+      try {
+        if (configFile.getParentFile() != null) {
+          configFile.getParentFile().mkdirs();
+        }
+        String defaultJson = """
+          {
+            "point_color": "0xFF21B7D1",
+            "point_hover_color_hex": "0xFFFFFF66",
+            "line_color": "0xFFB233FF",
+            "outline_color": "0xFF000000",
+            "line_size": 0.0225,
+            "outline_size": 2.0,
+            "wobble_intensity": 0.015
+          }
+          """;
+        java.nio.file.Files.writeString(configFile.toPath(), defaultJson, java.nio.charset.StandardCharsets.UTF_8);
+      } catch (Exception writeException) {
+        writeException.printStackTrace();
+      }
+      return;
+    }
 
     try {
       String jsonContent = new String(java.nio.file.Files.readAllBytes(configFile.toPath()), java.nio.charset.StandardCharsets.UTF_8);
@@ -385,11 +407,11 @@ public final class HexagonalGridManager {
       configLineSize = (float) parseDoubleOrDefault(extractJsonKeyValue(jsonContent, "line_size"), 0.0225D);
       configOutlineSizeMultiplier = (float) parseDoubleOrDefault(extractJsonKeyValue(jsonContent, "outline_size"), 2.0D);
       configWobbleIntensity = parseDoubleOrDefault(extractJsonKeyValue(jsonContent, "wobble_intensity"), 0.015D);
-
     } catch (Exception loaderCleanException) {
       loaderCleanException.printStackTrace();
     }
   }
+
 
   private static String extractJsonKeyValue(String json, String key) {
     String patternTarget = "\"" + key + "\""; if (!json.contains(patternTarget)) return "";
