@@ -142,14 +142,12 @@ public class CursedBlacksmithEntity extends Monster implements GeoEntity, Dialog
       if (this.shouldShowDialogue() && this.dialoguePlayback.hoveredOptionIndex != -1) {
         return InteractionResult.SUCCESS;
       }
-      
       if (!this.shouldShowDialogue() || this.dialoguePlayback.isForceClosed()) {
         this.dialoguePlayback.resetTypewriter();
       }
     } else {
       this.entityData.set(DIALOGUE_TICKS, 100);
     }
-    
     return InteractionResult.sidedSuccess(this.level().isClientSide);
   }
 

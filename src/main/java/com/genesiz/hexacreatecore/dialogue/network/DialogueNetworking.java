@@ -44,14 +44,31 @@ public final class DialogueNetworking {
     context.enqueueWork(() -> {
       if (!(context.player() instanceof ServerPlayer serverPlayer)) return;
 
-      Entity targetEntity = serverPlayer.level().getEntity(payload.entityId());
-      if (targetEntity == null) return;
+      String rawActionId = payload.actionId();
+      String lookupKey = rawActionId;
+      
+      // Separate the packet tracking ID from metadata parameters using a split token delimiter
+      if (rawActionId.contains(";")) {
+        lookupKey = rawActionId.split(";")[0];
+      }
 
-      // Security check: ensure player is within interaction reach (6 blocks)
-      if (serverPlayer.distanceToSqr(targetEntity) > 36.0D) return;
-
-      BiConsumer<ServerPlayer, Entity> handler = SERVER_ACTIONS.get(payload.actionId());
+      BiConsumer<ServerPlayer, Entity> handler = SERVER_ACTIONS.get(lookupKey);
       if (handler != null) {
+        // Special Case: Spatial spell actions do not require validation of world entity instances
+        if ("hexacreatecore:cast_3d_spell".equals(lookupKey) || "hexacreatecore:clear_3d_stack".equals(lookupKey)) {
+          serverPlayer.getPersistentData().putString("hexacreatecore_raw_action", rawActionId);
+          serverPlayer.getPersistentData().putInt("hexacreatecore_raw_entity_id", payload.entityId());
+
+          handler.accept(serverPlayer, serverPlayer);
+          return;
+        }
+
+        Entity targetEntity = serverPlayer.level().getEntity(payload.entityId());
+        if (targetEntity == null) return;
+
+        // Security check boundary: ensure player is within interaction reach (6 blocks)
+        if (serverPlayer.distanceToSqr(targetEntity) > 36.0D) return;
+
         handler.accept(serverPlayer, targetEntity);
       }
     });
@@ -109,14 +126,23 @@ public final class DialogueNetworking {
 
       registrar.playToServer(
         DialogueActionPayload.TYPE,
-        DialogueActionPayload.STREAM_CODEC,
+        DialogueActionPayload.STREAM_CODEC.cast(),
         DialogueNetworking::handleOnServer
+      );
+
+      // FIXED ACTION: Register our dedicated client-bound update packet with correct directional authorization
+      registrar.playToClient(
+        LiveStackUpdatePayload.TYPE,
+        LiveStackUpdatePayload.STREAM_CODEC.cast(),
+        (payload, context) -> context.enqueueWork(() -> {
+            com.genesiz.hexacreatecore.hexcasting.HexagonalGridManager.updateLiveCastingStack(payload.stackDescs(), "");
+        })
       );
 
       registrar.playToClient(
         HologramProjectionPayload.TYPE,
-        HologramProjectionPayload.STREAM_CODEC,
-      (payload, context) -> context.enqueueWork(() -> MultiblockHologramRenderer.setProjection(payload))
+        HologramProjectionPayload.STREAM_CODEC.cast(),
+        (payload, context) -> context.enqueueWork(() -> MultiblockHologramRenderer.setProjection(payload))
       );
     }
   }

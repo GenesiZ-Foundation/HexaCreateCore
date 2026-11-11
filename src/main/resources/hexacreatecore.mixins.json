@@ -1,8 +1,13 @@
 {
   "required": true,
-  "package": "com.genesiz.hexacreatecore.mixin",
+  "package": "com.genesiz.hexacreatecore.mixins",
   "compatibilityLevel": "JAVA_21",
-  "mixins": [],
+  "mixins": [
+    "CameraMixin",
+    "MouseHandlerMixin",
+    "LocalPlayerMixin",
+    "EntityRenderDispatcherMixin"
+  ],
   "injectors": {
     "defaultRequire": 1
   },

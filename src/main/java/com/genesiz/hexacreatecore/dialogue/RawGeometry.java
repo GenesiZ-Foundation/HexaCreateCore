@@ -19,7 +19,7 @@ import java.util.List;
 
 import org.joml.Matrix4f;
 
-public final class RawGeometry {
+public class RawGeometry {
   private RawGeometry() {} // Prevent instantiation
   public static final RenderType DIALOGUE_SOLID = RenderType.create(
     "dialogue_solid",
@@ -259,6 +259,61 @@ public final class RawGeometry {
       startX, y, z + 0.5f, activeBarW, innerH, 0.0f, 0.0f,
       progressColor, 0, java.util.Collections.emptyList(), false
     );
+  }
+
+    public static void drawArcaneNodePrism(
+      com.mojang.blaze3d.vertex.PoseStack poseStack,
+      net.minecraft.client.renderer.MultiBufferSource bufferSource,
+      float x, float y, float z,
+      float size,
+      int color
+  ) {
+    // Use a clean, non-textured GUI or flat color layout to bypass atlas sheets entirely
+    VertexConsumer buffer = bufferSource.getBuffer(net.minecraft.client.renderer.RenderType.gui());
+    org.joml.Matrix4f matrix = poseStack.last().pose();
+
+    int a = (color >> 24) & 0xFF;
+    int r = (color >> 16) & 0xFF;
+    int g = (color >> 8) & 0xFF;
+    int b = color & 0xFF;
+
+    float rS = size * 0.5f;
+
+    // Front Face
+    buffer.addVertex(matrix, x - rS, y - rS, z + rS).setColor(r, g, b, a);
+    buffer.addVertex(matrix, x + rS, y - rS, z + rS).setColor(r, g, b, a);
+    buffer.addVertex(matrix, x + rS, y + rS, z + rS).setColor(r, g, b, a);
+    buffer.addVertex(matrix, x - rS, y + rS, z + rS).setColor(r, g, b, a);
+
+    // Back Face
+    buffer.addVertex(matrix, x - rS, y - rS, z - rS).setColor(r, g, b, a);
+    buffer.addVertex(matrix, x - rS, y + rS, z - rS).setColor(r, g, b, a);
+    buffer.addVertex(matrix, x + rS, y + rS, z - rS).setColor(r, g, b, a);
+    buffer.addVertex(matrix, x + rS, y - rS, z - rS).setColor(r, g, b, a);
+
+    // Top Face
+    buffer.addVertex(matrix, x - rS, y + rS, z - rS).setColor(r, g, b, a);
+    buffer.addVertex(matrix, x - rS, y + rS, z + rS).setColor(r, g, b, a);
+    buffer.addVertex(matrix, x + rS, y + rS, z + rS).setColor(r, g, b, a);
+    buffer.addVertex(matrix, x + rS, y + rS, z - rS).setColor(r, g, b, a);
+
+    // Bottom Face
+    buffer.addVertex(matrix, x - rS, y - rS, z - rS).setColor(r, g, b, a);
+    buffer.addVertex(matrix, x + rS, y - rS, z - rS).setColor(r, g, b, a);
+    buffer.addVertex(matrix, x + rS, y - rS, z + rS).setColor(r, g, b, a);
+    buffer.addVertex(matrix, x - rS, y - rS, z + rS).setColor(r, g, b, a);
+
+    // Right Face
+    buffer.addVertex(matrix, x + rS, y - rS, z - rS).setColor(r, g, b, a);
+    buffer.addVertex(matrix, x + rS, y + rS, z - rS).setColor(r, g, b, a);
+    buffer.addVertex(matrix, x + rS, y + rS, z + rS).setColor(r, g, b, a);
+    buffer.addVertex(matrix, x + rS, y - rS, z + rS).setColor(r, g, b, a);
+
+    // Left Face
+    buffer.addVertex(matrix, x - rS, y - rS, z - rS).setColor(r, g, b, a);
+    buffer.addVertex(matrix, x - rS, y - rS, z + rS).setColor(r, g, b, a);
+    buffer.addVertex(matrix, x - rS, y + rS, z + rS).setColor(r, g, b, a);
+    buffer.addVertex(matrix, x - rS, y + rS, z - rS).setColor(r, g, b, a);
   }
 
   private static void vertex(VertexConsumer c, Matrix4f m, float x, float y, float z, int r, int g, int b, int a) {
