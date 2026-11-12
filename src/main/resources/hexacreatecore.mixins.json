@@ -8,6 +8,10 @@
     "LocalPlayerMixin",
     "EntityRenderDispatcherMixin"
   ],
+  "client": [
+    "SoundEngineMixin",
+    "BossHealthOverlayMixin"
+  ],
   "injectors": {
     "defaultRequire": 1
   },

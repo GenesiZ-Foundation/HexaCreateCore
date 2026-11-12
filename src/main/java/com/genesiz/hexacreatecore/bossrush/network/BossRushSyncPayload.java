@@ -14,32 +14,38 @@ public record BossRushSyncPayload(
   String musicTitle,
   String totemItemId,
   String totemSoundId,
-  String statusBanner
+  String statusBanner,
+  int activeBossEntityId,
+  String healthBarsJson
 ) implements CustomPacketPayload {
 
   public static final Type<BossRushSyncPayload> TYPE =
-  new Type<>(ResourceLocation.fromNamespaceAndPath(HexaCreateCore.MODID, "boss_rush_sync"));
+    new Type<>(ResourceLocation.fromNamespaceAndPath(HexaCreateCore.MODID, "boss_rush_sync"));
 
   public static final StreamCodec<FriendlyByteBuf, BossRushSyncPayload> STREAM_CODEC = StreamCodec.of(
-  (buf, p) -> {
+    (buf, p) -> {
       buf.writeBoolean(p.active());
-      buf.writeUtf(p.phaseName() != null ? p.phaseName() : "");
-      buf.writeUtf(p.phaseDescription() != null ? p.phaseDescription() : "");
-      buf.writeUtf(p.musicId() != null ? p.musicId() : "");
-      buf.writeUtf(p.musicTitle() != null ? p.musicTitle() : "");
-      buf.writeUtf(p.totemItemId() != null ? p.totemItemId() : "");
-      buf.writeUtf(p.totemSoundId() != null ? p.totemSoundId() : "");
-      buf.writeUtf(p.statusBanner() != null ? p.statusBanner() : "");
+      buf.writeUtf(p.phaseName() != null ? p.phaseName() : "", 32767);
+      buf.writeUtf(p.phaseDescription() != null ? p.phaseDescription() : "", 32767);
+      buf.writeUtf(p.musicId() != null ? p.musicId() : "", 32767);
+      buf.writeUtf(p.musicTitle() != null ? p.musicTitle() : "", 32767);
+      buf.writeUtf(p.totemItemId() != null ? p.totemItemId() : "", 32767);
+      buf.writeUtf(p.totemSoundId() != null ? p.totemSoundId() : "", 32767);
+      buf.writeUtf(p.statusBanner() != null ? p.statusBanner() : "", 32767);
+      buf.writeInt(p.activeBossEntityId());
+      buf.writeUtf(p.healthBarsJson() != null ? p.healthBarsJson() : "{}", 262144);
     },
     buf -> new BossRushSyncPayload(
       buf.readBoolean(),
-      buf.readUtf(),
-      buf.readUtf(),
-      buf.readUtf(),
-      buf.readUtf(),
-      buf.readUtf(),
-      buf.readUtf(),
-      buf.readUtf()
+      buf.readUtf(32767),
+      buf.readUtf(32767),
+      buf.readUtf(32767),
+      buf.readUtf(32767),
+      buf.readUtf(32767),
+      buf.readUtf(32767),
+      buf.readUtf(32767),
+      buf.readInt(),
+      buf.readUtf(262144)
     )
   );
 

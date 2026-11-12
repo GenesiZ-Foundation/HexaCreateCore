@@ -1,0 +1,226 @@
+{
+  "minecraft:warden": {
+    "border_color": "#00D4C8",
+    "background_color": "#0A141A",
+    "bar_color": ["#053B47", "#00A896", "#6FFFE9"],
+    "bar_color_pos": [0.15, 0.65, 0.95],
+    "pixel_density": 0.45,
+    "color_angle": 15.0,
+    "boss_rush_only": true
+  },
+  "minecraft:wither": {
+    "border_color": "#8A4FFF",
+    "background_color": "#110E1A",
+    "bar_color": ["#2B0938", "#7B2CBF", "#E0AAFF"],
+    "bar_color_pos": [0.2, 0.5, 0.9],
+    "pixel_density": 0.6,
+    "color_angle": -25.0,
+    "move_direction": "right",
+    "move_speed": 1.0,
+    "boss_rush_only": false
+  },
+  "legendary_monsters:cloud_golem": {
+    "border_color": "#8BE9FD",
+    "background_color": "#0D1B2A",
+    "bar_color": ["#1B4965", "#62B6CB", "#CAE9FF"],
+    "bar_color_pos": [0.1, 0.55, 0.95],
+    "pixel_density": 0.5,
+    "color_angle": 10.0,
+    "move_direction": "right",
+    "move_speed": 1.5,
+    "boss_rush_only": false
+  },
+  "block_factorys_bosses:infernal_dragon": {
+    "border_color": "#FF5500",
+    "background_color": "#1A0A08",
+    "bar_color": ["#4A0E0E", "#D9381E", "#FFAA00"],
+    "bar_color_pos": [0.15, 0.6, 0.95],
+    "pixel_density": 0.5,
+    "color_angle": -15.0,
+    "move_direction": "right",
+    "move_speed": 2.0,
+    "boss_rush_only": false
+  },
+  "legendary_monsters:endersent": {
+    "border_color": "#D97BF2",
+    "background_color": "#110817",
+    "bar_color": ["#1E0F29", "#6E5D66", "#F4A8FF"],
+    "bar_color_pos": [0.15, 0.65, 0.95],
+    "pixel_density": 0.55,
+    "color_angle": 12.0,
+    "move_direction": "none",
+    "move_speed": 0.0,
+    "boss_rush_only": false
+  },
+  "legendary_monsters:beheaded_knight": {
+    "border_color": "#2EE6D6",
+    "background_color": "#141212",
+    "bar_color": ["#4A4642", "#8C1D1D", "#2EE6D6"],
+    "bar_color_pos": [0.2, 0.6, 0.92],
+    "pixel_density": 0.6,
+    "color_angle": -15.0,
+    "move_direction": "none",
+    "move_speed": 0.0,
+    "boss_rush_only": false
+  },
+  "legendary_monsters:ancient_guardian": {
+    "border_color": "#B8B2A8",
+    "background_color": "#170F0E",
+    "bar_color": ["#3A2622", "#6B4C42", "#C7C1B6"],
+    "bar_color_pos": [0.2, 0.65, 0.95],
+    "pixel_density": 0.45,
+    "color_angle": 10.0,
+    "move_direction": "none",
+    "move_speed": 0.0,
+    "boss_rush_only": false
+  },
+  "legendary_monsters:overgrown_colossus": {
+    "border_color": "#6B9E32",
+    "background_color": "#121710",
+    "bar_color": ["#4E544D", "#5A7D2A", "#D946EF"],
+    "bar_color_pos": [0.25, 0.72, 0.96],
+    "pixel_density": 0.4,
+    "color_angle": 20.0,
+    "move_direction": "none",
+    "move_speed": 0.0,
+    "boss_rush_only": false
+  },
+  "legendary_monsters:shulker_mimic": {
+    "border_color": "#9B5991",
+    "background_color": "#170C16",
+    "bar_color": ["#4A2545", "#82497A", "#E6D38A"],
+    "bar_color_pos": [0.2, 0.65, 0.95],
+    "pixel_density": 0.55,
+    "color_angle": -10.0,
+    "move_direction": "none",
+    "move_speed": 0.0,
+    "boss_rush_only": false
+  },
+  "block_factorys_bosses:sandworm": {
+    "border_color": "#D9821E",
+    "background_color": "#1C130A",
+    "bar_color": ["#6E4B26", "#D9821E", "#F7C531"],
+    "bar_color_pos": [0.15, 0.55, 0.9],
+    "pixel_density": 0.1,
+    "color_angle": -12.0,
+    "move_direction": "right",
+    "move_speed": 3.0,
+    "boss_rush_only": false
+  },
+    "legendary_monsters:frostbitten_golem": {
+    "border_color": "#5BC0EB",
+    "background_color": "#0D171C",
+    "bar_color": ["#134E6F", "#4EA8DE", "#D8F3FF"],
+    "bar_color_pos": [0.15, 0.65, 0.95],
+    "pixel_density": 0.45,
+    "color_angle": 18.0,
+    "move_direction": "none",
+    "move_speed": 0.0,
+    "boss_rush_only": false
+  },
+  "legendary_monsters:lava_eater": {
+    "border_color": "#FF7B00",
+    "background_color": "#140D0A",
+    "bar_color": ["#241815", "#B84A0E", "#FF9E1B"],
+    "bar_color_pos": [0.2, 0.6, 0.92],
+    "pixel_density": 0.35,
+    "color_angle": -15.0,
+    "move_direction": "right",
+    "move_speed": 1.2,
+    "boss_rush_only": false
+  },
+  "legendary_monsters:withered_abomination": {
+    "border_color": "#29F2FF",
+    "background_color": "#0D0E10",
+    "bar_color": ["#18181A", "#36383B", "#29F2FF"],
+    "bar_color_pos": [0.25, 0.72, 0.95],
+    "pixel_density": 0.5,
+    "color_angle": 12.0,
+    "move_direction": "none",
+    "move_speed": 0.0,
+    "boss_rush_only": false
+  },
+  "legendary_monsters:annihilation_pursuer": {
+    "border_color": "#C2A675",
+    "background_color": "#0F1711",
+    "bar_color": ["#273828", "#C2A675", "#7CFF9B"],
+    "bar_color_pos": [0.2, 0.68, 0.95],
+    "pixel_density": 0.6,
+    "color_angle": -18.0,
+    "move_direction": "none",
+    "move_speed": 0.0,
+    "boss_rush_only": false
+  },
+  "legendary_monsters:posessed_paladin": {
+    "border_color": "#C9A23F",
+    "background_color": "#141118",
+    "bar_color": ["#3B352E", "#B89335", "#6E44FF"],
+    "bar_color_pos": [0.2, 0.65, 0.94],
+    "pixel_density": 0.55,
+    "color_angle": 15.0,
+    "move_direction": "right",
+    "move_speed": 2.0,
+    "boss_rush_only": false,
+    "hp_phases": [
+      {
+        "below_hp": 260.0,
+        "display_name": "Orion, The Fractured Omen",
+        "border_color": "#FF1F3D",
+        "background_color": "#140C0E",
+        "bar_color": ["#1C191A", "#4A1E24", "#B81428", "#FF2E4C"],
+        "bar_color_pos": [0.15, 0.45, 0.78, 0.96],
+        "pixel_density": 0.45,
+        "color_angle": -18.0,
+        "move_direction": "right",
+        "move_speed": 2.8
+      }
+    ]
+  },
+  "legendary_monsters:the_obliterator": {
+    "border_color": "#5CFF54",
+    "background_color": "#0B1611",
+    "bar_color": ["#1F422D", "#C9B282", "#85F24B"],
+    "bar_color_pos": [0.18, 0.58, 0.92],
+    "pixel_density": 0.5,
+    "color_angle": -18.0,
+    "move_direction": "right",
+    "move_speed": 2.4,
+    "boss_rush_only": false
+  },
+  "block_factorys_bosses:underworld_knight": {
+    "border_color": "#1BE7FF",
+    "background_color": "#101417",
+    "bar_color": ["#2A3033", "#9EA8AB", "#1BE7FF"],
+    "bar_color_pos": [0.2, 0.65, 0.92],
+    "pixel_density": 0.55,
+    "color_angle": -10.0,
+    "move_direction": "right",
+    "move_speed": 2.2,
+    "boss_rush_only": false
+  },
+  "minecraft:ender_dragon": {
+    "border_color": "#B233FF",
+    "background_color": "#0F0817",
+    "bar_color": ["#140A1F", "#6A1B9A", "#D580FF"],
+    "bar_color_pos": [0.15, 0.6, 0.92],
+    "pixel_density": 0.55,
+    "color_angle": -15.0,
+    "move_direction": "right",
+    "move_speed": 2.2,
+    "boss_rush_only": false,
+    "hp_phases": [
+      {
+        "below_hp": 100.0,
+        "display_name": "The End Dragon",
+        "border_color": "#FF1E56",
+        "background_color": "#17060C",
+        "bar_color": ["#140814", "#8A0E3A", "#FF2A6D", "#FF8FA3"],
+        "bar_color_pos": [0.12, 0.45, 0.78, 0.96],
+        "pixel_density": 0.35,
+        "color_angle": -22.0,
+        "move_direction": "right",
+        "move_speed": 3.5
+      }
+    ]
+  }
+}

@@ -106,7 +106,9 @@ public final class BossRushManager {
       phase.musicTitle(),
       totemItemId,
       totemSoundId,
-      ""
+      "",
+      -1,
+      BossRushReloadListener.getRawHealthBarsJson()
     ));
 
     spawnNextBossInPhase(player, session);
@@ -123,6 +125,7 @@ public final class BossRushManager {
         beginPhase(player, session, nextPhase, phase.onCompletionItem(), phase.onCompletionSound());
       } else {
         ACTIVE_SESSIONS.remove(player.getUUID());
+        ACTIVE_SESSIONS.remove(player.getUUID());
         PacketDistributor.sendToPlayer(player, new BossRushSyncPayload(
           false,
           "",
@@ -131,7 +134,9 @@ public final class BossRushManager {
           "",
           phase.onCompletionItem(),
           phase.onCompletionSound(),
-          "§6Boss Rush Completed!"
+          "§6Boss Rush Completed!",
+          -1,
+          "{}"
         ));
       }
       return;
@@ -164,9 +169,19 @@ public final class BossRushManager {
       }
       session.currentBossUuid = spawned.getUUID();
       session.allSpawnedEntities.add(spawned.getUUID());
-    } else {
-      session.bossIndexInPhase++;
-      spawnNextBossInPhase(player, session);
+
+      PacketDistributor.sendToPlayer(player, new BossRushSyncPayload(
+        true,
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        spawned.getId(),
+        BossRushReloadListener.getRawHealthBarsJson()
+      ));
     }
   }
 
@@ -183,8 +198,8 @@ public final class BossRushManager {
     }
     session.allSpawnedEntities.clear();
 
-    PacketDistributor.sendToPlayer(player, new BossRushSyncPayload(
-      false, "", "", "", "", "", "", reasonBanner
+      PacketDistributor.sendToPlayer(player, new BossRushSyncPayload(
+      false, "", "", "", "", "", "", reasonBanner, -1, "{}"
     ));
   }
 
@@ -278,6 +293,31 @@ public final class BossRushManager {
       double px = origin.x + Math.cos(angle) * radius;
       double pz = origin.z + Math.sin(angle) * radius;
       level.sendParticles(options, px, origin.y + 0.5D, pz, 2, 0.1D, 0.4D, 0.1D, 0.02D);
+    }
+  }
+
+  @SubscribeEvent
+  public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
+    if (event.getEntity() instanceof ServerPlayer sp) {
+      PacketDistributor.sendToPlayer(sp, new BossRushSyncPayload(
+        false, "", "", "", "", "", "", "", -1, BossRushReloadListener.getRawHealthBarsJson()
+      ));
+    }
+  }
+
+  @SubscribeEvent
+  public static void onDatapackSync(net.neoforged.neoforge.event.OnDatapackSyncEvent event) {
+    String json = BossRushReloadListener.getRawHealthBarsJson();
+    if (event.getPlayer() != null) {
+      PacketDistributor.sendToPlayer(event.getPlayer(), new BossRushSyncPayload(
+        isPlayerInRush(event.getPlayer().getUUID()), "", "", "", "", "", "", "", -1, json
+      ));
+    } else {
+      for (ServerPlayer sp : event.getPlayerList().getPlayers()) {
+        PacketDistributor.sendToPlayer(sp, new BossRushSyncPayload(
+          isPlayerInRush(sp.getUUID()), "", "", "", "", "", "", "", -1, json
+        ));
+      }
     }
   }
 }

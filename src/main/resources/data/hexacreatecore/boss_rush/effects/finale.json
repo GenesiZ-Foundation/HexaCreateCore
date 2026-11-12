@@ -1,0 +1,8 @@
+{
+  "particle": "minecraft:end_rod",
+  "sound": "minecraft:entity.wither.spawn",
+  "count": 1000,
+  "radius": 3.0,
+  "lightning": true
+}
+

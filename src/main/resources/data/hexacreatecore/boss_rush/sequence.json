@@ -1,42 +1,87 @@
 {
   "on_trigger": "minecraft:stick",
   "on_trigger_sound": "minecraft:block.bell.resonate",
-  "area_of_effect": 100,
+  "area_of_effect": 500,
   "phases": [
     {
       "id": "phase_one",
-      "name": "Test Phase",
-      "description": "this is the test phase",
-      "music": "cd_music_ensemble_of_fools",
-      "music_title": "Ensemble of fools - CDMusic",
+      "name": "The Fool's Path",
+      "description": "another fool... Fine then, advance",
+      "music": "feral_amalgamation_dm_dokuro",
+      "music_title": "Feral Amalgamation - DM Dokuro",
       "on_completion": "minecraft:diamond",
       "on_completion_sound": "minecraft:entity.elder_guardian.curse",
       "bosses": [
+        "legendary_monsters:endersent",
+        "legendary_monsters:beheaded_knight",
+        "legendary_monsters:ancient_guardian",
         "minecraft:warden",
-        "minecraft:wither"
+        "legendary_monsters:overgrown_colossus",
+        "legendary_monsters:shulker_mimic",
+        "block_factorys_bosses:sandworm"
       ],
       "effects": {
-        "on_start": "void_storm",
+        "on_start": "minecraft:sweep_attack",
         "on_end": "minecraft:explosion"
       }
     },
     {
       "id": "phase_two",
-      "name": "Test Phase 2",
-      "description": "this is the second test phase",
-      "music": "feral_amalgamation_dm_dokuro",
-      "music_title": "Feral Amalgamation - DM Dokuro",
+      "name": "Challenger's Might",
+      "description": "you ought to be of much interest... CONTINUE",
+      "music": "cd_music_ensemble_of_fools",
+      "music_title": "Ensemble of fools - CDMusic",
       "on_completion": "minecraft:netherite_ingot",
       "on_completion_sound": "minecraft:entity.elder_guardian.curse",
       "bosses": [
-        "minecraft:wither",
-        "minecraft:ender_dragon"
+        "legendary_monsters:frostbitten_golem",
+        "legendary_monsters:lava_eater",
+        "legendary_monsters:cloud_golem",
+        "legendary_monsters:withered_abomination",
+        "legendary_monsters:annihilation_pursuer",
+        "block_factorys_bosses:infernal_dragon",
+        "minecraft:wither"
       ],
       "effects": {
         "on_start": "void_storm",
-        "on_end": "minecraft:explosion"
+        "on_end": "minecraft:sonic_boom"
+      }
+    },
+    {
+      "id": "phase_three",
+      "name": "The Grand Hero",
+      "description": "These challengers aren't good enough for thee, prove yourslf",
+      "music": "scourge_of_the_universe_dm_dokuro",
+      "music_title": "Scourge of the Universe - DM Dokuro",
+      "on_completion": "minecraft:ender_eye",
+      "on_completion_sound": "minecraft:entity.wither.ambient",
+      "bosses": [
+        "block_factorys_bosses:underworld_knight",
+        "legendary_monsters:posessed_paladin",
+        "legendary_monsters:the_obliterator"
+      ],
+      "effects": {
+        "on_start": "trial_onwards",
+        "on_end": "minecraft:sonic_boom"
+      }
+    },
+    {
+      "id": "phase_four",
+      "name": "Godslayer",
+      "description": "A miriad of challenges conquered... End it all !",
+      "music": "omniscience_of_gods_the_trester",
+      "music_title": "Omniscience of Gods - The Trester",
+      "on_completion": "hexacreatecore:debugger",
+      "on_completion_sound": "minecraft:ambient.cave",
+      "bosses": [
+        "minecraft:ender_dragon"
+      ],
+      "effects": {
+        "on_start": "trial_onwards",
+        "on_end": "minecraft:sonic_boom"
       }
     }
+
   ]
 }
 

@@ -1,0 +1,7 @@
+{
+  "particle": "minecraft:trial_spawner_detection_ominous",
+  "sound": "minecraft:entity.elder_guardian.death",
+  "count": 1000,
+  "radius": 2.0,
+  "lightning": false
+}

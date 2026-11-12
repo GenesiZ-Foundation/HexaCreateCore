@@ -14,6 +14,21 @@
         "stream": true
       }
     ]
+  },
+  "boss_rush.music.scourge_of_the_universe_dm_dokuro": {
+    "sounds": [
+      {
+        "name": "hexacreatecore:boss_rush/music/scourge_of_the_universe_dm_dokuro",
+        "stream": true
+      }
+    ]
+  },
+  "boss_rush.music.omniscience_of_gods_the_trester": {
+    "sounds": [
+      {
+        "name": "hexacreatecore:boss_rush/music/omniscience_of_gods_the_trester",
+        "stream": true
+      }
+    ]
   }
-
 }
