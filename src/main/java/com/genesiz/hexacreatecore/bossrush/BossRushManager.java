@@ -125,13 +125,12 @@ public final class BossRushManager {
         beginPhase(player, session, nextPhase, phase.onCompletionItem(), phase.onCompletionSound());
       } else {
         ACTIVE_SESSIONS.remove(player.getUUID());
-        ACTIVE_SESSIONS.remove(player.getUUID());
         PacketDistributor.sendToPlayer(player, new BossRushSyncPayload(
           false,
           "",
           "",
-          "",
-          "",
+          session.sequence.endingMusic(),
+          session.sequence.endingMusicTitle(),
           phase.onCompletionItem(),
           phase.onCompletionSound(),
           "§6Boss Rush Completed!",
@@ -184,7 +183,6 @@ public final class BossRushManager {
       ));
     }
   }
-
 
   public static void failAndCleanupSession(ServerPlayer player, RushSession session, String reasonBanner) {
     ACTIVE_SESSIONS.remove(session.playerUuid);

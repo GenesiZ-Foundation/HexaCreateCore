@@ -2,6 +2,8 @@
   "on_trigger": "minecraft:stick",
   "on_trigger_sound": "minecraft:block.bell.resonate",
   "area_of_effect": 500,
+  "ending_music": "c418_dry_hands",
+  "ending_music_title": "Dry Hands - C418",
   "phases": [
     {
       "id": "phase_one",

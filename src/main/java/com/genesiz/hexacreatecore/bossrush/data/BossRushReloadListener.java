@@ -161,6 +161,8 @@ public final class BossRushReloadListener extends SimpleJsonResourceReloadListen
     String onTrigger = root.has("on_trigger") ? root.get("on_trigger").getAsString() : "";
     String onTriggerSound = root.has("on_trigger_sound") ? root.get("on_trigger_sound").getAsString() : "minecraft:item.totem.use";
     int areaOfEffect = root.has("area_of_effect") ? root.get("area_of_effect").getAsInt() : 64;
+    String endingMusic = root.has("ending_music") ? root.get("ending_music").getAsString() : "";
+    String endingMusicTitle = root.has("ending_music_title") ? root.get("ending_music_title").getAsString() : "";
 
     List<PhaseConfig> phases = new ArrayList<>();
     if (root.has("phases") && root.get("phases").isJsonArray()) {
@@ -196,7 +198,7 @@ public final class BossRushReloadListener extends SimpleJsonResourceReloadListen
       }
     }
 
-    return new SequenceConfig(onTrigger, onTriggerSound, areaOfEffect, phases);
+    return new BossRushData.SequenceConfig(onTrigger, onTriggerSound, areaOfEffect, endingMusic, endingMusicTitle, phases);
   }
 
   private static CustomEffectScript parseEffectScript(JsonObject obj) {

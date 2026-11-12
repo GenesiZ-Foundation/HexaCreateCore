@@ -30,5 +30,13 @@
         "stream": true
       }
     ]
+  },
+  "boss_rush.music.c418_dry_hands": {
+    "sounds": [
+      {
+        "name": "hexacreatecore:boss_rush/music/c418_dry_hands",
+        "stream": true
+      }
+    ]
   }
 }

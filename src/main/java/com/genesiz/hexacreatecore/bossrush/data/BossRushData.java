@@ -7,6 +7,8 @@ public final class BossRushData {
     String onTriggerItem,
     String onTriggerSound,
     int areaOfEffect,
+    String endingMusic,
+    String endingMusicTitle,
     List<PhaseConfig> phases
   ) {}
 

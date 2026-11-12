@@ -171,13 +171,20 @@ public final class BossRushClientHud {
     bossRushActive = payload.active();
 
     if (!payload.active()) {
-      stopActiveMusic();
       activeBossEntityId = -1;
       currentMusicId = "";
       phaseName = "";
       fullDescription = "";
       bannerStartMs = 0L;
-      musicToastStartMs = 0L;
+
+      if (!payload.musicId().isEmpty()) {
+        playBossRushMusic(payload.musicId(), false);
+        musicTitle = payload.musicTitle().isEmpty() ? payload.musicId() : payload.musicTitle();
+        musicToastStartMs = System.currentTimeMillis();
+      } else {
+        stopActiveMusic();
+        musicToastStartMs = 0L;
+      }
       return;
     }
 
@@ -193,15 +200,19 @@ public final class BossRushClientHud {
     }
 
     if (!payload.musicId().isEmpty()) {
-      playBossRushMusic(payload.musicId());
+      playBossRushMusic(payload.musicId(), true);
       musicTitle = payload.musicTitle().isEmpty() ? payload.musicId() : payload.musicTitle();
       musicToastStartMs = System.currentTimeMillis();
     }
   }
 
   private static void playBossRushMusic(String musicName) {
+    playBossRushMusic(musicName, true);
+  }
+
+  private static void playBossRushMusic(String musicName, boolean loop) {
     stopActiveMusic();
-    currentMusicId = musicName;
+    currentMusicId = loop ? musicName : "";
     Minecraft mc = Minecraft.getInstance();
 
     mc.getSoundManager().stop(null, SoundSource.MUSIC);
@@ -212,7 +223,7 @@ public final class BossRushClientHud {
 
     activeMusicInstance = new SimpleSoundInstance(
       event.getLocation(), SoundSource.MASTER, 1.0f, 1.0f,
-      SoundInstance.createUnseededRandom(), true, 0,
+      SoundInstance.createUnseededRandom(), loop, 0,
       SoundInstance.Attenuation.NONE, 0.0D, 0.0D, 0.0D, true
     );
     mc.getSoundManager().play(activeMusicInstance);
