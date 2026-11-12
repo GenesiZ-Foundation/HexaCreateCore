@@ -1,0 +1,40 @@
+{
+  "on_trigger": "minecraft:stick",
+  "on_trigger_sound": "minecraft:block.bell.resonate",
+  "area_of_effect": 100,
+  "phases": [
+    {
+      "id": "phase_one",
+      "name": "Test Phase",
+      "description": "this is the test phase",
+      "music": "cd_music_ensemble_of_fools",
+      "music_title": "Ensemble of fools - CDMusic",
+      "on_completion": "minecraft:diamond",
+      "on_completion_sound": "minecraft:entity.elder_guardian.curse",
+      "bosses": [
+        "minecraft:warden"
+      ],
+      "effects": {
+        "on_start": "minecraft:portal",
+        "on_end": "minecraft:explosion"
+      }
+    },
+    {
+      "id": "phase_two",
+      "name": "Test Phase 2",
+      "description": "this is the second test phase",
+      "music": "feral_amalgamation_dm_dokuro",
+      "music_title": "Feral Amalgamation - DM Dokuro",
+      "on_completion": "minecraft:netherite_ingot",
+      "on_completion_sound": "minecraft:entity.elder_guardian.curse",
+      "bosses": [
+        "minecraft:wither"
+      ],
+      "effects": {
+        "on_start": "minecraft:portal",
+        "on_end": "minecraft:explosion"
+      }
+    }
+  ]
+}
+

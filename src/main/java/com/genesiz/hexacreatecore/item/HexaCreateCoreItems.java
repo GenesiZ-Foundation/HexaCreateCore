@@ -11,7 +11,9 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 
 public class HexaCreateCoreItems {
   public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(HexaCreateCore.MODID);
-  public static final DeferredItem<Item> DEBUGGER = ITEMS.register("debugger", ()-> new Item(new Item.Properties()));
+  public static final DeferredItem<Item> DEBUGGER = ITEMS.register("debugger", 
+  () -> new com.genesiz.hexacreatecore.item.custom.BossRushTriggerItem(new Item.Properties().stacksTo(1))
+  );
   public static final DeferredItem<Item> CURSED_BLACKSMITH_SPAWN_EGG = ITEMS.register("cursed_blacksmith_spawn_egg", ()-> new DeferredSpawnEggItem(
     ModEntities.CURSED_BLACKSMITH,
     0x45413d,

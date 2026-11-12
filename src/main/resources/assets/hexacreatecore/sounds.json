@@ -1,0 +1,19 @@
+{
+  "boss_rush.music.cd_music_ensemble_of_fools": {
+    "sounds": [
+      {
+        "name": "hexacreatecore:boss_rush/music/cd_music_ensemble_of_fools",
+        "stream": true
+      }
+    ]
+  },
+  "boss_rush.music.feral_amalgamation_dm_dokuro": {
+    "sounds": [
+      {
+        "name": "hexacreatecore:boss_rush/music/feral_amalgamation_dm_dokuro",
+        "stream": true
+      }
+    ]
+  }
+
+}

@@ -194,6 +194,15 @@ public final class DialogueNetworking {
           HexagonalGridManager.updateLiveCastingStack(payload.stackDescs(), payload.ravensmind());
         })
       );
+
+      registrar.playToClient(
+        com.genesiz.hexacreatecore.bossrush.network.BossRushSyncPayload.TYPE,
+        com.genesiz.hexacreatecore.bossrush.network.BossRushSyncPayload.STREAM_CODEC.cast(),
+      (payload, context) -> context.enqueueWork(() ->
+          com.genesiz.hexacreatecore.bossrush.client.BossRushClientHud.handleSyncPacket(payload)
+        )
+      );
+
     }
   }
 }
