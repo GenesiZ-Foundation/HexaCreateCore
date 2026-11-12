@@ -15,7 +15,7 @@
         "minecraft:warden"
       ],
       "effects": {
-        "on_start": "minecraft:portal",
+        "on_start": "void_storm",
         "on_end": "minecraft:explosion"
       }
     },
@@ -31,7 +31,7 @@
         "minecraft:wither"
       ],
       "effects": {
-        "on_start": "minecraft:portal",
+        "on_start": "void_storm",
         "on_end": "minecraft:explosion"
       }
     }

@@ -10,6 +10,7 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -17,6 +18,7 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.util.Mth;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.api.distmarker.Dist;
@@ -36,11 +38,21 @@ public final class BossRushClientHud {
   private static int bannerDisplayTicks = 0;
 
   private static String musicTitle = "";
-  private static int musicToastTicks = 0;
+  private static long musicToastStartMs = 0L;
+  private static final long MUSIC_TOAST_DURATION_MS = 5000L;
+  private static final long MUSIC_TOAST_SLIDE_MS = 750L;
   private static SoundInstance activeMusicInstance = null;
+
 
   private static String statusBanner = "";
   private static int statusBannerTicks = 0;
+
+  // Sine-eased camera inertia state (matching HexCastingGeometry.render3DStackHUD)
+  private static boolean hasCameraHistory = false;
+  private static float lastCamYaw = 0.0f;
+  private static float lastCamPitch = 0.0f;
+  private static float lagOffsetX = 0.0f;
+  private static float lagOffsetY = 0.0f;
 
   public static void handleSyncPacket(BossRushSyncPayload payload) {
     Minecraft mc = Minecraft.getInstance();
@@ -51,19 +63,19 @@ public final class BossRushClientHud {
         Item item = BuiltInRegistries.ITEM.get(itemLoc);
         mc.gameRenderer.displayItemActivation(new ItemStack(item));
         if (mc.player != null && mc.particleEngine != null) {
-          mc.particleEngine.createTrackingEmitter(mc.player, net.minecraft.core.particles.ParticleTypes.TOTEM_OF_UNDYING, 30);
+          mc.particleEngine.createTrackingEmitter(mc.player, ParticleTypes.TOTEM_OF_UNDYING, 30);
         }
       }
     }
 
     if (!payload.totemSoundId().isEmpty() && mc.player != null) {
       ResourceLocation soundLoc = payload.totemSoundId().contains(":")
-        ? ResourceLocation.tryParse(payload.totemSoundId())
-        : ResourceLocation.fromNamespaceAndPath(HexaCreateCore.MODID, payload.totemSoundId());
+      ? ResourceLocation.tryParse(payload.totemSoundId())
+      : ResourceLocation.fromNamespaceAndPath(HexaCreateCore.MODID, payload.totemSoundId());
       if (soundLoc != null) {
         SoundEvent se = BuiltInRegistries.SOUND_EVENT.containsKey(soundLoc)
-          ? BuiltInRegistries.SOUND_EVENT.get(soundLoc)
-          : SoundEvent.createVariableRangeEvent(soundLoc);
+        ? BuiltInRegistries.SOUND_EVENT.get(soundLoc)
+        : SoundEvent.createVariableRangeEvent(soundLoc);
         mc.player.playSound(se, 1.0f, 1.0f);
       }
     }
@@ -86,10 +98,10 @@ public final class BossRushClientHud {
     revealedChars = 0;
     bannerDisplayTicks = 140;
 
-    if (!payload.musicId().isEmpty()) {
+      if (!payload.musicId().isEmpty()) {
       playBossRushMusic(payload.musicId());
       musicTitle = payload.musicTitle().isEmpty() ? payload.musicId() : payload.musicTitle();
-      musicToastTicks = 100;
+      musicToastStartMs = System.currentTimeMillis();
     }
   }
 
@@ -125,7 +137,7 @@ public final class BossRushClientHud {
   public static void onClientTick(ClientTickEvent.Post event) {
     if (bannerDisplayTicks > 0) {
       bannerDisplayTicks--;
-      if (revealedChars < fullDescription.length()) {
+      if (fullDescription.length() > revealedChars) {
         revealedChars = Math.min(fullDescription.length(), revealedChars + 2);
         Minecraft mc = Minecraft.getInstance();
         if (mc.player != null && revealedChars % 4 == 0) {
@@ -134,7 +146,6 @@ public final class BossRushClientHud {
       }
     }
 
-    if (musicToastTicks > 0) musicToastTicks--;
     if (statusBannerTicks > 0) statusBannerTicks--;
   }
 
@@ -145,74 +156,160 @@ public final class BossRushClientHud {
     Minecraft mc = Minecraft.getInstance();
     if (mc.player == null) return;
 
+    long nowMs = System.currentTimeMillis();
+    long musicElapsedMs = (musicToastStartMs > 0L) ? (nowMs - musicToastStartMs) : Long.MAX_VALUE;
+    boolean isMusicToastVisible = (musicToastStartMs > 0L) && (MUSIC_TOAST_DURATION_MS > musicElapsedMs) && !musicTitle.isEmpty();
+
+    boolean anyVisible = (bannerDisplayTicks > 0) || isMusicToastVisible || (statusBannerTicks > 0);
+    if (!anyVisible) {
+      hasCameraHistory = false;
+      lagOffsetX = 0.0f;
+      lagOffsetY = 0.0f;
+      return;
+    }
+
+    // Sine-eased camera inertia matching HexCastingGeometry.render3DStackHUD
+    float currentYaw = mc.player.getYRot();
+    float currentPitch = mc.player.getXRot();
+    if (!hasCameraHistory) {
+      lastCamYaw = currentYaw;
+      lastCamPitch = currentPitch;
+      hasCameraHistory = true;
+    } else {
+      float deltaYaw = Mth.wrapDegrees(currentYaw - lastCamYaw);
+      float deltaPitch = currentPitch - lastCamPitch;
+      lastCamYaw = currentYaw;
+      lastCamPitch = currentPitch;
+
+      lagOffsetX = Mth.clamp(lagOffsetX - (deltaYaw * 0.45f), -24.0f, 24.0f);
+      lagOffsetY = Mth.clamp(lagOffsetY - (deltaPitch * 0.45f), -16.0f, 16.0f);
+
+      float dt = mc.getTimer().getRealtimeDeltaTicks() / 20.0f;
+      double linearAlpha = Math.min(1.0D, dt * 3.0D);
+      float sineEase = (float) Math.sin(linearAlpha * (Math.PI / 2.0D));
+
+      lagOffsetX = Mth.lerp(sineEase, lagOffsetX, 0.0f);
+      lagOffsetY = Mth.lerp(sineEase, lagOffsetY, 0.0f);
+    }
+
     Font font = mc.font;
     int screenWidth = mc.getWindow().getGuiScaledWidth();
     int screenHeight = mc.getWindow().getGuiScaledHeight();
+    float screenCenterX = screenWidth * 0.5f;
+
     PoseStack poseStack = event.getGuiGraphics().pose();
     MultiBufferSource.BufferSource bufferSource = mc.renderBuffers().bufferSource();
 
     RenderSystem.enableBlend();
     RenderSystem.defaultBlendFunc();
 
+    // 1. Top-Center Phase Title centered directly below Jade's HUD
     if (bannerDisplayTicks > 0 && !phaseName.isEmpty()) {
       String styledName = "§6§l" + phaseName;
-      int textWidth = font.width(styledName);
-      float boxWidth = Math.max(140.0f, textWidth + 28.0f);
-      float boxHeight = font.lineHeight + 14.0f;
-      float boxX = (screenWidth - boxWidth) / 2.0f;
-      float boxY = 14.0f;
+      int maxTitleWidth = Math.min(260, screenWidth - 40);
+      List<FormattedCharSequence> lines = font.split(Component.literal(styledName), maxTitleWidth - 20);
 
-      List<FormattedCharSequence> lines = font.split(Component.literal(styledName), (int) boxWidth - 16);
+      int widestTitle = 0;
+      for (FormattedCharSequence seq : lines) {
+        widestTitle = Math.max(widestTitle, font.width(seq));
+      }
+
+      float boxWidth = widestTitle + 24.0f;
+      float boxHeight = (lines.size() * font.lineHeight) + 12.0f;
+      float centerX = screenCenterX + lagOffsetX;
+      float centerY = 36.0f + (boxHeight * 0.5f) + lagOffsetY;
+
       RawGeometry.drawDialogueNode(
         poseStack, bufferSource, font,
-        boxX, boxY, 0.0f,
+        centerX, centerY, 0.0f,
         boxWidth, boxHeight, 3.0f, 3.0f,
-        0xCC110E1A, 0xFFFFAA00, lines, false
+        0xCC110E1A, 0xFFFFAA00, lines, true
       );
     }
 
-    if (musicToastTicks > 0 && !musicTitle.isEmpty()) {
+    // 2. Top-Right Sliding Music Toast in Dialogue3D box
+    if (isMusicToastVisible) {
       String styledMusic = "§b♪ §f" + musicTitle;
-      int textWidth = font.width(styledMusic);
-      float boxWidth = textWidth + 24.0f;
-      float boxHeight = font.lineHeight + 12.0f;
-      float boxX = screenWidth - boxWidth - 12.0f;
-      float boxY = 12.0f;
+      List<FormattedCharSequence> lines = font.split(Component.literal(styledMusic), 220);
 
-      List<FormattedCharSequence> lines = font.split(Component.literal(styledMusic), (int) boxWidth - 12);
+      int widestMusic = 0;
+      for (FormattedCharSequence seq : lines) {
+        widestMusic = Math.max(widestMusic, font.width(seq));
+      }
+
+      float boxWidth = widestMusic + 22.0f;
+      float boxHeight = (lines.size() * font.lineHeight) + 12.0f;
+
+      long remainingMs = MUSIC_TOAST_DURATION_MS - musicElapsedMs;
+      float slideProgress = 1.0f;
+      if (MUSIC_TOAST_SLIDE_MS > musicElapsedMs) {
+        float t = (float) musicElapsedMs / (float) MUSIC_TOAST_SLIDE_MS;
+        slideProgress = (float) Math.sin(t * (Math.PI / 2.0D));
+      } else if (MUSIC_TOAST_SLIDE_MS > remainingMs) {
+        float t = (float) remainingMs / (float) MUSIC_TOAST_SLIDE_MS;
+        slideProgress = (float) Math.sin(t * (Math.PI / 2.0D));
+      }
+
+      float targetCenterX = screenWidth - (boxWidth * 0.5f) - 10.0f;
+      float offscreenCenterX = screenWidth + (boxWidth * 0.5f) + 10.0f;
+      float centerX = Mth.lerp(slideProgress, offscreenCenterX, targetCenterX) + (lagOffsetX * 0.5f);
+      float centerY = 12.0f + (boxHeight * 0.5f) + (lagOffsetY * 0.5f);
+
       RawGeometry.drawDialogueNode(
         poseStack, bufferSource, font,
-        boxX, boxY, 0.0f,
+        centerX, centerY, 0.0f,
         boxWidth, boxHeight, 3.0f, 3.0f,
-        0xCC110E1A, 0xFF21B7D1, lines, false
+        0xCC110E1A, 0xFF21B7D1, lines, true
       );
     }
 
+    // 3. Status Banner (Victory / Arena Exit / Death) centered directly below Jade's HUD
     if (statusBannerTicks > 0 && !statusBanner.isEmpty()) {
-      int textWidth = font.width(statusBanner);
-      float boxWidth = Math.max(150.0f, textWidth + 28.0f);
-      float boxHeight = font.lineHeight + 14.0f;
-      float boxX = (screenWidth - boxWidth) / 2.0f;
-      float boxY = 14.0f;
+      List<FormattedCharSequence> lines = font.split(Component.literal(statusBanner), 240);
+      int widestStatus = 0;
+      for (FormattedCharSequence seq : lines) {
+        widestStatus = Math.max(widestStatus, font.width(seq));
+      }
 
-      List<FormattedCharSequence> lines = font.split(Component.literal(statusBanner), (int) boxWidth - 16);
+      float boxWidth = widestStatus + 24.0f;
+      float boxHeight = (lines.size() * font.lineHeight) + 12.0f;
+      float centerX = screenCenterX + lagOffsetX;
+      float centerY = 36.0f + (boxHeight * 0.5f) + lagOffsetY;
+
       RawGeometry.drawDialogueNode(
         poseStack, bufferSource, font,
-        boxX, boxY, 0.0f,
+        centerX, centerY, 0.0f,
         boxWidth, boxHeight, 3.0f, 3.0f,
-        0xCC110E1A, 0xFFB233FF, lines, false
+        0xCC110E1A, 0xFFB233FF, lines, true
+      );
+    }
+
+    // 4. Bottom Typewriter Description centered directly above the XP Bar
+    if (bannerDisplayTicks > 0 && revealedChars > 0) {
+      String rawVisible = fullDescription.substring(0, revealedChars);
+      String styledDesc = "§e" + rawVisible;
+      int maxBoxWidth = Math.min(260, screenWidth - 40);
+      List<FormattedCharSequence> descLines = font.split(Component.literal(styledDesc), maxBoxWidth - 20);
+
+      int widestLine = 0;
+      for (FormattedCharSequence seq : descLines) {
+        widestLine = Math.max(widestLine, font.width(seq));
+      }
+
+      float descBoxWidth = widestLine + 24.0f;
+      float descBoxHeight = (descLines.size() * font.lineHeight) + 12.0f;
+      float descCenterX = screenCenterX + lagOffsetX;
+      float descCenterY = (screenHeight - 50.0f - (descBoxHeight * 0.5f)) + lagOffsetY;
+
+      RawGeometry.drawDialogueNode(
+        poseStack, bufferSource, font,
+        descCenterX, descCenterY, 0.0f,
+        descBoxWidth, descBoxHeight, 3.0f, 3.0f,
+        0xCC110E1A, 0xFF8A4FFF, descLines, true
       );
     }
 
     bufferSource.endBatch(RawGeometry.DIALOGUE_SOLID);
     bufferSource.endBatch();
-
-    if (bannerDisplayTicks > 0 && revealedChars > 0) {
-      String visibleDesc = "§e" + fullDescription.substring(0, revealedChars);
-      int descWidth = font.width(visibleDesc);
-      int descX = (screenWidth - descWidth) / 2;
-      int descY = screenHeight - 54;
-      event.getGuiGraphics().drawString(font, visibleDesc, descX, descY, 0xFFFFFF, true);
-    }
   }
 }

@@ -1,0 +1,7 @@
+{
+  "particle": "minecraft:sonic_boom",
+  "sound": "minecraft:entity.wither.spawn",
+  "count": 32,
+  "radius": 5.0,
+  "lightning": true
+}
