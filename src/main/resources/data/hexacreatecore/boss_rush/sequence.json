@@ -12,7 +12,8 @@
       "on_completion": "minecraft:diamond",
       "on_completion_sound": "minecraft:entity.elder_guardian.curse",
       "bosses": [
-        "minecraft:warden"
+        "minecraft:warden",
+        "minecraft:wither"
       ],
       "effects": {
         "on_start": "void_storm",
@@ -28,7 +29,8 @@
       "on_completion": "minecraft:netherite_ingot",
       "on_completion_sound": "minecraft:entity.elder_guardian.curse",
       "bosses": [
-        "minecraft:wither"
+        "minecraft:wither",
+        "minecraft:ender_dragon"
       ],
       "effects": {
         "on_start": "void_storm",

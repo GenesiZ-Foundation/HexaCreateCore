@@ -35,7 +35,10 @@ public final class BossRushClientHud {
   private static String phaseName = "";
   private static String fullDescription = "";
   private static int revealedChars = 0;
-  private static int bannerDisplayTicks = 0;
+  private static long bannerStartMs = 0L;
+  private static final long BANNER_DURATION_MS = 7000L;
+  private static final long BANNER_SLIDE_MS = 750L;
+
 
   private static String musicTitle = "";
   private static long musicToastStartMs = 0L;
@@ -89,16 +92,18 @@ public final class BossRushClientHud {
       stopActiveMusic();
       phaseName = "";
       fullDescription = "";
-      bannerDisplayTicks = 0;
+      bannerStartMs = 0L;
+      musicToastStartMs = 0L;
       return;
     }
 
     phaseName = payload.phaseName();
     fullDescription = payload.phaseDescription();
     revealedChars = 0;
-    bannerDisplayTicks = 140;
+    bannerStartMs = System.currentTimeMillis();
 
-      if (!payload.musicId().isEmpty()) {
+
+    if (!payload.musicId().isEmpty()) {
       playBossRushMusic(payload.musicId());
       musicTitle = payload.musicTitle().isEmpty() ? payload.musicId() : payload.musicTitle();
       musicToastStartMs = System.currentTimeMillis();
@@ -135,8 +140,7 @@ public final class BossRushClientHud {
 
   @SubscribeEvent
   public static void onClientTick(ClientTickEvent.Post event) {
-    if (bannerDisplayTicks > 0) {
-      bannerDisplayTicks--;
+    if (bannerStartMs > 0L && (BANNER_DURATION_MS > (System.currentTimeMillis() - bannerStartMs))) {
       if (fullDescription.length() > revealedChars) {
         revealedChars = Math.min(fullDescription.length(), revealedChars + 2);
         Minecraft mc = Minecraft.getInstance();
@@ -149,6 +153,7 @@ public final class BossRushClientHud {
     if (statusBannerTicks > 0) statusBannerTicks--;
   }
 
+
   @SubscribeEvent
   public static void onRenderGui(RenderGuiLayerEvent.Post event) {
     if (!event.getName().equals(VanillaGuiLayers.EXPERIENCE_BAR)) return;
@@ -156,11 +161,15 @@ public final class BossRushClientHud {
     Minecraft mc = Minecraft.getInstance();
     if (mc.player == null) return;
 
-    long nowMs = System.currentTimeMillis();
+      long nowMs = System.currentTimeMillis();
+    long bannerElapsedMs = (bannerStartMs > 0L) ? (nowMs - bannerStartMs) : Long.MAX_VALUE;
+    boolean isBannerVisible = (bannerStartMs > 0L) && (BANNER_DURATION_MS > bannerElapsedMs);
+
     long musicElapsedMs = (musicToastStartMs > 0L) ? (nowMs - musicToastStartMs) : Long.MAX_VALUE;
     boolean isMusicToastVisible = (musicToastStartMs > 0L) && (MUSIC_TOAST_DURATION_MS > musicElapsedMs) && !musicTitle.isEmpty();
 
-    boolean anyVisible = (bannerDisplayTicks > 0) || isMusicToastVisible || (statusBannerTicks > 0);
+    boolean anyVisible = isBannerVisible || isMusicToastVisible || (statusBannerTicks > 0);
+
     if (!anyVisible) {
       hasCameraHistory = false;
       lagOffsetX = 0.0f;
@@ -204,7 +213,7 @@ public final class BossRushClientHud {
     RenderSystem.defaultBlendFunc();
 
     // 1. Top-Center Phase Title centered directly below Jade's HUD
-    if (bannerDisplayTicks > 0 && !phaseName.isEmpty()) {
+    if (isBannerVisible && !phaseName.isEmpty()) {
       String styledName = "§6§l" + phaseName;
       int maxTitleWidth = Math.min(260, screenWidth - 40);
       List<FormattedCharSequence> lines = font.split(Component.literal(styledName), maxTitleWidth - 20);
@@ -216,8 +225,21 @@ public final class BossRushClientHud {
 
       float boxWidth = widestTitle + 24.0f;
       float boxHeight = (lines.size() * font.lineHeight) + 12.0f;
+
+      long bannerRemainingMs = BANNER_DURATION_MS - bannerElapsedMs;
+      float slideProgress = 1.0f;
+      if (BANNER_SLIDE_MS > bannerElapsedMs) {
+        float t = (float) bannerElapsedMs / (float) BANNER_SLIDE_MS;
+        slideProgress = (float) Math.sin(t * (Math.PI / 2.0D));
+      } else if (BANNER_SLIDE_MS > bannerRemainingMs) {
+        float t = (float) bannerRemainingMs / (float) BANNER_SLIDE_MS;
+        slideProgress = (float) Math.sin(t * (Math.PI / 2.0D));
+      }
+
+      float targetCenterY = 36.0f + (boxHeight * 0.5f);
+      float offscreenCenterY = -(boxHeight * 0.5f) - 10.0f;
       float centerX = screenCenterX + lagOffsetX;
-      float centerY = 36.0f + (boxHeight * 0.5f) + lagOffsetY;
+      float centerY = Mth.lerp(slideProgress, offscreenCenterY, targetCenterY) + lagOffsetY;
 
       RawGeometry.drawDialogueNode(
         poseStack, bufferSource, font,
@@ -226,6 +248,7 @@ public final class BossRushClientHud {
         0xCC110E1A, 0xFFFFAA00, lines, true
       );
     }
+
 
     // 2. Top-Right Sliding Music Toast in Dialogue3D box
     if (isMusicToastVisible) {
@@ -285,7 +308,7 @@ public final class BossRushClientHud {
     }
 
     // 4. Bottom Typewriter Description centered directly above the XP Bar
-    if (bannerDisplayTicks > 0 && revealedChars > 0) {
+    if (isBannerVisible && revealedChars > 0) {
       String rawVisible = fullDescription.substring(0, revealedChars);
       String styledDesc = "§e" + rawVisible;
       int maxBoxWidth = Math.min(260, screenWidth - 40);
