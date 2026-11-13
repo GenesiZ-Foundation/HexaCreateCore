@@ -8,7 +8,7 @@ import at.petrak.hexcasting.api.casting.math.HexDir;
 import at.petrak.hexcasting.api.casting.math.HexPattern;
 import at.petrak.hexcasting.xplat.IXplatAbstractions;
 import com.genesiz.hexacreatecore.decorators.annotations.DialogueAction;
-import com.genesiz.hexacreatecore.dialogue.network.LiveStackUpdatePayload;
+import com.genesiz.hexacreatecore.threedified.network.LiveStackUpdatePayload;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;

@@ -7,6 +7,9 @@ import com.genesiz.hexacreatecore.bossrush.data.BossRushData.SequenceConfig;
 import com.genesiz.hexacreatecore.bossrush.data.BossRushReloadListener;
 import com.genesiz.hexacreatecore.bossrush.network.BossRushSyncPayload;
 import com.genesiz.hexacreatecore.decorators.annotations.DialogueAction;
+import com.genesiz.hexacreatecore.difficulty.DifficultyManager;
+import com.genesiz.hexacreatecore.difficulty.DifficultySavedData;
+import com.genesiz.hexacreatecore.difficulty.data.DifficultyData.DifficultyTier;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
@@ -125,6 +128,9 @@ public final class BossRushManager {
         beginPhase(player, session, nextPhase, phase.onCompletionItem(), phase.onCompletionSound());
       } else {
         ACTIVE_SESSIONS.remove(player.getUUID());
+        if (DifficultySavedData.get(player.serverLevel()).getActiveTier() == DifficultyTier.ABSOLUTION) {
+          DifficultyManager.unlockGenesisForServer(player.serverLevel());
+        }
         PacketDistributor.sendToPlayer(player, new BossRushSyncPayload(
           false,
           "",

@@ -1,6 +1,6 @@
 package com.genesiz.hexacreatecore.hexcasting;
 
-import com.genesiz.hexacreatecore.dialogue.RawGeometry;
+import com.genesiz.hexacreatecore.threedified.RawGeometry;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;

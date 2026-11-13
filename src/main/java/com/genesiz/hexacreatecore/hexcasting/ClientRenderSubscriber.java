@@ -57,7 +57,7 @@ public final class ClientRenderSubscriber {
       // =========================================================================
 
       // Command the buffer source to immediately submit your custom quads straight to shader layers
-      bufferSource.endBatch(com.genesiz.hexacreatecore.dialogue.RawGeometry.DIALOGUE_SOLID);
+      bufferSource.endBatch(com.genesiz.hexacreatecore.threedified.RawGeometry.DIALOGUE_SOLID);
       bufferSource.endBatch(); 
     }
   }

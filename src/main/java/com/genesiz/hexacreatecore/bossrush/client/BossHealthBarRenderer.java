@@ -1,7 +1,7 @@
 package com.genesiz.hexacreatecore.bossrush.client;
 
 import com.genesiz.hexacreatecore.bossrush.data.BossHealthBarData.HealthBarStyle;
-import com.genesiz.hexacreatecore.dialogue.RawGeometry;
+import com.genesiz.hexacreatecore.threedified.RawGeometry;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -81,7 +81,7 @@ public final class BossHealthBarRenderer {
       style.backgroundColor(), style.borderColor(), List.of(), false
     );
 
-    // Flush Dialogue3D geometry before drawing the quantized gradient cells on top
+    // Flush ThreeDified geometry before drawing the quantized gradient cells on top
     bufferSource.endBatch(RawGeometry.DIALOGUE_SOLID);
     bufferSource.endBatch();
 

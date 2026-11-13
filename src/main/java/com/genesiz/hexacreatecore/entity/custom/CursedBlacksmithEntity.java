@@ -2,9 +2,9 @@ package com.genesiz.hexacreatecore.entity.custom;
 
 import com.genesiz.hexacreatecore.animations.EntityAnimationStateMachine;
 import com.genesiz.hexacreatecore.components.IProceduralAnimConfig;
-import com.genesiz.hexacreatecore.dialogue.Dialogue3D;
-import com.genesiz.hexacreatecore.dialogue.DialoguePlaybackState;
-import com.genesiz.hexacreatecore.dialogue.DialogueTransformState;
+import com.genesiz.hexacreatecore.threedified.ThreeDified;
+import com.genesiz.hexacreatecore.threedified.DialoguePlaybackState;
+import com.genesiz.hexacreatecore.threedified.DialogueTransformState;
 
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -27,7 +27,7 @@ import software.bernie.geckolib.animation.AnimatableManager;
 import software.bernie.geckolib.animation.AnimationController;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
-public class CursedBlacksmithEntity extends Monster implements GeoEntity, Dialogue3D, IProceduralAnimConfig {
+public class CursedBlacksmithEntity extends Monster implements GeoEntity, ThreeDified, IProceduralAnimConfig {
   private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
   
   public static final EntityDataAccessor<Integer> DIALOGUE_TICKS =

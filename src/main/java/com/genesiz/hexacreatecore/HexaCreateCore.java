@@ -2,8 +2,8 @@ package com.genesiz.hexacreatecore;
 
 import org.slf4j.Logger;
 import com.genesiz.hexacreatecore.datagen.ModModelProvider;
-import com.genesiz.hexacreatecore.dialogue.data.DialogueReloadListener;
-import com.genesiz.hexacreatecore.dialogue.hologram.BlueprintReloadListener;
+import com.genesiz.hexacreatecore.threedified.data.DialogueReloadListener;
+import com.genesiz.hexacreatecore.threedified.hologram.BlueprintReloadListener;
 import com.genesiz.hexacreatecore.entity.ModEntities;
 import com.genesiz.hexacreatecore.item.HexaCreateCoreItems;
 import com.genesiz.hexacreatecore.item.ModCreativeModeTabs;

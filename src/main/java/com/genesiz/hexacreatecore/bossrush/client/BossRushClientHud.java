@@ -4,7 +4,7 @@ import com.genesiz.hexacreatecore.HexaCreateCore;
 import com.genesiz.hexacreatecore.bossrush.data.BossHealthBarData.HealthBarStyle;
 import com.genesiz.hexacreatecore.bossrush.data.BossRushReloadListener;
 import com.genesiz.hexacreatecore.bossrush.network.BossRushSyncPayload;
-import com.genesiz.hexacreatecore.dialogue.RawGeometry;
+import com.genesiz.hexacreatecore.threedified.RawGeometry;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.mojang.blaze3d.systems.RenderSystem;

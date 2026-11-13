@@ -211,7 +211,7 @@ public final class HexagonalGridManager {
           : "hexacreatecore:overreach_penalty;normal";
 
         net.neoforged.neoforge.network.PacketDistributor.sendToServer(
-          new com.genesiz.hexacreatecore.dialogue.network.DialogueActionPayload(mc.player.getId(), actionPayload, false)
+          new com.genesiz.hexacreatecore.threedified.network.DialogueActionPayload(mc.player.getId(), actionPayload, false)
         );
       }
     } else {
@@ -364,7 +364,7 @@ public final class HexagonalGridManager {
     player.displayClientMessage(net.minecraft.network.chat.Component.literal("§d[Arcane Grid] Signature: " + signature + " (" + startDir.name() + ")"), true);
 
     String unifiedPayloadString = "hexacreatecore:cast_3d_spell;" + startDir.ordinal() + ";" + signature;
-    net.neoforged.neoforge.network.PacketDistributor.sendToServer(new com.genesiz.hexacreatecore.dialogue.network.DialogueActionPayload(player.getId(), unifiedPayloadString, false));
+    net.neoforged.neoforge.network.PacketDistributor.sendToServer(new com.genesiz.hexacreatecore.threedified.network.DialogueActionPayload(player.getId(), unifiedPayloadString, false));
   }
 
   public static void loadExternalGridConfig() {
@@ -480,7 +480,7 @@ public final class HexagonalGridManager {
       } catch (Throwable ignored) {}
 
       net.neoforged.neoforge.network.PacketDistributor.sendToServer(
-        new com.genesiz.hexacreatecore.dialogue.network.DialogueActionPayload(player.getId(), "hexacreatecore:clear_3d_stack", false)
+        new com.genesiz.hexacreatecore.threedified.network.DialogueActionPayload(player.getId(), "hexacreatecore:clear_3d_stack", false)
       );
 
       activateCastingGrid(player);

@@ -1,0 +1,22 @@
+{
+  "red": {
+    "sound": "minecraft:block.amethyst_block.chime",
+    "volume": 0.7,
+    "pitch": 0.8
+  },
+  "orange": {
+    "sound": "minecraft:block.amethyst_block.break",
+    "volume": 0.8,
+    "pitch": 1.0
+  },
+  "green": {
+    "sound": "minecraft:block.amethyst_block.resonate",
+    "volume": 0.9,
+    "pitch": 1.2
+  },
+  "white": {
+    "sound": "minecraft:block.amethyst_cluster.fall",
+    "volume": 1.0,
+    "pitch": 1.4
+  }
+}

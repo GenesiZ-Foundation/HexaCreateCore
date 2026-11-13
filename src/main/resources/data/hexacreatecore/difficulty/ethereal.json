@@ -1,0 +1,12 @@
+{
+  "gauge_bar": {
+    "border_color": "#21B7D1",
+    "background_color": "#0A141A",
+    "bar_color": ["#0E3B4D", "#21B7D1", "#9EF8FF"],
+    "bar_color_pos": [0.15, 0.65, 0.95],
+    "pixel_density": 0.55,
+    "color_angle": -15.0,
+    "move_direction": "right",
+    "move_speed": 1.5
+  }
+}
