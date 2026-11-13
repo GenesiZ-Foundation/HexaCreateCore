@@ -222,10 +222,12 @@ public final class DifficultyManager {
       }
 
       // Unparried hit: lose 1/5 of max gauge and break Parry Flow
-      int penalty = Math.max(1, tier.riposteMaxCharges / 5);
-      state.riposteCharges = Math.max(0, state.riposteCharges - penalty);
-      state.parryFlowExpiresAtMs = 0L;
-      syncToPlayer(player);
+      if (!isPassiveDoTDamage(event.getSource())) {
+        int penalty = Math.max(1, tier.riposteMaxCharges / 5);
+        state.riposteCharges = Math.max(0, state.riposteCharges - penalty);
+        state.parryFlowExpiresAtMs = 0L;
+        syncToPlayer(player);
+      }
 
       if (event.getSource().getEntity() instanceof LivingEntity mobAttacker) {
         DifficultyProfile profile = DifficultyReloadListener.getProfile(tier.id);
@@ -281,6 +283,26 @@ public final class DifficultyManager {
       state.ripostePrimed, flowLeft, new Gson().toJson(descMap),
       DifficultyReloadListener.getRawGaugeBarsJson(), DifficultyReloadListener.getRawParrySoundsJson()
     ));
+  }
+
+  private static boolean isPassiveDoTDamage(net.minecraft.world.damagesource.DamageSource source) {
+    if (source.is(net.minecraft.tags.DamageTypeTags.IS_FIRE)) return true;
+    if (source.is(net.minecraft.tags.DamageTypeTags.IS_FREEZING)) return true;
+    if (source.is(net.minecraft.tags.DamageTypeTags.IS_DROWNING)) return true;
+
+    // Any status-effect tick (vanilla Poison/Wither or ANY modded DoT effect) has no attacker and no projectile
+    if (source.getEntity() == null && source.getDirectEntity() == null) {
+      if (source.is(net.minecraft.tags.DamageTypeTags.IS_EXPLOSION)) return false;
+      if (source.is(net.minecraft.tags.DamageTypeTags.IS_LIGHTNING)) return false;
+      if (source.is(net.minecraft.tags.DamageTypeTags.IS_FALL)) return false;
+      return true;
+    }
+
+    // Some mods attribute DoTs to the caster with no direct projectile while a harmful effect is active
+    if (source.getDirectEntity() == null && source.is(net.minecraft.tags.DamageTypeTags.WITCH_RESISTANT_TO)) {
+      return true;
+    }
+    return false;
   }
 
 

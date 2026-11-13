@@ -9,7 +9,6 @@ import com.google.gson.Gson;
 import com.google.gson.JsonParser;
 import com.google.gson.reflect.TypeToken;
 import net.minecraft.client.Minecraft;
-import net.minecraft.sounds.SoundEvents;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.lang.reflect.Type;
@@ -144,13 +143,13 @@ public final class DifficultyClientState {
       if (flowTapPending) return;
       isHoldingParry = false;
       flowTapPending = true;
-      flowWindowEndsAtMs = System.currentTimeMillis() + 120L;
+      flowWindowEndsAtMs = System.currentTimeMillis() + 400L;
       lockedCursorProgress = 0.5f;
       lastResultLabel = "FLOW PARRY";
       lastResultColor = 0xFF21B7D1;
       resultDisplayUntilMs = System.currentTimeMillis() + 300L;
       playParrySound("white");
-      PacketDistributor.sendToServer(new DifficultyPackets.ActionPayload("PARRY_WINDOW", "FLOW", 120));
+      PacketDistributor.sendToServer(new DifficultyPackets.ActionPayload("PARRY_WINDOW", "FLOW", 400));
       return;
     }
 
@@ -205,19 +204,19 @@ public final class DifficultyClientState {
     int windowMs;
     if (p >= 0.45f && 0.55f >= p) {
       zone = "PURE";
-      windowMs = 150;
+      windowMs = 400;
       lastResultLabel = "PURE PARRY";
       lastResultColor = 0xFFFFFFFF;
       playParrySound("white");
     } else if ((p >= 0.30f && 0.45f > p) || (p > 0.55f && 0.70f >= p)) {
       zone = "PARRY";
-      windowMs = 200;
+      windowMs = 400;
       lastResultLabel = "PARRY";
       lastResultColor = 0xFF4ADE80;
       playParrySound("green");
     } else if ((p >= 0.10f && 0.30f > p) || (p > 0.70f && 0.90f >= p)) {
       zone = "SHALLOW";
-      windowMs = 200;
+      windowMs = 400;
       lastResultLabel = "SHALLOW";
       lastResultColor = 0xFFFB923C;
       playParrySound("orange");
