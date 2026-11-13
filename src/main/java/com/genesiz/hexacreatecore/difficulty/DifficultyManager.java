@@ -42,6 +42,7 @@ public final class DifficultyManager {
   private static final Map<String, AttackCallbackFn> CALLBACKS = new HashMap<>();
   private static final Map<UUID, PlayerCombatState> PLAYER_STATES = new ConcurrentHashMap<>();
   private static boolean callbacksScanned = false;
+  private static int genesisHeartbeatTicksRemaining = 0;
 
   @FunctionalInterface
   public interface AttackCallbackFn {
@@ -91,19 +92,33 @@ public final class DifficultyManager {
     switch (payload.actionType()) {
       case "SELECT_TIER" -> {
         DifficultyTier chosen = DifficultyTier.fromId(payload.stringParam());
-        if (chosen == DifficultyTier.GENESIS && !data.isGenesisUnlocked()) {
-          player.sendSystemMessage(Component.literal("§cGenesis difficulty is locked! Defeat the Boss Rush on Absolution first."));
+        if (chosen == data.getActiveTier()) {
           return;
         }
+        if (chosen == DifficultyTier.GENESIS && !data.isGenesisUnlocked()) {
+          return;
+        }
+        ServerLevel sLevel = player.serverLevel();
         data.setActiveTier(chosen);
-        state.riposteCharges = 0;
-        state.ripostePrimed = false;
-        state.parryFlowExpiresAtMs = 0L;
-        for (ServerPlayer sp : player.server.getPlayerList().getPlayers()) {
-          syncToPlayer(sp);
-          sp.sendSystemMessage(Component.literal("§6World Difficulty set to: §l" + chosen.displayName));
+        data.setDirty();
+        for (ServerPlayer p : sLevel.getServer().getPlayerList().getPlayers()) {
+          syncToPlayer(p);
+        }
+
+        if (chosen == DifficultyTier.ETHEREAL) {
+          genesisHeartbeatTicksRemaining = 0;
+          sLevel.playSound(null, player.blockPosition(), SoundEvents.ALLAY_AMBIENT_WITHOUT_ITEM, SoundSource.MASTER, 1.0f, 0.5f);
+        } else if (chosen == DifficultyTier.ABSOLUTION) {
+          genesisHeartbeatTicksRemaining = 0;
+          sLevel.playSound(null, player.blockPosition(), SoundEvents.WITHER_SPAWN, SoundSource.MASTER, 1.0f, 0.7f);
+        } else if (chosen == DifficultyTier.GENESIS) {
+          sLevel.playSound(null, player.blockPosition(), SoundEvents.ENDER_DRAGON_DEATH, SoundSource.MASTER, 0.8f, 0.5f);
+          genesisHeartbeatTicksRemaining = 500; // 25 seconds at 20 TPS
+        } else {
+          genesisHeartbeatTicksRemaining = 0;
         }
       }
+
       case "PARRY_WINDOW" -> {
         if (data.getActiveTier() == DifficultyTier.NORMAL) return;
         state.activeParryZone = payload.stringParam();
@@ -303,6 +318,20 @@ public final class DifficultyManager {
       return true;
     }
     return false;
+  }
+
+  @SubscribeEvent
+  public static void onServerTick(net.neoforged.neoforge.event.tick.ServerTickEvent.Post event) {
+    if (genesisHeartbeatTicksRemaining > 0) {
+      int elapsed = 500 - genesisHeartbeatTicksRemaining;
+      int beatOffset = elapsed % 20;
+      if (beatOffset == 0 || beatOffset == 4) {
+        for (ServerPlayer p : event.getServer().getPlayerList().getPlayers()) {
+          p.serverLevel().playSound(null, p.blockPosition(), SoundEvents.WARDEN_HEARTBEAT, SoundSource.MASTER, 2.0f, 0.8f);
+        }
+      }
+      genesisHeartbeatTicksRemaining--;
+    }
   }
 
 

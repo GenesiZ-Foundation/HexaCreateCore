@@ -128,9 +128,18 @@ public final class BossRushManager {
         beginPhase(player, session, nextPhase, phase.onCompletionItem(), phase.onCompletionSound());
       } else {
         ACTIVE_SESSIONS.remove(player.getUUID());
-        if (DifficultySavedData.get(player.serverLevel()).getActiveTier() == DifficultyTier.ABSOLUTION) {
+        DifficultyTier activeTier = DifficultySavedData.get(player.serverLevel()).getActiveTier();
+        if (activeTier == DifficultyTier.ABSOLUTION) {
           DifficultyManager.unlockGenesisForServer(player.serverLevel());
         }
+
+        String completionMsg = switch (activeTier) {
+          case ETHEREAL -> "This mortal realm have seen enough... Aren't you satisfied ?";
+          case ABSOLUTION -> "Breaking through the world as they would, your path is one of peril...";
+          case GENESIS -> "You've Done it... Now, what shall it be ?";
+          default -> "Boss Rush Completed!";
+        };
+
         PacketDistributor.sendToPlayer(player, new BossRushSyncPayload(
           false,
           "",
@@ -139,7 +148,7 @@ public final class BossRushManager {
           session.sequence.endingMusicTitle(),
           phase.onCompletionItem(),
           phase.onCompletionSound(),
-          "§6Boss Rush Completed!",
+          completionMsg,
           -1,
           "{}"
         ));

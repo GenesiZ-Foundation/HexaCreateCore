@@ -15,11 +15,31 @@ public final class DifficultyNetworking {
   @SubscribeEvent
   public static void onRegisterPayloads(RegisterPayloadHandlersEvent event) {
     PayloadRegistrar registrar = event.registrar("1");
+
     registrar.playToClient(
       DifficultyPackets.SyncPayload.TYPE,
       DifficultyPackets.SyncPayload.STREAM_CODEC,
     (payload, ctx) -> ctx.enqueueWork(() -> DifficultyClientState.handleSync(payload))
     );
+
+    registrar.playToClient(
+      DifficultyPackets.SoulSyncPayload.TYPE,
+      DifficultyPackets.SoulSyncPayload.STREAM_CODEC,
+    (payload, context) -> context.enqueueWork(() ->
+        com.genesiz.hexacreatecore.difficulty.client.SoulRecoveryClientRenderer.handleSoulSync(payload)
+      )
+    );
+
+    registrar.playToServer(
+      DifficultyPackets.SoulActionPayload.TYPE,
+      DifficultyPackets.SoulActionPayload.STREAM_CODEC,
+    (payload, context) -> context.enqueueWork(() -> {
+        if (context.player() instanceof net.minecraft.server.level.ServerPlayer sp) {
+          com.genesiz.hexacreatecore.difficulty.SoulRecoveryManager.handleSoulAction(sp, payload.action());
+        }
+      })
+    );
+
     registrar.playToServer(
       DifficultyPackets.ActionPayload.TYPE,
       DifficultyPackets.ActionPayload.STREAM_CODEC,

@@ -64,4 +64,63 @@ public final class DifficultyPackets {
     @Override
     public Type<? extends CustomPacketPayload> type() { return TYPE; }
   }
+
+  public record SoulSyncPayload(
+    boolean inSoulForm,
+    double bodyX,
+    double bodyY,
+    double bodyZ,
+    double launchX,
+    double launchY,
+    double launchZ,
+    int remainingTicks,
+    int maxTicks,
+    int fractureStacks
+  ) implements CustomPacketPayload {
+    public static final Type<SoulSyncPayload> TYPE =
+      new Type<>(ResourceLocation.fromNamespaceAndPath(HexaCreateCore.MODID, "soul_sync"));
+
+    public static final StreamCodec<FriendlyByteBuf, SoulSyncPayload> STREAM_CODEC = StreamCodec.of(
+      (buf, p) -> {
+        buf.writeBoolean(p.inSoulForm);
+        buf.writeDouble(p.bodyX);
+        buf.writeDouble(p.bodyY);
+        buf.writeDouble(p.bodyZ);
+        buf.writeDouble(p.launchX);
+        buf.writeDouble(p.launchY);
+        buf.writeDouble(p.launchZ);
+        buf.writeInt(p.remainingTicks);
+        buf.writeInt(p.maxTicks);
+        buf.writeInt(p.fractureStacks);
+      },
+      buf -> new SoulSyncPayload(
+        buf.readBoolean(),
+        buf.readDouble(), buf.readDouble(), buf.readDouble(),
+        buf.readDouble(), buf.readDouble(), buf.readDouble(),
+        buf.readInt(), buf.readInt(), buf.readInt()
+      )
+    );
+
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+      return TYPE;
+    }
+  }
+
+  public record SoulActionPayload(String action) implements CustomPacketPayload {
+    public static final Type<SoulActionPayload> TYPE =
+    new Type<>(ResourceLocation.fromNamespaceAndPath(HexaCreateCore.MODID, "soul_action"));
+
+    public static final StreamCodec<FriendlyByteBuf, SoulActionPayload> STREAM_CODEC = StreamCodec.of(
+    (buf, p) -> buf.writeUtf(p.action),
+      buf -> new SoulActionPayload(buf.readUtf())
+    );
+
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+      return TYPE;
+    }
+  }
+
+
 }

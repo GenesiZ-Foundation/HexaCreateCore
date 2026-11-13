@@ -1,0 +1,203 @@
+{
+  "minecraft:nether_star": {
+    "title_style": "spectrum",
+    "lore_style": "starly:#FFD700",
+    "border_color": "#FFD700",
+    "bg_color": "#EE140E1C"
+  },
+  "minecraft:dragon_egg": {
+    "title_style": "genesis",
+    "lore_style": "glitch:#FF1E56",
+    "border_color": "#FF1E56",
+    "bg_color": "#EE16050A"
+  },
+  "minecraft:heavy_core": {
+    "title_style": "prismatic_outline",
+    "lore_style": "aurora:#B233FF",
+    "border_color": "#B233FF",
+    "bg_color": "#EE11081A"
+  },
+    "*amethyst*": {
+    "border_color": "#9333EA",
+    "bg_color": "#EE180A26",
+    "title_style": {
+      "colors": ["#FFFFFF", "#E9D5FF", "#A855F7", "#FFFFFF"],
+      "stops": [0.0, 0.35, 0.7, 1.0],
+      "scroll_speed": 1.6,
+      "wave_amplitude": 0.25,
+      "wave_frequency": 0.28,
+      "backdrop": "PRISMATIC_OUTLINE",
+      "glow_color": "#FF66CC",
+      "secondary_glow_color": "#9333EA",
+      "sparkles": true
+    }
+  },
+  "*spawner*": {
+    "border_color": "#2563EB",
+    "bg_color": "#EE060F24",
+    "title_style": {
+      "colors": ["#FF7A1A", "#FFB347", "#2563EB", "#38BDF8", "#FF7A1A"],
+      "stops": [0.0, 0.28, 0.55, 0.80, 1.0],
+      "scroll_speed": 2.8,
+      "wave_amplitude": 0.25,
+      "wave_frequency": 0.30,
+      "backdrop": "PRISMATIC_OUTLINE",
+      "glow_color": "#FFFFFF",
+      "secondary_glow_color": "#38BDF8"
+    }
+  },
+  "*spawn_egg*": {
+    "border_color": "#2563EB",
+    "bg_color": "#EE060F24",
+    "title_style": {
+      "colors": ["#FF7A1A", "#FFB347", "#2563EB", "#38BDF8", "#FF7A1A"],
+      "stops": [0.0, 0.28, 0.55, 0.80, 1.0],
+      "scroll_speed": 2.8,
+      "wave_amplitude": 0.25,
+      "wave_frequency": 0.30,
+      "backdrop": "PRISMATIC_OUTLINE",
+      "glow_color": "#FFFFFF",
+      "secondary_glow_color": "#38BDF8"
+    }
+  },
+  "#minecraft:enchantable/weapon": {
+    "border_color": "#7A6860",
+    "bg_color": "#F2060608",
+    "title_style": {
+      "colors": ["#F4F4F5", "#A8A29E", "#574B47", "#3B3230", "#F4F4F5"],
+      "stops": [0.0, 0.30, 0.60, 0.82, 1.0],
+      "scroll_speed": 0.85,
+      "wave_amplitude": 0.32,
+      "wave_frequency": 0.22,
+      "backdrop": "PRISMATIC_OUTLINE",
+      "glow_color": "#E4E4E7",
+      "secondary_glow_color": "#786862",
+      "sparkles": true
+    }
+  },
+  "#minecraft:enchantable/armor": {
+    "border_color": "#8C5332",
+    "bg_color": "#EE0D0A14",
+    "title_style": {
+      "colors": ["#8C5332", "#A86B44", "#38BDF8", "#67E8F9", "#8C5332"],
+      "stops": [0.0, 0.28, 0.58, 0.80, 1.0],
+      "scroll_speed": 0.90,
+      "wave_amplitude": 0.0,
+      "backdrop": "GLOW_BLOOM",
+      "glow_color": "#6638BDF8",
+      "secondary_glow_color": "#448C5332"
+    }
+  },
+  "#c:tools": {
+    "border_color": "#85858D",
+    "bg_color": "#EE0D0A14",
+    "title_style": {
+      "colors": ["#9CA3AF", "#6B7280", "#4B423F", "#362F2D", "#9CA3AF"],
+      "stops": [0.0, 0.30, 0.60, 0.82, 1.0],
+      "scroll_speed": 0.65,
+      "wave_amplitude": 0.0,
+      "backdrop": "GLOW_BLOOM",
+      "glow_color": "#559CA3AF",
+      "secondary_glow_color": "#336B7280",
+      "sparkles": true
+    }
+  },
+  "*redstone*": {
+    "border_color": "#DC2626",
+    "bg_color": "#EE1C0606",
+    "title_style": {
+      "colors": ["#FF1E1E", "#FF5533", "#8F6638", "#6B4A24", "#FF1E1E"],
+      "stops": [0.0, 0.30, 0.55, 0.80, 1.0],
+      "scroll_speed": 2.6,
+      "wave_amplitude": 0.45,
+      "wave_frequency": 0.34,
+      "gradient_angle": 30.0
+    }
+  },
+  "#c:ingots": {
+    "border_color": "#9A6B14",
+    "bg_color": "#EE0D0A14",
+    "title_style": {
+      "colors": ["#F4F4F5", "#D8D8DC", "#C87544", "#E39464", "#F4F4F5"],
+      "stops": [0.0, 0.25, 0.5, 0.75, 1.0],
+      "scroll_speed": 0.75,
+      "wave_amplitude": 0.0,
+      "sparkles": true
+    }
+  },
+  "#c:gems": {
+    "border_color": "#1B7A88",
+    "bg_color": "#EE0D0A14",
+    "title_style": {
+      "colors": ["#5CE6E6", "#28B8D8", "#1E48A8", "#5CE6E6"],
+      "stops": [0.0, 0.35, 0.75, 1.0],
+      "scroll_speed": 1.1,
+      "wave_amplitude": 0.22,
+      "wave_frequency": 0.28,
+      "sparkles": true
+    }
+  },
+    "#minecraft:logs": {
+    "border_color": "#5A4020",
+    "bg_color": "#EE0D0A14",
+    "title_style": { "colors": ["#4A3219", "#7D5A32", "#B8945E"], "stops": [0.0, 0.5, 1.0], "scroll_speed": 0.0, "wave_amplitude": 0.15, "wave_frequency": 0.25 }
+  },
+  "#minecraft:planks": {
+    "border_color": "#5A4020",
+    "bg_color": "#EE0D0A14",
+    "title_style": { "colors": ["#4A3219", "#7D5A32", "#B8945E"], "stops": [0.0, 0.5, 1.0], "scroll_speed": 0.0, "wave_amplitude": 0.15, "wave_frequency": 0.25 }
+  },
+  "#c:stones": {
+    "border_color": "#64646E",
+    "bg_color": "#EE0D0A14",
+    "title_style": { "colors": ["#9A9A9A", "#6B6B70", "#3E3E44"], "stops": [0.0, 0.5, 1.0], "scroll_speed": 0.0, "wave_amplitude": 0.0 }
+  },
+  "#c:cobblestones": {
+    "border_color": "#64646E",
+    "bg_color": "#EE0D0A14",
+    "title_style": { "colors": ["#9A9A9A", "#6B6B70", "#3E3E44"], "stops": [0.0, 0.5, 1.0], "scroll_speed": 0.0, "wave_amplitude": 0.0 }
+  },
+  "*crafting_table*": {
+    "border_color": "#8C8C94",
+    "bg_color": "#EE1C120A",
+    "title_style": { "colors": ["#FFFFFF", "#D1D5DB", "#8E929B", "#FFFFFF"], "stops": [0.0, 0.35, 0.7, 1.0], "scroll_speed": 1.2, "wave_amplitude": 0.16, "wave_frequency": 0.26 }
+  },
+  "*furnace*": {
+    "border_color": "#8C8C94",
+    "bg_color": "#EE1C120A",
+    "title_style": { "colors": ["#FFFFFF", "#D1D5DB", "#8E929B", "#FFFFFF"], "stops": [0.0, 0.35, 0.7, 1.0], "scroll_speed": 1.2, "wave_amplitude": 0.16, "wave_frequency": 0.26 }
+  },
+  "*white_wool*": { "border_color": "#FFFFFF", "bg_color": "#EE0D0A14", "title_style": { "colors": ["#FFFFFF", "#CBD5E1"], "stops": [0.0, 1.0], "wave_amplitude": 0.10 } },
+  "*orange_wool*": { "border_color": "#FB923C", "bg_color": "#EE0D0A14", "title_style": { "colors": ["#FB923C", "#C2410C"], "stops": [0.0, 1.0], "wave_amplitude": 0.10 } },
+  "*magenta_wool*": { "border_color": "#E879F9", "bg_color": "#EE0D0A14", "title_style": { "colors": ["#E879F9", "#A21CAF"], "stops": [0.0, 1.0], "wave_amplitude": 0.10 } },
+  "*light_blue_wool*": { "border_color": "#7DD3FC", "bg_color": "#EE0D0A14", "title_style": { "colors": ["#7DD3FC", "#0284C7"], "stops": [0.0, 1.0], "wave_amplitude": 0.10 } },
+  "*yellow_wool*": { "border_color": "#FDE047", "bg_color": "#EE0D0A14", "title_style": { "colors": ["#FDE047", "#CA8A04"], "stops": [0.0, 1.0], "wave_amplitude": 0.10 } },
+  "*lime_wool*": { "border_color": "#A3E635", "bg_color": "#EE0D0A14", "title_style": { "colors": ["#A3E635", "#4D7C0F"], "stops": [0.0, 1.0], "wave_amplitude": 0.10 } },
+  "*pink_wool*": { "border_color": "#F9A8D4", "bg_color": "#EE0D0A14", "title_style": { "colors": ["#F9A8D4", "#BE185D"], "stops": [0.0, 1.0], "wave_amplitude": 0.10 } },
+  "*gray_wool*": { "border_color": "#9CA3AF", "bg_color": "#EE0D0A14", "title_style": { "colors": ["#9CA3AF", "#374151"], "stops": [0.0, 1.0], "wave_amplitude": 0.10 } },
+  "*light_gray_wool*": { "border_color": "#D4D4D8", "bg_color": "#EE0D0A14", "title_style": { "colors": ["#D4D4D8", "#71717A"], "stops": [0.0, 1.0], "wave_amplitude": 0.10 } },
+  "*cyan_wool*": { "border_color": "#22D3EE", "bg_color": "#EE0D0A14", "title_style": { "colors": ["#22D3EE", "#0E7490"], "stops": [0.0, 1.0], "wave_amplitude": 0.10 } },
+  "*purple_wool*": { "border_color": "#C084FC", "bg_color": "#EE0D0A14", "title_style": { "colors": ["#C084FC", "#6B21A8"], "stops": [0.0, 1.0], "wave_amplitude": 0.10 } },
+  "*blue_wool*": { "border_color": "#60A5FA", "bg_color": "#EE0D0A14", "title_style": { "colors": ["#60A5FA", "#1D4ED8"], "stops": [0.0, 1.0], "wave_amplitude": 0.10 } },
+  "*brown_wool*": { "border_color": "#A87654", "bg_color": "#EE0D0A14", "title_style": { "colors": ["#A87654", "#5C3A21"], "stops": [0.0, 1.0], "wave_amplitude": 0.10 } },
+  "*green_wool*": { "border_color": "#4ADE80", "bg_color": "#EE0D0A14", "title_style": { "colors": ["#4ADE80", "#15803D"], "stops": [0.0, 1.0], "wave_amplitude": 0.10 } },
+  "*red_wool*": { "border_color": "#F87171", "bg_color": "#EE0D0A14", "title_style": { "colors": ["#F87171", "#B91C1C"], "stops": [0.0, 1.0], "wave_amplitude": 0.10 } },
+  "*black_wool*": { "border_color": "#52525B", "bg_color": "#EE0D0A14", "title_style": { "colors": ["#52525B", "#18181B"], "stops": [0.0, 1.0], "wave_amplitude": 0.10 } },
+
+  "*staff*": {
+    "border_color": "#9333EA",
+    "bg_color": "#EE180A26",
+    "title_style": {
+      "colors": ["#FFFFFF", "#E9D5FF", "#A855F7", "#FFFFFF"],
+      "stops": [0.0, 0.35, 0.7, 1.0],
+      "scroll_speed": 1.6,
+      "wave_amplitude": 0.25,
+      "wave_frequency": 0.28,
+      "backdrop": "PRISMATIC_OUTLINE",
+      "glow_color": "#FF66CC",
+      "secondary_glow_color": "#9333EA",
+      "sparkles": true
+    }
+  }
+}
+

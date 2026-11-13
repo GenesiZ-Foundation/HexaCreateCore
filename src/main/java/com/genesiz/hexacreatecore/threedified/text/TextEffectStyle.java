@@ -14,13 +14,41 @@ public record TextEffectStyle(
   BackdropMode backdropMode,
   int glowColor,
   int secondaryGlowColor,
-  boolean sparkles
+  boolean sparkles,
+  boolean rainbowStroke,
+  boolean hasPrismaticOutline,
+  float gradientAngleDeg
 ) {
+  public TextEffectStyle(
+    List<Integer> colors, List<Float> stops, float scrollSpeed,
+    float waveAmplitude, float waveFrequency, BackdropMode backdropMode,
+    int glowColor, int secondaryGlowColor, boolean sparkles
+  ) {
+    this(colors, stops, scrollSpeed, waveAmplitude, waveFrequency, backdropMode, glowColor, secondaryGlowColor, sparkles, false, false, 0.0f);
+  }
+
+  public TextEffectStyle(
+    List<Integer> colors, List<Float> stops, float scrollSpeed,
+    float waveAmplitude, float waveFrequency, BackdropMode backdropMode,
+    int glowColor, int secondaryGlowColor, boolean sparkles, boolean rainbowStroke
+  ) {
+    this(colors, stops, scrollSpeed, waveAmplitude, waveFrequency, backdropMode, glowColor, secondaryGlowColor, sparkles, rainbowStroke, false, 0.0f);
+  }
+
+  public TextEffectStyle(
+    List<Integer> colors, List<Float> stops, float scrollSpeed,
+    float waveAmplitude, float waveFrequency, BackdropMode backdropMode,
+    int glowColor, int secondaryGlowColor, boolean sparkles, boolean rainbowStroke, boolean hasPrismaticOutline
+  ) {
+    this(colors, stops, scrollSpeed, waveAmplitude, waveFrequency, backdropMode, glowColor, secondaryGlowColor, sparkles, rainbowStroke, hasPrismaticOutline, 0.0f);
+  }
+
   public enum BackdropMode {
     NONE,
     GLOW_BLOOM,
     CHROMATIC_GLITCH,
-    PRISMATIC_OUTLINE
+    PRISMATIC_OUTLINE,
+    SPECTRUM_STROKE
   }
 
   public static TextEffectStyle prismaticOutline() {
@@ -136,10 +164,20 @@ public record TextEffectStyle(
   }
 
   public int sampleColor(float u, float timeSec) {
+    return sampleColor(u, 0.5f, timeSec);
+  }
+
+  public int sampleColor(float u, float v, float timeSec) {
     if (colors == null || colors.isEmpty()) return 0xFFFFFFFF;
     if (colors.size() == 1) return colors.get(0);
 
-    float shifted = (u - (timeSec * scrollSpeed * 0.25f)) % 1.0f;
+    float coord = u;
+    if (Math.abs(gradientAngleDeg) > 0.01f) {
+      double rad = Math.toRadians(gradientAngleDeg);
+      coord = (float) ((u * Math.cos(rad)) + (v * Math.sin(rad)));
+    }
+
+    float shifted = (coord - (timeSec * scrollSpeed * 0.25f)) % 1.0f;
     if (0.0f > shifted) shifted += 1.0f;
 
     int count = colors.size();
@@ -154,6 +192,7 @@ public record TextEffectStyle(
     return colors.get(count - 1);
   }
 
+
   public static int lerpArgb(int c0, int c1, float t) {
     t = Mth.clamp(t, 0.0f, 1.0f);
     int a = Math.round(Mth.lerp(t, FastColor.ARGB32.alpha(c0), FastColor.ARGB32.alpha(c1)));
@@ -162,4 +201,50 @@ public record TextEffectStyle(
     int b = Math.round(Mth.lerp(t, FastColor.ARGB32.blue(c0), FastColor.ARGB32.blue(c1)));
     return FastColor.ARGB32.color(a, r, g, b);
   }
+
+  /** Two-color Aurora gradient + soft glow (e.g. White + HexCasting Purple) */
+  public static TextEffectStyle aurora(int primaryRgb, int secondaryRgb) {
+    int c1 = ensureOpaque(primaryRgb);
+    int c2 = ensureOpaque(secondaryRgb);
+    int primaryGlow = withAlpha(c2, 0x77);
+    int outerGlow = withAlpha(c1, 0x3A);
+    return new TextEffectStyle(
+      List.of(c1, c2, tintWhite(c2, 0.55f), c2, c1),
+      List.of(0.0f, 0.3f, 0.5f, 0.75f, 1.0f),
+      1.4f, 0.35f, 0.28f,
+      BackdropMode.GLOW_BLOOM, primaryGlow, outerGlow, false
+    );
+  }
+
+  /** Custom core + animated edge outline (e.g. Gold + White for Raven's Mind) */
+  public static TextEffectStyle outline(int coreRgb, int edgeRgb) {
+    int core = ensureOpaque(coreRgb);
+    int edge = ensureOpaque(edgeRgb);
+    return new TextEffectStyle(
+      List.of(shade(core, 0.75f), core, tintWhite(core, 0.35f), core, shade(core, 0.75f)),
+      List.of(0.0f, 0.3f, 0.5f, 0.7f, 1.0f),
+      2.0f, 0.3f, 0.25f,
+      BackdropMode.PRISMATIC_OUTLINE, core, edge, false
+    );
+  }
+
+  /** Radiant pearlescent white core surrounded by a fast-cycling full-spectrum rainbow outline */
+  public static TextEffectStyle spectrum() {
+    return new TextEffectStyle(
+      List.of(0xFFFFFFFF, 0xFFFEF9C3, 0xFFE0F2FE, 0xFFFCE7F3, 0xFFFFFFFF),
+      List.of(0.0f, 0.25f, 0.5f, 0.75f, 1.0f),
+      2.6f, 0.45f, 0.30f,
+      BackdropMode.SPECTRUM_STROKE, 0xFFFF2A6D, 0xFF00F5FF, true
+    );
+  }
+
+  public static int sampleSpectrum(float phase) {
+    float p = phase % 1.0f;
+    if (0.0f > p) p += 1.0f;
+    int[] stops = { 0xFFFF2A54, 0xFFFFA500, 0xFFFACC15, 0xFF4ADE80, 0xFF00F5FF, 0xFFC084FC, 0xFFFF2A54 };
+    float scaled = p * (stops.length - 1);
+    int idx = Math.min(stops.length - 2, (int) scaled);
+    return lerpArgb(stops[idx], stops[idx + 1], scaled - idx);
+  }
+
 }

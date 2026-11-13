@@ -5,10 +5,16 @@ import com.genesiz.hexacreatecore.bossrush.data.BossHealthBarData.HealthBarStyle
 import com.genesiz.hexacreatecore.bossrush.data.BossRushReloadListener;
 import com.genesiz.hexacreatecore.bossrush.network.BossRushSyncPayload;
 import com.genesiz.hexacreatecore.threedified.RawGeometry;
+import com.genesiz.hexacreatecore.threedified.text.TextEffectStyle;
+import com.genesiz.hexacreatecore.threedified.text.ThreeDifiedTextRenderer;
+import com.genesiz.hexacreatecore.threedified.threedishapes_hooks.ThreeDiShapeHooks;
+import com.genesiz.hexacreatecore.threedified.threedishapes_hooks.UiShapeTarget;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
+
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -70,6 +76,10 @@ public final class BossRushClientHud {
   private static float lastCamPitch = 0.0f;
   private static float lagOffsetX = 0.0f;
   private static float lagOffsetY = 0.0f;
+
+  private static final TextEffectStyle PHASE_TITLE_STYLE = TextEffectStyle.spectrum();
+  private static final TextEffectStyle PHASE_DESC_STYLE = TextEffectStyle.glitch();
+  private static final TextEffectStyle MUSIC_TOAST_STYLE = TextEffectStyle.prismaticOutline();
 
   public static boolean isBossRushActive() {
     return bossRushActive;
@@ -370,8 +380,15 @@ public final class BossRushClientHud {
       }
     }
 
+    boolean drawCustomTitle = false;
+    float savedTitleCenterX = 0.0f;
+    float savedTitleCenterY = 0.0f;
+    List<String> savedTitleLines = List.of();
+
     if (isBannerVisible && !phaseName.isEmpty()) {
-      String styledName = "§6§l" + phaseName;
+      String cleanPhaseName = ChatFormatting.stripFormatting(phaseName);
+      if (cleanPhaseName == null) cleanPhaseName = phaseName;
+      String styledName = "§6§l" + cleanPhaseName;
       int maxTitleWidth = Math.min(260, screenWidth - 40);
       List<FormattedCharSequence> lines = font.split(Component.literal(styledName), maxTitleWidth - 20);
 
@@ -402,13 +419,28 @@ public final class BossRushClientHud {
         poseStack, bufferSource, font,
         centerX, centerY, 0.0f,
         boxWidth, boxHeight, 3.0f, 3.0f,
-        0xCC110E1A, 0xFFFFAA00, lines, true
+        0xCC110E1A, 0xFFFFAA00, List.of(), true
       );
+      ThreeDiShapeHooks.renderAttachedShapes(
+        poseStack, bufferSource, UiShapeTarget.BOSS_RUSH_TITLE, "",
+        centerX, centerY, 0.0f, boxWidth, boxHeight
+      );
+
+      drawCustomTitle = true;
+      savedTitleCenterX = centerX;
+      savedTitleCenterY = centerY;
+      savedTitleLines = toPlainLines(lines);
     }
 
+    boolean drawCustomMusic = false;
+    float savedMusicCenterX = 0.0f;
+    float savedMusicCenterY = 0.0f;
+    List<String> savedMusicLines = List.of();
+
     if (isMusicToastVisible) {
-      String styledMusic = "§b♪ §f" + musicTitle;
-      List<FormattedCharSequence> lines = font.split(Component.literal(styledMusic), 220);
+      String cleanMusic = ChatFormatting.stripFormatting("♪ " + musicTitle);
+      if (cleanMusic == null) cleanMusic = "♪ " + musicTitle;
+      List<FormattedCharSequence> lines = font.split(Component.literal(cleanMusic), 220);
 
       int widestMusic = 0;
       for (FormattedCharSequence seq : lines) {
@@ -431,25 +463,40 @@ public final class BossRushClientHud {
       float targetCenterX = screenWidth - (boxWidth * 0.5f) - 10.0f;
       float offscreenCenterX = screenWidth + (boxWidth * 0.5f) + 10.0f;
       float centerX = Mth.lerp(slideProgress, offscreenCenterX, targetCenterX) + (lagOffsetX * 0.5f);
-      float centerY = 12.0f + (boxHeight * 0.5f) + (lagOffsetY * 0.5f);
+      float centerY = 58.0f + (boxHeight * 0.5f) + (lagOffsetY * 0.5f);
 
       RawGeometry.drawDialogueNode(
         poseStack, bufferSource, font,
         centerX, centerY, 0.0f,
         boxWidth, boxHeight, 3.0f, 3.0f,
-        0xCC110E1A, 0xFF21B7D1, lines, true
+        0xCC110E1A, 0xFF21B7D1, List.of(), true
       );
+
+      drawCustomMusic = true;
+      savedMusicCenterX = centerX;
+      savedMusicCenterY = centerY;
+      savedMusicLines = toPlainLines(lines);
     }
 
+
+    boolean drawCustomStatus = false;
+    float savedStatusCenterX = 0.0f;
+    float savedStatusCenterY = 0.0f;
+    List<String> savedStatusLines = List.of();
+    int statusBorderColor = com.genesiz.hexacreatecore.difficulty.client.DifficultyClientState.activeTier.accentColor;
+
     if (statusBannerTicks > 0 && !statusBanner.isEmpty()) {
-      List<FormattedCharSequence> lines = font.split(Component.literal(statusBanner), 240);
+      String cleanStatus = ChatFormatting.stripFormatting(statusBanner);
+      if (cleanStatus == null) cleanStatus = statusBanner;
+      var boldStatus = Component.literal(cleanStatus).withStyle(net.minecraft.network.chat.Style.EMPTY.withBold(true));
+      List<FormattedCharSequence> lines = font.split(boldStatus, 260);
       int widestStatus = 0;
       for (FormattedCharSequence seq : lines) {
         widestStatus = Math.max(widestStatus, font.width(seq));
       }
 
-      float boxWidth = widestStatus + 24.0f;
-      float boxHeight = (lines.size() * font.lineHeight) + 12.0f;
+      float boxWidth = widestStatus + 26.0f;
+      float boxHeight = (lines.size() * font.lineHeight) + 14.0f;
       float centerX = screenCenterX + lagOffsetX;
       float centerY = 48.0f + (boxHeight * 0.5f) + lagOffsetY;
 
@@ -457,15 +504,25 @@ public final class BossRushClientHud {
         poseStack, bufferSource, font,
         centerX, centerY, 0.0f,
         boxWidth, boxHeight, 3.0f, 3.0f,
-        0xCC110E1A, 0xFFB233FF, lines, true
+        0xCC110E1A, statusBorderColor, List.of(), true
       );
+
+      drawCustomStatus = true;
+      savedStatusCenterX = centerX;
+      savedStatusCenterY = centerY;
+      savedStatusLines = toPlainLines(lines);
     }
+    boolean drawCustomDesc = false;
+    float savedDescCenterX = 0.0f;
+    float savedDescCenterY = 0.0f;
+    List<String> savedDescLines = List.of();
 
     if (isBannerVisible && revealedChars > 0) {
       String rawVisible = fullDescription.substring(0, revealedChars);
-      String styledDesc = "§e" + rawVisible;
+      String cleanVisible = ChatFormatting.stripFormatting(rawVisible);
+      if (cleanVisible == null) cleanVisible = rawVisible;
       int maxBoxWidth = Math.min(260, screenWidth - 40);
-      List<FormattedCharSequence> descLines = font.split(Component.literal(styledDesc), maxBoxWidth - 20);
+      List<FormattedCharSequence> descLines = font.split(Component.literal(cleanVisible), maxBoxWidth - 20);
 
       int widestLine = 0;
       for (FormattedCharSequence seq : descLines) {
@@ -481,13 +538,80 @@ public final class BossRushClientHud {
         poseStack, bufferSource, font,
         descCenterX, descCenterY, 0.0f,
         descBoxWidth, descBoxHeight, 3.0f, 3.0f,
-        0xCC110E1A, 0xFF8A4FFF, descLines, true
+        0xCC110E1A, 0xFF8A4FFF, List.of(), true
       );
+
+      drawCustomDesc = true;
+      savedDescCenterX = descCenterX;
+      savedDescCenterY = descCenterY;
+      savedDescLines = toPlainLines(descLines);
     }
 
     bufferSource.endBatch(RawGeometry.DIALOGUE_SOLID);
     bufferSource.endBatch();
+    RenderSystem.disableDepthTest();
+
+    if (drawCustomStatus) {
+      TextEffectStyle statusStyle = getCompletionBannerStyle();
+      float startY = savedStatusCenterY - (savedStatusLines.size() * font.lineHeight * 0.5f);
+      for (int i = 0; savedStatusLines.size() > i; i++) {
+        String line = savedStatusLines.get(i);
+        var boldComp = Component.literal(line).withStyle(net.minecraft.network.chat.Style.EMPTY.withBold(true));
+        float lx = savedStatusCenterX - (font.width(boldComp) * 0.5f);
+        ThreeDifiedTextRenderer.draw2DBold(
+          event.getGuiGraphics(), font, line, lx, startY + (i * font.lineHeight), statusStyle
+        );
+      }
+    }
+
+    if (drawCustomMusic) {
+      float startY = savedMusicCenterY - (savedMusicLines.size() * font.lineHeight * 0.5f);
+      for (int i = 0; savedMusicLines.size() > i; i++) {
+        String line = savedMusicLines.get(i);
+        float lx = savedMusicCenterX - (font.width(line) * 0.5f);
+        ThreeDifiedTextRenderer.draw2D(
+          event.getGuiGraphics(), font, line, lx, startY + (i * font.lineHeight), MUSIC_TOAST_STYLE
+        );
+      }
+    }
+
+    if (drawCustomTitle) {
+      float startY = savedTitleCenterY - (savedTitleLines.size() * font.lineHeight * 0.5f);
+      for (int i = 0; savedTitleLines.size() > i; i++) {
+        String line = savedTitleLines.get(i);
+        var boldComp = Component.literal(line).withStyle(net.minecraft.network.chat.Style.EMPTY.withBold(true));
+        float lx = savedTitleCenterX - (font.width(boldComp) * 0.5f);
+        ThreeDifiedTextRenderer.draw2DBold(
+          event.getGuiGraphics(), font, line, lx, startY + (i * font.lineHeight), PHASE_TITLE_STYLE
+        );
+      }
+    }
+
+    if (drawCustomDesc) {
+      float startY = savedDescCenterY - (savedDescLines.size() * font.lineHeight * 0.5f);
+      for (int i = 0; savedDescLines.size() > i; i++) {
+        String line = savedDescLines.get(i);
+        float lx = savedDescCenterX - (font.width(line) * 0.5f);
+        ThreeDifiedTextRenderer.draw2D(
+          event.getGuiGraphics(), font, line, lx, startY + (i * font.lineHeight), PHASE_DESC_STYLE
+        );
+      }
+    }
   }
+
+  private static List<String> toPlainLines(List<FormattedCharSequence> seqs) {
+    List<String> out = new java.util.ArrayList<>(seqs.size());
+    for (FormattedCharSequence seq : seqs) {
+      StringBuilder sb = new StringBuilder();
+      seq.accept((idx, style, codePoint) -> {
+        sb.appendCodePoint(codePoint);
+        return true;
+      });
+      out.add(sb.toString());
+    }
+    return out;
+  }
+
 
   @SubscribeEvent(priority = net.neoforged.bus.api.EventPriority.HIGHEST)
   public static void onPreRenderGuiLayer(RenderGuiLayerEvent.Pre event) {
@@ -514,6 +638,31 @@ public final class BossRushClientHud {
     || path.contains("boss") || path.contains("health_bar") || path.contains("bossbar")) {
       event.setCanceled(true);
     }
+  }
+
+  private static TextEffectStyle getCompletionBannerStyle() {
+    var tier = com.genesiz.hexacreatecore.difficulty.client.DifficultyClientState.activeTier;
+    return switch (tier) {
+      case ETHEREAL -> new TextEffectStyle(
+        List.of(0xFF38BDF8, 0xFFBAE6FD, 0xFFFFFFFF, 0xFF38BDF8),
+        List.of(0.0f, 0.35f, 0.7f, 1.0f),
+        1.6f, 0.45f, 0.28f,
+        TextEffectStyle.BackdropMode.GLOW_BLOOM, 0x7738BDF8, 0x44E0F2FE, true, true
+      );
+      case ABSOLUTION -> new TextEffectStyle(
+        List.of(0xFF1A082B, 0xFF6B21A8, 0xFFA855F7, 0xFFE9D5FF),
+        List.of(0.0f, 0.35f, 0.7f, 1.0f),
+        0.0f, 0.40f, 0.25f,
+        TextEffectStyle.BackdropMode.NONE, 0xFF9333EA, 0xFF1A082B, false, true
+      );
+      case GENESIS -> new TextEffectStyle(
+        List.of(0xFFFF1E56, 0xFF8B0000, 0xFFDC2626, 0xFFFF1E56),
+        List.of(0.0f, 0.35f, 0.7f, 1.0f),
+        2.4f, 0.85f, 0.40f,
+        TextEffectStyle.BackdropMode.CHROMATIC_GLITCH, 0x99FF1E56, 0x99660011, true, true
+      );
+      default -> PHASE_TITLE_STYLE;
+    };
   }
 
   public static boolean hasActiveCustomBossBar() {

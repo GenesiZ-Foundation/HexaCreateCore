@@ -1,6 +1,7 @@
 package com.genesiz.hexacreatecore.hexcasting;
 
 import com.genesiz.hexacreatecore.threedified.RawGeometry;
+import com.genesiz.hexacreatecore.threedified.text.TextEffectStyle;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -25,6 +26,8 @@ import java.util.List;
 public final class HexCastingGeometry {
   private static Vec3 smoothedHudPos = null;
   private static float smoothedHudYaw = 0.0f;
+  private static final TextEffectStyle ravensMindStyle = TextEffectStyle.outline(0xFFCD7F32);
+  TextEffectStyle hexStackStyle = TextEffectStyle.aurora(0xFFFFFFFF, 0xFFA855F7);    // Mostly White & HexCasting Purple Aurora
 
   public static void render3DCellShadedLines(PoseStack poseStack, List<List<Integer>> persistentLines, List<Integer> activePath, List<ArcaneNode3D> gridNodes, Vec3 cameraPos, int baseColorHex) {
     if (gridNodes.isEmpty()) return;
@@ -118,11 +121,17 @@ public final class HexCastingGeometry {
 
     float currentPanelLocalY = 0.0f;
     int fixedBoxWidth = 150;
+    int maxTextWidth = fixedBoxWidth - 16;
+
+    var ravensMindStyle = com.genesiz.hexacreatecore.threedified.text.TextEffectStyle.outline(0xFFFFD700, 0xFFFFFFFF);
+    var hexAuroraStyle = com.genesiz.hexacreatecore.threedified.text.TextEffectStyle.aurora(0xFFFFFFFF, 0xFFA855F7);
 
     // 1. Pinned Raven's Mind box at the very top of the floating list
     if (hasRavensmind) {
-      String ravenLabel = "§6[Raven's Mind] §f" + activeRavensmind;
-      List<FormattedCharSequence> ravenLines = font.split(Component.literal(ravenLabel), fixedBoxWidth - 16);
+      String cleanRavenVal = net.minecraft.ChatFormatting.stripFormatting(activeRavensmind);
+      if (cleanRavenVal == null) cleanRavenVal = activeRavensmind;
+      String ravenPrefix = "[Raven's Mind] ";
+      List<String> ravenLines = wrapPlainText(font, ravenPrefix + cleanRavenVal, maxTextWidth);
       float ravenHeight = (ravenLines.size() * font.lineHeight) + 12.0f;
 
       poseStack.pushPose();
@@ -132,18 +141,44 @@ public final class HexCastingGeometry {
         poseStack, bufferSource, font,
         0.0f, 0.0f, 0.0f,
         fixedBoxWidth, ravenHeight, 3.0f, 3.0f,
-        0x1A241808, 0x1AFFD700, ravenLines, false
+        0x1A241808, 0x1AFFD700, List.of(), false
       );
+
+      poseStack.pushPose();
+      poseStack.translate(0.0f, 0.0f, 0.25f);
+      float textLeftX = -(fixedBoxWidth * 0.5f) + 8.0f;
+      float textTopY = -(ravenLines.size() * font.lineHeight * 0.5f);
+
+      for (int l = 0; ravenLines.size() > l; l++) {
+        String line = ravenLines.get(l);
+        float ly = textTopY + (l * font.lineHeight);
+        if (l == 0 && line.startsWith(ravenPrefix)) {
+          String rest = line.substring(ravenPrefix.length());
+          com.genesiz.hexacreatecore.threedified.text.ThreeDifiedTextRenderer.draw3D(
+            poseStack, bufferSource, font, ravenPrefix, textLeftX, ly, ravensMindStyle
+          );
+          com.genesiz.hexacreatecore.threedified.text.ThreeDifiedTextRenderer.draw3D(
+            poseStack, bufferSource, font, rest, textLeftX + font.width(ravenPrefix), ly, hexAuroraStyle
+          );
+        } else {
+          com.genesiz.hexacreatecore.threedified.text.ThreeDifiedTextRenderer.draw3D(
+            poseStack, bufferSource, font, line, textLeftX, ly, hexAuroraStyle
+          );
+        }
+      }
+      poseStack.popPose();
 
       poseStack.popPose();
       currentPanelLocalY += ravenHeight + 10.0f;
     }
 
     // 2. Scrollable 10-slot stack boxes below Raven's Mind
-    for (int i = startIndex; i < endIndex; i++) {
-      String label = "§e[" + i + "] §f" + allItems.get(i);
-      List<FormattedCharSequence> formattedLines = font.split(Component.literal(label), fixedBoxWidth - 16);
-      float boxHeight = (formattedLines.size() * font.lineHeight) + 12.0f;
+    for (int i = startIndex; endIndex > i; i++) {
+      String cleanIota = net.minecraft.ChatFormatting.stripFormatting(allItems.get(i));
+      if (cleanIota == null) cleanIota = allItems.get(i);
+      String idxPrefix = "[" + i + "] ";
+      List<String> lines = wrapPlainText(font, idxPrefix + cleanIota, maxTextWidth);
+      float boxHeight = (lines.size() * font.lineHeight) + 12.0f;
 
       poseStack.pushPose();
       poseStack.translate(0.0f, currentPanelLocalY, 0.0f);
@@ -152,8 +187,34 @@ public final class HexCastingGeometry {
         poseStack, bufferSource, font,
         0.0f, 0.0f, 0.0f,
         fixedBoxWidth, boxHeight, 3.0f, 3.0f,
-        0x1A110E1A, 0x1A5A2E85, formattedLines, false
+        0x1A110E1A, 0x1A5A2E85, List.of(), false
       );
+
+      poseStack.pushPose();
+      poseStack.translate(0.0f, 0.0f, 0.25f);
+      float textLeftX = -(fixedBoxWidth * 0.5f) + 8.0f;
+      float textTopY = -(lines.size() * font.lineHeight * 0.5f);
+
+      for (int l = 0; lines.size() > l; l++) {
+        String line = lines.get(l);
+        float ly = textTopY + (l * font.lineHeight);
+        if (l == 0 && line.startsWith(idxPrefix)) {
+          String rest = line.substring(idxPrefix.length());
+          font.drawInBatch(
+            idxPrefix, textLeftX, ly, 0xFFFFFF55, true,
+            poseStack.last().pose(), bufferSource, Font.DisplayMode.NORMAL, 0,
+            net.minecraft.client.renderer.LightTexture.FULL_BRIGHT
+          );
+          com.genesiz.hexacreatecore.threedified.text.ThreeDifiedTextRenderer.draw3D(
+            poseStack, bufferSource, font, rest, textLeftX + font.width(idxPrefix), ly, hexAuroraStyle
+          );
+        } else {
+          com.genesiz.hexacreatecore.threedified.text.ThreeDifiedTextRenderer.draw3D(
+            poseStack, bufferSource, font, line, textLeftX, ly, hexAuroraStyle
+          );
+        }
+      }
+      poseStack.popPose();
 
       poseStack.popPose();
       currentPanelLocalY += boxHeight + 8.0f;
@@ -162,6 +223,18 @@ public final class HexCastingGeometry {
     poseStack.popPose();
   }
 
+  private static List<String> wrapPlainText(Font font, String text, int maxWidth) {
+    List<String> out = new java.util.ArrayList<>();
+    for (FormattedCharSequence seq : font.split(Component.literal(text), maxWidth)) {
+      StringBuilder sb = new StringBuilder();
+      seq.accept((idx, style, codePoint) -> {
+        sb.appendCodePoint(codePoint);
+        return true;
+      });
+      out.add(sb.toString());
+    }
+    return out.isEmpty() ? List.of("") : out;
+  }
 
   private static void renderScenePrisms(PoseStack poseStack, VertexConsumer consumer, List<List<Integer>> persistentLines, List<Integer> activePath, List<ArcaneNode3D> gridNodes, Vec3 cameraPos, float thickness, int colorHex) {
     drawSingleLineStream(poseStack, consumer, activePath, gridNodes, cameraPos, thickness, colorHex);

@@ -4,5 +4,9 @@
   
   "creativetab.hexacreatecore.mod_items": "HexaCreate",
 
-  "entity.hexacreatecore.cursed_blacksmith": "Cursed Blacksmith"
+  "entity.hexacreatecore.cursed_blacksmith": "Cursed Blacksmith",
+
+  "effect.hexacreatecore.soul_fracture": "Soul Fracture",
+  "effect.hexacreatecore.soul_fracture.description": "Your severed soul has weakened your vessel, reducing Maximum Health by 33% per stack. Uncurable."
+
 }

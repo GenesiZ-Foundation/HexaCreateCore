@@ -3,6 +3,8 @@ package com.genesiz.hexacreatecore.bossrush.data;
 import net.minecraft.util.Mth;
 import java.util.List;
 
+import com.genesiz.hexacreatecore.decorators.annotations.Overload;
+
 public final class BossHealthBarData {
 
   
@@ -105,12 +107,19 @@ public final class BossHealthBarData {
       }
     }
 
-      public HealthBarStyle resolveForHp(float currentHp) {
+    public HealthBarStyle resolveForHp(float currentHp) {
+      return resolveForHp(currentHp, 1.0f);
+    }
+
+    @Overload
+    public HealthBarStyle resolveForHp(float currentHp, float hpScale) {
       if (hpPhases == null || hpPhases.isEmpty()) return this;
+      float scale = Math.max(0.01f, hpScale);
       HpPhaseOverride best = null;
       for (HpPhaseOverride phase : hpPhases) {
-        if (phase.belowHp() >= currentHp) {
-          if (best == null || best.belowHp() > phase.belowHp()) {
+        float scaledThreshold = phase.belowHp() * scale;
+        if (scaledThreshold >= currentHp) {
+          if (best == null || (best.belowHp() * scale) > scaledThreshold) {
             best = phase;
           }
         }

@@ -7,6 +7,7 @@ import com.genesiz.hexacreatecore.threedified.hologram.BlueprintReloadListener;
 import com.genesiz.hexacreatecore.entity.ModEntities;
 import com.genesiz.hexacreatecore.item.HexaCreateCoreItems;
 import com.genesiz.hexacreatecore.item.ModCreativeModeTabs;
+import com.genesiz.hexacreatecore.registry.ModEffects;
 import com.mojang.logging.LogUtils;
 
 import net.neoforged.bus.api.IEventBus;
@@ -28,6 +29,7 @@ public class HexaCreateCore {
     ModCreativeModeTabs.register(modEventBus);
     HexaCreateCoreItems.register(modEventBus);
     ModEntities.register(modEventBus);
+    ModEffects.register(modEventBus);
 
     if (FMLEnvironment.dist.isClient()) {
       modEventBus.addListener(DialogueReloadListener::onRegisterClientReloadListeners);

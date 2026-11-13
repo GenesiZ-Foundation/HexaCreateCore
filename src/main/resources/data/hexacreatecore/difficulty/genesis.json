@@ -1,0 +1,36 @@
+{
+  "description": [
+    "Hostile mobs gain +35% Max HP & +25% Damage",
+    "Unlocks Rhythm Parry & 25-Charge Riposte (5% Max HP Strike)",
+    "Elite enemies inflict Weakness & Slowness on hit"
+  ],
+  "hp_multiplier": 1.35,
+  "damage_multiplier": 1.25,
+  "spawn_buffs": [
+    { "effect": "minecraft:speed", "duration": 999999, "amplifier": 0, "chance": 0.4 }
+  ],
+  "on_hit_debuffs": [
+    { "effect": "minecraft:slowness", "duration": 60, "amplifier": 0, "chance": 0.35 }
+  ],
+  "attack_callbacks": [],
+  "entities": {
+    "minecraft:warden": {
+      "hp_multiplier": 1.5,
+      "damage_multiplier": 1.35,
+      "on_hit_debuffs": [
+        { "effect": "minecraft:darkness", "duration": 100, "amplifier": 0, "chance": 1.0 }
+      ]
+    }
+  },
+  "gauge_bar": {
+    "border_color": "#FF1E56",
+    "background_color": "#16050A",
+    "bar_color": ["#4A0415", "#DC2626", "#FF1E56", "#FF99B4"],
+    "bar_color_pos": [0.10, 0.45, 0.78, 0.96],
+    "pixel_density": 0.55,
+    "color_angle": -15.0,
+    "move_direction": "right",
+    "move_speed": 2.0
+  }
+}
+

@@ -49,13 +49,32 @@ public final class DifficultyClientState {
     "white", new ParrySoundEntry("minecraft:block.amethyst_cluster.fall", 1.0f, 1.4f)
   ));
 
+  private static boolean hasInitialTierSync = false;
+  public static long difficultyBannerStartMs = 0L;
+  public static String difficultyBannerText = "";
+  public static DifficultyTier difficultyBannerTier = DifficultyTier.NORMAL;
+
   public static void handleSync(DifficultyPackets.SyncPayload payload) {
-    activeTier = DifficultyTier.fromId(payload.activeTierId());
+    DifficultyTier nextTier = DifficultyTier.fromId(payload.activeTierId());
+    if (hasInitialTierSync && nextTier != activeTier && nextTier != DifficultyTier.NORMAL) {
+      DifficultyAtmosphereController.trigger(nextTier);
+      difficultyBannerTier = nextTier;
+      difficultyBannerStartMs = System.currentTimeMillis();
+      difficultyBannerText = switch (nextTier) {
+        case ETHEREAL -> "A fragment of your mind remains, but for how long...";
+        case ABSOLUTION -> "Your soul is now bound to the world... You do not know what awaits you";
+        case GENESIS -> "Your wretched soul will know no rest... Your last breath is near...";
+        default -> "";
+      };
+    }
+    hasInitialTierSync = true;
+    activeTier = nextTier;
+
     genesisUnlocked = payload.genesisUnlocked();
     riposteCharges = payload.riposteCharges();
     ripostePrimed = payload.ripostePrimed();
     parryFlowEndsAtMs = (payload.parryFlowRemainingMs() > 0L)
-    ? (System.currentTimeMillis() + payload.parryFlowRemainingMs()) : 0L;
+      ? (System.currentTimeMillis() + payload.parryFlowRemainingMs()) : 0L;
 
     if (payload.descriptionsJson() != null && !payload.descriptionsJson().isEmpty()) {
       Type mapType = new TypeToken<Map<String, List<String>>>() {}.getType();
@@ -101,6 +120,7 @@ public final class DifficultyClientState {
       } catch (Exception ignored) {}
     }
   }
+
 
   public static HealthBarStyle getActiveGaugeStyle() {
     return TIER_GAUGE_STYLES.getOrDefault(activeTier.id, DifficultyProfile.defaultGauge(activeTier.accentColor));

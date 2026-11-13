@@ -10,7 +10,8 @@
   ],
   "client": [
     "SoundEngineMixin",
-    "BossHealthOverlayMixin"
+    "BossHealthOverlayMixin",
+    "ClientLevelMixin"
   ],
   "injectors": {
     "defaultRequire": 1
