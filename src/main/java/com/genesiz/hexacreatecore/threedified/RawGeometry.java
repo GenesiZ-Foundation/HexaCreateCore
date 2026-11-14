@@ -316,7 +316,16 @@ public class RawGeometry {
     buffer.addVertex(matrix, x - rS, y + rS, z - rS).setColor(r, g, b, a);
   }
 
-  private static void vertex(VertexConsumer c, Matrix4f m, float x, float y, float z, int r, int g, int b, int a) {
+  public static void vertex(VertexConsumer c, Matrix4f m, float x, float y, float z, int argb) {
+    c.addVertex(m, x, y, z).setColor(
+      net.minecraft.util.FastColor.ARGB32.red(argb),
+      net.minecraft.util.FastColor.ARGB32.green(argb),
+      net.minecraft.util.FastColor.ARGB32.blue(argb),
+      net.minecraft.util.FastColor.ARGB32.alpha(argb)
+    );
+  }
+
+  public static void vertex(VertexConsumer c, Matrix4f m, float x, float y, float z, int r, int g, int b, int a) {
     c.addVertex(m, x, y, z).setColor(r, g, b, a);
   }
 }

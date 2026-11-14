@@ -176,6 +176,10 @@ public final class HexagonalGridManager {
   @SubscribeEvent
   public static void onClientTick(ClientTickEvent.Pre event) {
     if (!isGridActive) return;
+    if (com.genesiz.hexacreatecore.hexcasting.everbook.EverbookSessionState.isRiftMode()) {
+      ACTIVE_DRAWING_PATH.clear();
+      return;
+    }
 
     Minecraft mc = Minecraft.getInstance();
     if (mc.player == null || mc.level == null) return;
@@ -361,11 +365,19 @@ public final class HexagonalGridManager {
     String signature = signatureBuilder.toString();
     at.petrak.hexcasting.api.casting.math.HexDir startDir = directions.get(0);
 
+    if (com.genesiz.hexacreatecore.hexcasting.everbook.EverbookSessionState.isActive()) {
+      com.genesiz.hexacreatecore.hexcasting.everbook.EverbookSessionState.appendDrawnPattern(
+        signature, startDir.name(), "Sigil"
+      );
+      return;
+    }
+
     player.displayClientMessage(net.minecraft.network.chat.Component.literal("§d[Arcane Grid] Signature: " + signature + " (" + startDir.name() + ")"), true);
 
     String unifiedPayloadString = "hexacreatecore:cast_3d_spell;" + startDir.ordinal() + ";" + signature;
     net.neoforged.neoforge.network.PacketDistributor.sendToServer(new com.genesiz.hexacreatecore.threedified.network.DialogueActionPayload(player.getId(), unifiedPayloadString, false));
   }
+
 
   public static void loadExternalGridConfig() {
     java.io.File configFile = new java.io.File(
@@ -379,16 +391,16 @@ public final class HexagonalGridManager {
           configFile.getParentFile().mkdirs();
         }
         String defaultJson = """
-          {
-            "point_color": "0xFF21B7D1",
-            "point_hover_color_hex": "0xFFFFFF66",
-            "line_color": "0xFFB233FF",
-            "outline_color": "0xFF000000",
-            "line_size": 0.0225,
-            "outline_size": 2.0,
-            "wobble_intensity": 0.015
-          }
-          """;
+        {
+        "point_color": "0xFF21B7D1",
+        "point_hover_color_hex": "0xFFFFFF66",
+        "line_color": "0xFFB233FF",
+        "outline_color": "0xFF000000",
+        "line_size": 0.0225,
+        "outline_size": 2.0,
+        "wobble_intensity": 0.015
+        }
+        """;
         java.nio.file.Files.writeString(configFile.toPath(), defaultJson, java.nio.charset.StandardCharsets.UTF_8);
       } catch (Exception writeException) {
         writeException.printStackTrace();
@@ -428,9 +440,14 @@ public final class HexagonalGridManager {
   @SubscribeEvent
   public static void onMouseScroll(net.neoforged.neoforge.client.event.InputEvent.MouseScrollingEvent event) {
     if (!isGridActive) return;
-    handleStackScroll((float) event.getScrollDeltaY());
+    if (com.genesiz.hexacreatecore.hexcasting.everbook.EverbookSessionState.isRiftMode()) {
+      com.genesiz.hexacreatecore.hexcasting.everbook.EverbookSessionState.handleRiftScroll((float) event.getScrollDeltaY());
+    } else {
+      handleStackScroll((float) event.getScrollDeltaY());
+    }
     event.setCanceled(true);
   }
+
 
   @SubscribeEvent
   public static void onScreenOpening(net.neoforged.neoforge.client.event.ScreenEvent.Opening event) {
@@ -446,7 +463,6 @@ public final class HexagonalGridManager {
 
   @SubscribeEvent
   public static void onRightClickStaff(net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.RightClickItem event) {
-    // Block normal staff right-click and hand-swing animation while in 3D grid mode
     if (isGridActive) {
       event.setCancellationResult(net.minecraft.world.InteractionResult.FAIL);
       event.setCanceled(true);
@@ -456,24 +472,25 @@ public final class HexagonalGridManager {
     if (!event.getLevel().isClientSide()) return;
 
     Player player = event.getEntity();
-    if (!player.isShiftKeyDown()) return;
-
     net.minecraft.resources.ResourceLocation itemId = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(event.getItemStack().getItem());
-    if (itemId != null && "hexcasting".equals(itemId.getNamespace()) && itemId.getPath().contains("staff")) {
+    boolean isStaff = player.isShiftKeyDown() && itemId != null && "hexcasting".equals(itemId.getNamespace()) && itemId.getPath().contains("staff");
+    boolean isEverbook = event.getItemStack().getItem() instanceof com.genesiz.hexacreatecore.item.custom.EverbookItem;
+
+    if (isStaff || isEverbook) {
       STACK_DISPLAY_STRINGS.clear();
       ravensmindString = null;
       stackScrollIndex = 0;
 
-      // Clear HexCasting's client-side orbiting spiral runes
       try {
-        Class<?> stackClass = Class.forName("at.petrak.hexcasting.client.ClientCastingStack");
-        for (java.lang.reflect.Method m : stackClass.getDeclaredMethods()) {
-          if (m.getName().contains("clear")) {
-            m.setAccessible(true);
-            if (m.getParameterCount() == 0) {
-              m.invoke(null);
-            } else if (m.getParameterCount() == 1 && m.getParameterTypes()[0] == java.util.UUID.class) {
-              m.invoke(null, player.getUUID());
+        Class<?> clientStackClass = Class.forName("at.petrak.hexcasting.client.ClientCastingStack");
+        for (java.lang.reflect.Method stackMethod : clientStackClass.getDeclaredMethods()) {
+          if (stackMethod.getName().contains("clear")) {
+            stackMethod.setAccessible(true);
+            Class<?>[] paramTypes = stackMethod.getParameterTypes();
+            if (paramTypes.length == 0) {
+              stackMethod.invoke(null);
+            } else if (paramTypes.length == 1 && paramTypes[0] == java.util.UUID.class) {
+              stackMethod.invoke(null, player.getUUID());
             }
           }
         }
@@ -484,6 +501,9 @@ public final class HexagonalGridManager {
       );
 
       activateCastingGrid(player);
+      if (isEverbook) {
+        com.genesiz.hexacreatecore.hexcasting.everbook.EverbookSessionState.activateForPlayer(player, event.getItemStack(), event.getHand());
+      }
       event.setCancellationResult(net.minecraft.world.InteractionResult.SUCCESS);
       event.setCanceled(true);
     }

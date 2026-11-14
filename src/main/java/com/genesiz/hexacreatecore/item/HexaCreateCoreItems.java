@@ -14,6 +14,9 @@ public class HexaCreateCoreItems {
   public static final DeferredItem<Item> DEBUGGER = ITEMS.register("debugger", 
   () -> new com.genesiz.hexacreatecore.item.custom.BossRushTriggerItem(new Item.Properties().stacksTo(1))
   );
+  public static final DeferredItem<Item> EVERBOOK = ITEMS.register("everbook",
+  () -> new com.genesiz.hexacreatecore.item.custom.EverbookItem(new Item.Properties()));
+
   public static final DeferredItem<Item> CURSED_BLACKSMITH_SPAWN_EGG = ITEMS.register("cursed_blacksmith_spawn_egg", ()-> new DeferredSpawnEggItem(
     ModEntities.CURSED_BLACKSMITH,
     0x45413d,

@@ -1,5 +1,6 @@
 package com.genesiz.hexacreatecore.hexcasting;
 
+import com.genesiz.hexacreatecore.hexcasting.everbook.EverbookSessionState;
 import com.genesiz.hexacreatecore.threedified.RawGeometry;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -23,6 +24,8 @@ public final class ArcaneGridRenderer {
   public static void onRenderLevelStage(RenderLevelStageEvent event) {
     if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS) return;
     if (!HexagonalGridManager.isActive()) return;
+    if (EverbookSessionState.isRiftMode()) return;
+
 
     Minecraft mc = Minecraft.getInstance();
     if (mc.level == null || mc.player == null) return;

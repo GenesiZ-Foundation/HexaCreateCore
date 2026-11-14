@@ -171,7 +171,7 @@ public final class DialogueNetworking {
       event.enqueueWork(DialogueNetworking::scanAnnotatedActions);
     }
 
-    @SubscribeEvent
+      @SubscribeEvent
     public static void onRegisterPayloads(RegisterPayloadHandlersEvent event) {
       final PayloadRegistrar registrar = event.registrar("1.0");
 
@@ -184,13 +184,13 @@ public final class DialogueNetworking {
       registrar.playToClient(
         HologramProjectionPayload.TYPE,
         HologramProjectionPayload.STREAM_CODEC.cast(),
-      (payload, context) -> context.enqueueWork(() -> MultiblockHologramRenderer.setProjection(payload))
+        (payload, context) -> context.enqueueWork(() -> MultiblockHologramRenderer.setProjection(payload))
       );
 
       registrar.playToClient(
         LiveStackUpdatePayload.TYPE,
         LiveStackUpdatePayload.STREAM_CODEC.cast(),
-      (payload, context) -> context.enqueueWork(() -> {
+        (payload, context) -> context.enqueueWork(() -> {
           HexagonalGridManager.updateLiveCastingStack(payload.stackDescs(), payload.ravensmind());
         })
       );
@@ -198,11 +198,22 @@ public final class DialogueNetworking {
       registrar.playToClient(
         com.genesiz.hexacreatecore.bossrush.network.BossRushSyncPayload.TYPE,
         com.genesiz.hexacreatecore.bossrush.network.BossRushSyncPayload.STREAM_CODEC.cast(),
-      (payload, context) -> context.enqueueWork(() ->
+        (payload, context) -> context.enqueueWork(() ->
           com.genesiz.hexacreatecore.bossrush.client.BossRushClientHud.handleSyncPacket(payload)
         )
       );
 
+      registrar.playToServer(
+        com.genesiz.hexacreatecore.hexcasting.everbook.EverbookSyncPayload.TYPE,
+        com.genesiz.hexacreatecore.hexcasting.everbook.EverbookSyncPayload.STREAM_CODEC.cast(),
+        com.genesiz.hexacreatecore.hexcasting.everbook.EverbookSyncPayload::handleServer
+      );
+
+      registrar.playBidirectional(
+        com.genesiz.hexacreatecore.hexcasting.everbook.EverbookEvalPayload.TYPE,
+        com.genesiz.hexacreatecore.hexcasting.everbook.EverbookEvalPayload.STREAM_CODEC.cast(),
+        com.genesiz.hexacreatecore.hexcasting.everbook.EverbookEvalPayload::handle
+      );
     }
   }
 }

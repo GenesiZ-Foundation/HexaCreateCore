@@ -7,6 +7,12 @@
   "entity.hexacreatecore.cursed_blacksmith": "Cursed Blacksmith",
 
   "effect.hexacreatecore.soul_fracture": "Soul Fracture",
-  "effect.hexacreatecore.soul_fracture.description": "Your severed soul has weakened your vessel, reducing Maximum Health by 33% per stack. Uncurable."
+  "effect.hexacreatecore.soul_fracture.description": "Your severed soul has weakened your vessel, reducing Maximum Health by 33% per stack. Uncurable.",
 
+  "item.hexacreatecore.everbook": "The Everbook",
+  "key.categories.hexacreatecore": "HexaCreateCore",
+  "key.hexacreatecore.delete_iota": "Delete Selected Iota",
+  "key.hexacreatecore.difficulty_menu": "Open Difficulty Menu",
+  "key.hexacreatecore.parry": "Parry",
+  "key.hexacreatecore.unleash_riposte": "Unleash Riposte"
 }

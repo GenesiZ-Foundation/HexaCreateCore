@@ -55,6 +55,10 @@ public final class HexCastingGeometry {
   }
 
   public static void render3DStackHUD(PoseStack poseStack, MultiBufferSource bufferSource, Vec3 center, Vec3 cameraPos, float camYaw, float camPitch, int activeShellIndex, List<String> stackStrings, String ravensmind, int scrollIndex) {
+    if (com.genesiz.hexacreatecore.hexcasting.everbook.EverbookSessionState.isActive()) {
+      smoothedHudPos = null;
+      return;
+    }
     if (center == null || !HexagonalGridManager.isActive()) {
       smoothedHudPos = null;
       return;
