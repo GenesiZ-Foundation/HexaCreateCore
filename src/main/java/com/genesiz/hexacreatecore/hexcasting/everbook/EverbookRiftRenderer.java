@@ -90,42 +90,65 @@ public final class EverbookRiftRenderer {
     RenderSystem.enableDepthTest();
   }
 
-  private static void renderWrappedPatterns(PoseStack ps, MultiBufferSource buf, Font font, float timeSec) {
-    List<EverbookData.PatternEntry> entries = EverbookSessionState.getCurrentEntries();
-    float startX = -((COLS_PER_ROW - 1) * CELL_SIZE) * 0.5f, scroll = EverbookSessionState.getScrollRowOffset();
-    VertexConsumer quads = buf.getBuffer(RawGeometry.DIALOGUE_SOLID);
+  private static void renderWrappedPatterns(PoseStack poseStack, MultiBufferSource bufferSource, Font font, float timeSeconds) {
+    List<EverbookData.PatternEntry> patternEntries = EverbookSessionState.getCurrentEntries();
+    float gridStartX = -((COLS_PER_ROW - 1) * CELL_SIZE) * 0.5f;
+    float scrollRowOffset = EverbookSessionState.getScrollRowOffset();
+    VertexConsumer quadConsumer = bufferSource.getBuffer(RawGeometry.DIALOGUE_SOLID);
 
     int introspectionDepth = 0;
-    for (int i = 0; entries.size() > i; i++) {
-      EverbookData.PatternEntry e = entries.get(i);
-      String sig = e.angles();
+    for (int index = 0; patternEntries.size() > index; index++) {
+      EverbookData.PatternEntry patternEntry = patternEntries.get(index);
+      String anglesSignature = patternEntry.angles();
 
       // Retrospection ("eee") closes the current introspection scope on itself
-      if ("eee".equals(sig) && introspectionDepth > 0) {
+      if ("eee".equals(anglesSignature) && introspectionDepth > 0) {
         introspectionDepth--;
       }
 
-      float visRow = (i / COLS_PER_ROW) - scroll;
-      if (visRow >= -0.6f && 5.2f >= visRow) {
-        drawPatternStrokes(ps, quads, startX + ((i % COLS_PER_ROW) * CELL_SIZE), PATTERN_TOP_Y - (visRow * CELL_SIZE), 0.008f, CELL_SIZE * 0.36f,
-          sig, e.startDir(), EverbookSessionState.getSelectedIds().contains(e.id()), i == EverbookSessionState.getHoveredPatternIdx(), introspectionDepth, timeSec);
+      float visibleRow = (index / COLS_PER_ROW) - scrollRowOffset;
+      if (visibleRow >= -0.6f && 5.2f >= visibleRow) {
+        float cellCenterX = gridStartX + ((index % COLS_PER_ROW) * CELL_SIZE);
+        float cellCenterY = PATTERN_TOP_Y - (visibleRow * CELL_SIZE);
+        boolean isSelected = EverbookSessionState.getSelectedIds().contains(patternEntry.id());
+        boolean isHovered = index == EverbookSessionState.getHoveredPatternIdx();
+
+        drawPatternStrokes(
+          poseStack, quadConsumer, cellCenterX, cellCenterY, 0.008f, CELL_SIZE * 0.36f,
+          anglesSignature, patternEntry.startDir(), isSelected, isHovered, introspectionDepth, timeSeconds
+        );
       }
 
       // Introspection ("qqq") shifts all glyphs AFTER it to the next color tier (Cyan -> Deep Blue -> Purple)
-      if ("qqq".equals(sig)) {
+      if ("qqq".equals(anglesSignature)) {
         introspectionDepth++;
       }
     }
 
-    ps.pushPose();
-    ps.translate(0.0f, 0.96f, 0.01f);
-    ps.scale(0.0085f, -0.0085f, 0.0085f);
-    String mode = EverbookSessionState.isRiftMode() ? "[RIFT LOCKED]" : "[SOUL CASTING]", count = "  " + entries.size() + " sigils";
-    float w = font.width(mode + count);
-    ThreeDifiedTextRenderer.draw3D(ps, buf, font, mode, -w * 0.5f, 0.0f, TextEffectStyle.spectrum());
-    font.drawInBatch(Component.literal("§f" + count), (-w * 0.5f) + font.width(mode), 0.0f, 0xFFFFFFFF, false, ps.last().pose(), buf, Font.DisplayMode.SEE_THROUGH, 0, 15728880);
-    ps.popPose();
+    poseStack.pushPose();
+    poseStack.translate(0.0f, 0.96f, 0.01f);
+    poseStack.scale(0.0085f, -0.0085f, 0.0085f);
+
+    String modeLabel = EverbookSessionState.isRiftMode() ? "[RIFT LOCKED]" : "[SOUL CASTING]";
+    String iotaCountLabel = "  " + patternEntries.size() + (patternEntries.size() == 1 ? " Iota" : " Iotas");
+    float totalHeaderWidth = font.width(modeLabel + iotaCountLabel);
+
+    ThreeDifiedTextRenderer.draw3D(poseStack, bufferSource, font, modeLabel, -totalHeaderWidth * 0.5f, 0.0f, TextEffectStyle.spectrum());
+    font.drawInBatch(
+      Component.literal("§f" + iotaCountLabel),
+      (-totalHeaderWidth * 0.5f) + font.width(modeLabel),
+      0.0f,
+      0xFFFFFFFF,
+      false,
+      poseStack.last().pose(),
+      bufferSource,
+      Font.DisplayMode.SEE_THROUGH,
+      0,
+      15728880
+    );
+    poseStack.popPose();
   }
+
 
   private static void renderLeftEvaluationPanel(PoseStack ps, MultiBufferSource.BufferSource buf, Font font, float timeSec) {
     boolean hov = EverbookSessionState.isEvalHovered();
