@@ -39,7 +39,6 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent;
 import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
-import net.neoforged.neoforge.client.event.sound.PlaySoundEvent;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 
 import java.lang.reflect.Field;
@@ -124,20 +123,16 @@ public final class BossRushClientHud {
     if (HexaCreateCore.MODID.equals(loc.getNamespace())) return false;
 
     SoundSource source = sound.getSource();
-    String ns = loc.getNamespace().toLowerCase();
     String path = loc.getPath().toLowerCase();
 
     if (source == SoundSource.MUSIC || source == SoundSource.RECORDS) return true;
-    if (sound.isLooping() || sound.getAttenuation() == SoundInstance.Attenuation.NONE) return true;
     if (path.contains("music") || path.contains("theme") || path.contains("bgm") || path.contains("ost")) return true;
-    if (ns.contains("wither") && (path.contains("boss") || path.contains("fight") || path.contains("phase"))) return true;
 
     return false;
   }
 
-  public static void handleSyncPacket(BossRushSyncPayload payload) {
-    HexaCreateCore.LOGGER.info("[HealthBarDebug] Client received healthBarsJson: {}", payload.healthBarsJson());
 
+  public static void handleSyncPacket(BossRushSyncPayload payload) {
     Minecraft mc = Minecraft.getInstance();
 
     if (payload.healthBarsJson() != null && !payload.healthBarsJson().isEmpty() && !"{}".equals(payload.healthBarsJson())) {
@@ -163,12 +158,12 @@ public final class BossRushClientHud {
 
     if (!payload.totemSoundId().isEmpty() && mc.player != null) {
       ResourceLocation soundLoc = payload.totemSoundId().contains(":")
-      ? ResourceLocation.tryParse(payload.totemSoundId())
-      : ResourceLocation.fromNamespaceAndPath(HexaCreateCore.MODID, payload.totemSoundId());
+        ? ResourceLocation.tryParse(payload.totemSoundId())
+        : ResourceLocation.fromNamespaceAndPath(HexaCreateCore.MODID, payload.totemSoundId());
       if (soundLoc != null) {
         SoundEvent se = BuiltInRegistries.SOUND_EVENT.containsKey(soundLoc)
-        ? BuiltInRegistries.SOUND_EVENT.get(soundLoc)
-        : SoundEvent.createVariableRangeEvent(soundLoc);
+          ? BuiltInRegistries.SOUND_EVENT.get(soundLoc)
+          : SoundEvent.createVariableRangeEvent(soundLoc);
         mc.player.playSound(se, 1.0f, 1.0f);
       }
     }
@@ -216,6 +211,7 @@ public final class BossRushClientHud {
     }
   }
 
+
   private static void playBossRushMusic(String musicName) {
     playBossRushMusic(musicName, true);
   }
@@ -250,13 +246,6 @@ public final class BossRushClientHud {
   public static void onRenderVanillaBossBar(CustomizeGuiOverlayEvent.BossEventProgress event) {
     if (hasActiveCustomBossBar()) {
       event.setCanceled(true);
-    }
-  }
-
-  @SubscribeEvent
-  public static void onPlaySound(PlaySoundEvent event) {
-    if (shouldBlockExternalSound(event.getSound())) {
-      event.setSound(null);
     }
   }
 

@@ -231,10 +231,27 @@ public final class BossRushManager {
         continue;
       }
 
-      ResourceLocation currentDim = player.serverLevel().dimension().location();
+      ServerLevel level = player.serverLevel();
+      ResourceLocation currentDim = level.dimension().location();
       double maxDist = session.sequence.areaOfEffect();
       if (!currentDim.equals(session.dimension) || player.position().distanceToSqr(session.originPos) > (maxDist * maxDist)) {
         failAndCleanupSession(player, session, "§cLeft Boss Rush Arena");
+        continue;
+      }
+
+      // Fallback check for bosses like EnderDragon or modded bosses that discard/die without firing LivingDeathEvent
+      if (session.currentBossUuid != null) {
+        Entity boss = level.getEntity(session.currentBossUuid);
+        boolean bossFinished = (boss == null || !boss.isAlive() || boss.isRemoved());
+        if (!bossFinished && boss instanceof EnderDragon dragon && dragon.dragonDeathTime >= 180) {
+          dragon.discard();
+          bossFinished = true;
+        }
+        if (bossFinished) {
+          session.currentBossUuid = null;
+          session.bossIndexInPhase++;
+          spawnNextBossInPhase(player, session);
+        }
       }
     }
   }
@@ -246,6 +263,7 @@ public final class BossRushManager {
 
     for (RushSession session : new HashSet<>(ACTIVE_SESSIONS.values())) {
       if (deadUuid.equals(session.currentBossUuid)) {
+        session.currentBossUuid = null;
         ServerPlayer player = event.getEntity().getServer().getPlayerList().getPlayer(session.playerUuid);
         if (player != null && player.isAlive()) {
           session.bossIndexInPhase++;

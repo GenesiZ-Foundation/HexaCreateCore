@@ -27,6 +27,10 @@ public class HexaCreateCoreClient {
   @SubscribeEvent
   static void onClientSetup(FMLClientSetupEvent event) {
     EntityRenderers.register(ModEntities.CURSED_BLACKSMITH.get(), CursedBlacksmithRenderer::new);
+
+    event.enqueueWork(() -> {
+      com.genesiz.hexacreatecore.compat.WitherReincarnatedCompat.enforceApiBoundMusicConfig();
+    });
   }
 
   @SubscribeEvent
