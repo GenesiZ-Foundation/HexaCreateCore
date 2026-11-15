@@ -21,8 +21,14 @@ public final class TruncatedIcosahedronCage {
   private static final List<Vec3> PENTAGON_NORMALS = new ArrayList<>(12);
   private static final List<Vec3> HEXAGON_NORMALS = new ArrayList<>(20);
 
+  private static final List<List<Vec3>> FACES = new ArrayList<>(32);
+  private record FacePlane(Vec3 normal, double unitInradius) {}
+  private static final List<FacePlane> FACE_PLANES = new ArrayList<>(32);
+  private static final double PLANE_EPSILON = 1.0e-3D;
+
   private static final double PENTAGON_INRADIUS_RATIO = 0.93417235896D;
   private static final double HEXAGON_INRADIUS_RATIO = 0.98224694688D;
+
 
   static {
     double phi = (1.0D + Math.sqrt(5.0D)) * 0.5D;
@@ -57,6 +63,8 @@ public final class TruncatedIcosahedronCage {
       }
     }
     addNormalPermutations(HEXAGON_NORMALS, 0.0D, phi, 1.0D / phi, dodNorm);
+    buildOrderedFaces(PENTAGON_NORMALS);
+    buildOrderedFaces(HEXAGON_NORMALS);
   }
 
   private TruncatedIcosahedronCage() {}
@@ -87,13 +95,10 @@ public final class TruncatedIcosahedronCage {
 
   public static boolean isOutsideCage(Vec3 playerEyePos, Vec3 cageCenter, float radius) {
     Vec3 rel = playerEyePos.subtract(cageCenter);
-    double maxPentDist = radius * PENTAGON_INRADIUS_RATIO;
-    for (Vec3 normal : PENTAGON_NORMALS) {
-      if (rel.dot(normal) > maxPentDist) return true;
-    }
-    double maxHexDist = radius * HEXAGON_INRADIUS_RATIO;
-    for (Vec3 normal : HEXAGON_NORMALS) {
-      if (rel.dot(normal) > maxHexDist) return true;
+    for (FacePlane plane : FACE_PLANES) {
+      if (rel.dot(plane.normal()) > radius * plane.unitInradius()) {
+        return true;
+      }
     }
     return false;
   }
@@ -102,19 +107,26 @@ public final class TruncatedIcosahedronCage {
     poseStack.pushPose();
     poseStack.translate(cageCenter.x - camPos.x, cageCenter.y - camPos.y, cageCenter.z - camPos.z);
 
-    // 1. Dark-nebula vertex nodes at the 60 corners
+    // 1. Cosmic Ocean Nebula shader across all 32 polyhedron faces (12 pentagons + 20 hexagons, no aurora rim)
+    com.genesiz.hexacreatecore.threedified.shaders.hooks.PolyhedronFaceShaderHook
+      .bind(com.genesiz.hexacreatecore.threedified.shaders.dictionaries.CosmicOceanDictionary.DEFAULT)
+      .opacity(0.38f)
+      .rings(3)
+      .renderFaces(poseStack, bufferSource, FACES, radius, timeSeconds);
+
+    // 2. Dark-nebula vertex nodes at the 60 corners
     for (int i = 0; VERTICES.size() > i; i++) {
       Vec3 v = VERTICES.get(i);
       float pulse = 0.5f + 0.5f * (float) Math.sin((timeSeconds * 2.4f) + (i * 0.35f));
       int nodeCol = (pulse > 0.5f) ? 0xCC7E22CE : 0xCC10B981;
       RawGeometry.drawArcaneNodePrism(
         poseStack, bufferSource,
-      (float) (v.x * radius), (float) (v.y * radius), (float) (v.z * radius),
+        (float) (v.x * radius), (float) (v.y * radius), (float) (v.z * radius),
         0.045f, nodeCol
       );
     }
 
-    // 2. Wireframe edges of the 12 pentagons & 20 hexagons
+    // 3. Wireframe edges of the 12 pentagons & 20 hexagons
     VertexConsumer lineConsumer = bufferSource.getBuffer(RenderType.lines());
     Matrix4f mat = poseStack.last().pose();
     float wave = 0.5f + 0.5f * (float) Math.sin(timeSeconds * 2.0f);
@@ -132,5 +144,41 @@ public final class TruncatedIcosahedronCage {
     }
 
     poseStack.popPose();
+  }
+
+  private static void buildOrderedFaces(List<Vec3> normals) {
+    for (Vec3 normal : normals) {
+      double maxDot = -Double.MAX_VALUE;
+      for (Vec3 v : VERTICES) {
+        double d = v.dot(normal);
+        if (d > maxDot) maxDot = d;
+      }
+
+      List<Vec3> faceVerts = new ArrayList<>(6);
+      for (Vec3 v : VERTICES) {
+        if (Math.abs(v.dot(normal) - maxDot) < PLANE_EPSILON) {
+          faceVerts.add(v);
+        }
+      }
+      if (faceVerts.size() < 3) continue;
+
+      Vec3 center = Vec3.ZERO;
+      for (Vec3 v : faceVerts) center = center.add(v);
+      final Vec3 faceCenter = center.scale(1.0D / faceVerts.size());
+
+      Vec3 tangentU = faceVerts.get(0).subtract(faceCenter).normalize();
+      Vec3 tangentV = normal.cross(tangentU).normalize();
+
+      faceVerts.sort((a, b) -> {
+        Vec3 da = a.subtract(faceCenter);
+        Vec3 db = b.subtract(faceCenter);
+        double angA = Math.atan2(da.dot(tangentV), da.dot(tangentU));
+        double angB = Math.atan2(db.dot(tangentV), db.dot(tangentU));
+        return Double.compare(angA, angB);
+      });
+
+      FACE_PLANES.add(new FacePlane(normal, maxDot));
+      FACES.add(List.copyOf(faceVerts));
+    }
   }
 }

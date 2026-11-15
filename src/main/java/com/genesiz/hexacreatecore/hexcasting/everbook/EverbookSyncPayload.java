@@ -44,6 +44,10 @@ public record EverbookSyncPayload(
 
       EverbookData.BookState state = EverbookData.BookState.fromNbt(payload.bookNbt());
       EverbookData.write(bookStack, state);
+      if ("INSCRIBE_OFFHAND".equals(payload.action())) {
+        InteractionHand targetHand = (hand == InteractionHand.MAIN_HAND) ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND;
+        EverbookHexWriter.inscribeToHexItem(sp, sp.getItemInHand(targetHand), state.currentPage().entries());
+      }
     });
   }
 }

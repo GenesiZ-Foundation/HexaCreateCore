@@ -66,7 +66,9 @@ public final class EverbookSessionState {
   private static int riftOverreachTicks = 0;
   private static long lastRiftPenaltyTick = 0L;
   private static boolean sweepDeselecting = false;
+  private static boolean inscribeHovered = false;
 
+  public static boolean isInscribeHovered() { return inscribeHovered; }
   public static Vec3 getCageCenterPos() { return cageCenterPos; }
 
   private EverbookSessionState() {}
@@ -214,6 +216,7 @@ public final class EverbookSessionState {
     evalHovered = hit.evalButtonHovered();
     hoveredMiniNode = hit.miniGridNodeIndex();
     totalWrappedRows = Math.max(1, hit.totalRows());
+    inscribeHovered = hit.inscribeButtonHovered();
 
     boolean sprintHeld = mc.options.keySprint.isDown();
     long windowHandle = mc.getWindow().getWindow();
@@ -291,6 +294,16 @@ public final class EverbookSessionState {
     }
 
     if (!riftLocked) return;
+
+    if (event.getButton() == GLFW.GLFW_MOUSE_BUTTON_LEFT && event.getAction() == InputConstants.PRESS && inscribeHovered) {
+      syncToServer("INSCRIBE_OFFHAND");
+      mc.level.playSound(
+        mc.player, mc.player.getX(), mc.player.getY(), mc.player.getZ(),
+        SoundEvents.ENCHANTMENT_TABLE_USE, SoundSource.PLAYERS, 0.85f, 1.2f
+      );
+      event.setCanceled(true);
+      return;
+    }
 
     if (event.getButton() == GLFW.GLFW_MOUSE_BUTTON_LEFT && event.getAction() == InputConstants.PRESS && evalHovered) {
       triggerEvaluate();

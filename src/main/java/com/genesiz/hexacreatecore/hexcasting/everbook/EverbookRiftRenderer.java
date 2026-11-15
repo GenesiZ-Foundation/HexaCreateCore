@@ -3,6 +3,9 @@ package com.genesiz.hexacreatecore.hexcasting.everbook;
 import com.genesiz.hexacreatecore.HexaCreateCore;
 import com.genesiz.hexacreatecore.hexcasting.HexagonalGridManager;
 import com.genesiz.hexacreatecore.threedified.RawGeometry;
+import com.genesiz.hexacreatecore.threedified.shaders.dictionaries.CompositeDictionary;
+import com.genesiz.hexacreatecore.threedified.shaders.dictionaries.ShaderDictionary;
+import com.genesiz.hexacreatecore.threedified.shaders.hooks.PortalShaderHook;
 import com.genesiz.hexacreatecore.threedified.text.TextEffectStyle;
 import com.genesiz.hexacreatecore.threedified.text.ThreeDifiedTextRenderer;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -32,6 +35,7 @@ public final class EverbookRiftRenderer {
   private static Vec3 smoothedRiftPos = null;
   private static float smoothedRiftYaw = 0.0f;
   private static double smoothedRiftDropY = 0.0D;
+  private static final long RENDER_EPOCH_NANOS = System.nanoTime();
 
   private EverbookRiftRenderer() {}
 
@@ -70,7 +74,7 @@ public final class EverbookRiftRenderer {
     PoseStack ps = event.getPoseStack();
     MultiBufferSource.BufferSource buf = mc.renderBuffers().bufferSource();
     Font font = mc.font;
-    float timeSec = (System.currentTimeMillis() % 600000L) / 1000.0f;
+    float timeSec = (float) ((System.nanoTime() - RENDER_EPOCH_NANOS) * 1.0e-9D);
 
     RenderSystem.disableDepthTest();
     RenderSystem.enableBlend();
@@ -78,7 +82,11 @@ public final class EverbookRiftRenderer {
     ps.translate(renderAnchor.x - cam.x, renderAnchor.y - cam.y, renderAnchor.z - cam.z);
     ps.mulPose(Axis.YP.rotationDegrees(-renderYaw - 180.0f));
 
-    EverbookNebulaPortal.renderPortal(buf.getBuffer(RawGeometry.DIALOGUE_SOLID), ps.last().pose(), 0.0f, 0.0f, RIFT_HALF_W, RIFT_HALF_H, timeSec, 32, 22, false, false);
+    PortalShaderHook.bind(CompositeDictionary.EVERBOOK_DEFAULT)
+      .size(RIFT_HALF_W, RIFT_HALF_H)
+      .resolution(64, 12)
+      .render(ps, buf, timeSec);
+
     renderWrappedPatterns(ps, buf, font, timeSec);
     if (EverbookSessionState.isRiftMode()) { renderLeftEvaluationPanel(ps, buf, font, timeSec); renderRightFlatMiniGrid(ps, buf); }
     ps.popPose();
@@ -150,16 +158,43 @@ public final class EverbookRiftRenderer {
   }
 
 
-  private static void renderLeftEvaluationPanel(PoseStack ps, MultiBufferSource.BufferSource buf, Font font, float timeSec) {
-    boolean hov = EverbookSessionState.isEvalHovered();
+  private static void renderLeftEvaluationPanel(PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, Font font, float timeSeconds) {
+    boolean inscribeHover = EverbookSessionState.isInscribeHovered();
+    boolean evalHover = EverbookSessionState.isEvalHovered();
     float panelX = -2.42f;
 
-    // Keep the miniature wobbling Nebula Rift behind Evaluate
-    EverbookNebulaPortal.renderPortal(buf.getBuffer(RawGeometry.DIALOGUE_SOLID), ps.last().pose(), panelX, 0.36f, 0.44f, 0.15f, timeSec, 12, 8, hov, false);
-    buf.endBatch(RawGeometry.DIALOGUE_SOLID);
+    // 1. "Inscribe" Nebula Portal + Borderless Absolution (spectrum) Text
+    PortalShaderHook.bind(inscribeHover ? CompositeDictionary.EVERBOOK_EMERALD : CompositeDictionary.EVERBOOK_DEFAULT)
+      .at(panelX, 0.72f)
+      .size(0.44f, 0.15f)
+      .resolution(48, 8)
+      .flushBatch()
+      .render(poseStack, bufferSource, timeSeconds);
 
-    // Strip the rectangular BackdropMode.GLOW_BLOOM box while keeping the Starly gradient + 4-point sparkles
-    TextEffectStyle baseStarly = TextEffectStyle.starly(hov ? 0xFFFFD700 : 0xFFD8DEE9);
+    TextEffectStyle rawSpectrum = TextEffectStyle.spectrum();
+    TextEffectStyle borderlessAbsolution = new TextEffectStyle(
+      rawSpectrum.colors(), rawSpectrum.stops(), rawSpectrum.scrollSpeed(),
+      rawSpectrum.waveAmplitude(), rawSpectrum.waveFrequency(),
+      TextEffectStyle.BackdropMode.NONE,
+      rawSpectrum.glowColor(), rawSpectrum.secondaryGlowColor(), true, true, false, 0.0f
+    );
+
+    poseStack.pushPose();
+    poseStack.translate(panelX, 0.75f, 0.045f);
+    poseStack.scale(0.0085f, -0.0085f, 0.0085f);
+    String inscribeLabel = "Inscribe";
+    ThreeDifiedTextRenderer.draw3D(poseStack, bufferSource, font, inscribeLabel, -font.width(inscribeLabel) * 0.5f, 0.0f, borderlessAbsolution);
+    poseStack.popPose();
+
+    // 2. "Evaluate" Nebula Portal + Borderless Starly Text
+    PortalShaderHook.bind(evalHover ? CompositeDictionary.EVERBOOK_EMERALD : CompositeDictionary.EVERBOOK_DEFAULT)
+      .at(panelX, 0.36f)
+      .size(0.44f, 0.15f)
+      .resolution(48, 8)
+      .flushBatch()
+      .render(poseStack, bufferSource, timeSeconds);
+
+    TextEffectStyle baseStarly = TextEffectStyle.starly(evalHover ? 0xFFFFD700 : 0xFFD8DEE9);
     TextEffectStyle borderlessStarly = new TextEffectStyle(
       baseStarly.colors(), baseStarly.stops(), baseStarly.scrollSpeed(),
       baseStarly.waveAmplitude(), baseStarly.waveFrequency(),
@@ -167,20 +202,30 @@ public final class EverbookRiftRenderer {
       baseStarly.glowColor(), baseStarly.secondaryGlowColor(), true
     );
 
-    ps.pushPose();
-    ps.translate(panelX, 0.39f, 0.045f);
-    ps.scale(0.0085f, -0.0085f, 0.0085f);
-    String label = "Evaluate";
-    ThreeDifiedTextRenderer.draw3D(ps, buf, font, label, -font.width(label) * 0.5f, 0.0f, borderlessStarly);
-    ps.popPose();
+    poseStack.pushPose();
+    poseStack.translate(panelX, 0.39f, 0.045f);
+    poseStack.scale(0.0085f, -0.0085f, 0.0085f);
+    String evalLabel = "Evaluate";
+    ThreeDifiedTextRenderer.draw3D(poseStack, bufferSource, font, evalLabel, -font.width(evalLabel) * 0.5f, 0.0f, borderlessStarly);
+    poseStack.popPose();
 
+    // 3. Evaluation Result Portal
     if (!EverbookSessionState.hasEvalResult()) return;
-    boolean col = EverbookSessionState.isEvalCollapsed(), ok = EverbookSessionState.isEvalSuccess();
-    EverbookNebulaPortal.renderPortal(buf.getBuffer(RawGeometry.DIALOGUE_SOLID), ps.last().pose(), panelX, -0.06f, 0.58f, 0.22f, timeSec, 14, 10, ok && !col, col);
-    buf.endBatch(RawGeometry.DIALOGUE_SOLID);
+    boolean collapsed = EverbookSessionState.isEvalCollapsed();
+    boolean success = EverbookSessionState.isEvalSuccess();
 
-    drawCenteredText(ps, buf, font, panelX, 0.05f, 0.0068f, (ok ? "§aResult: §f" : "§cResult: §f") + EverbookSessionState.getEvalSummary());
-    drawCenteredText(ps, buf, font, panelX, -0.04f, 0.0068f, col ? "§cToo many recursions, collapsed rift" : ("§7Recursions: §b" + EverbookSessionState.getEvalRecursions()));
+    ShaderDictionary resultDictionary = collapsed ? CompositeDictionary.EVERBOOK_CRIMSON
+      : (success ? CompositeDictionary.EVERBOOK_EMERALD : CompositeDictionary.EVERBOOK_DEFAULT);
+
+    PortalShaderHook.bind(resultDictionary)
+      .at(panelX, -0.06f)
+      .size(0.58f, 0.22f)
+      .resolution(48, 8)
+      .flushBatch()
+      .render(poseStack, bufferSource, timeSeconds);
+
+    drawCenteredText(poseStack, bufferSource, font, panelX, 0.05f, 0.0068f, (success ? "§aResult: §f" : "§cResult: §f") + EverbookSessionState.getEvalSummary());
+    drawCenteredText(poseStack, bufferSource, font, panelX, -0.04f, 0.0068f, collapsed ? "§cToo many recursions, collapsed rift" : ("§7Recursions: §b" + EverbookSessionState.getEvalRecursions()));
   }
 
   private static void drawCenteredText(PoseStack ps, MultiBufferSource buf, Font font, float x, float y, float sc, String raw) {

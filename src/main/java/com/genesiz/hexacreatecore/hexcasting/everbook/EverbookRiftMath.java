@@ -14,7 +14,15 @@ import java.util.List;
 
 public final class EverbookRiftMath {
 
-  public record HitResult(int patternIndex, boolean evalButtonHovered, int miniGridNodeIndex, int totalRows, int autoScrollDir) {}
+  public record HitResult(
+    int patternIndex,
+    boolean inscribeButtonHovered,
+    boolean evalButtonHovered,
+    int miniGridNodeIndex,
+    int totalRows,
+    int autoScrollDir
+  ) {}
+
   public record Point2D(float x, float y) {}
   private record AxialStep(int dq, int dr) {}
 
@@ -182,20 +190,27 @@ public final class EverbookRiftMath {
     Vector3f localDir = new Vector3f((float) lookVec.x, (float) lookVec.y, (float) lookVec.z);
     invRotation.transform(localDir);
 
-    if (Math.abs(localDir.z) < 1.0e-5f) return new HitResult(-1, false, -1, totalRows, 0);
+    if (Math.abs(localDir.z) < 1.0e-5f) return new HitResult(-1, false, false, -1, totalRows, 0);
     float hitDistance = -localOrigin.z / localDir.z;
-    if (hitDistance <= 0.0f) return new HitResult(-1, false, -1, totalRows, 0);
+    if (hitDistance <= 0.0f) return new HitResult(-1, false, false, -1, totalRows, 0);
 
-    float hitX = localOrigin.x + (localDir.x * hitDistance), hitY = localOrigin.y + (localDir.y * hitDistance);
-    boolean evalHovered = Math.abs(hitX - (-2.25f)) < 0.35f && Math.abs(hitY - 0.36f) < 0.12f;
+    float hitX = localOrigin.x + (localDir.x * hitDistance);
+    float hitY = localOrigin.y + (localDir.y * hitDistance);
+    boolean inscribeHovered = Math.abs(hitX - (-2.42f)) < 0.44f && Math.abs(hitY - 0.72f) < 0.15f;
+    boolean evalHovered = Math.abs(hitX - (-2.42f)) < 0.44f && Math.abs(hitY - 0.36f) < 0.15f;
 
     int hitMiniNode = -1;
     float bestMiniDistSq = 0.055f * 0.055f;
     for (int row = 0; MINI_ROWS > row; row++) {
       for (int col = 0; MINI_COLS > col; col++) {
         Point2D nodePos = getMiniNodePoint(row, col);
-        float dx = hitX - nodePos.x(), dy = hitY - nodePos.y(), distSq = dx * dx + dy * dy;
-        if (bestMiniDistSq > distSq) { bestMiniDistSq = distSq; hitMiniNode = (row * MINI_COLS) + col; }
+        float dx = hitX - nodePos.x();
+        float dy = hitY - nodePos.y();
+        float distSq = dx * dx + dy * dy;
+        if (bestMiniDistSq > distSq) {
+          bestMiniDistSq = distSq;
+          hitMiniNode = (row * MINI_COLS) + col;
+        }
       }
     }
 
@@ -205,10 +220,14 @@ public final class EverbookRiftMath {
     for (int i = 0; entries.size() > i; i++) {
       float visibleRow = (i / COLS_PER_ROW) - scrollOffset;
       if (-0.6f > visibleRow || visibleRow > 5.2f) continue;
-      float cellX = startX + ((i % COLS_PER_ROW) * CELL_SIZE), cellY = PATTERN_TOP_Y - (visibleRow * CELL_SIZE);
-      if (Math.abs(hitX - cellX) < (CELL_SIZE * 0.46f) && Math.abs(hitY - cellY) < (CELL_SIZE * 0.46f)) { hitPattern = i; break; }
+      float cellX = startX + ((i % COLS_PER_ROW) * CELL_SIZE);
+      float cellY = PATTERN_TOP_Y - (visibleRow * CELL_SIZE);
+      if (Math.abs(hitX - cellX) < (CELL_SIZE * 0.46f) && Math.abs(hitY - cellY) < (CELL_SIZE * 0.46f)) {
+        hitPattern = i;
+        break;
+      }
     }
-    return new HitResult(hitPattern, evalHovered, hitMiniNode, totalRows, autoScroll);
+    return new HitResult(hitPattern, inscribeHovered, evalHovered, hitMiniNode, totalRows, autoScroll);
   }
 
   public static void drawBoldAbsolutionPattern(PoseStack poseStack, VertexConsumer quadConsumer, float centerX, float centerY, float depthZ, float scale, String angles, String startDirName, boolean isSelected, boolean isHovered, float timeSeconds) {
@@ -282,4 +301,5 @@ public final class EverbookRiftMath {
     int b = (int) (FastColor.ARGB32.blue(c0) + (FastColor.ARGB32.blue(c1) - FastColor.ARGB32.blue(c0)) * t);
     return FastColor.ARGB32.color(a, r, g, b);
   }
+
 }

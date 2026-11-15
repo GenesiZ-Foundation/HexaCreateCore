@@ -15,11 +15,16 @@ public class EverbookItem extends Item {
   }
 
   @Override
-  public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
+  public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
     EverbookData.BookState state = EverbookData.read(stack);
-    int totalPatterns = state.pages().stream().mapToInt(p -> p.entries().size()).sum();
-    tooltip.add(Component.literal("§7Chapter: §d" + state.currentPage().title() + " §8(" + totalPatterns + " sigils)"));
-    tooltip.add(Component.literal("§8Sneak + Right-Click: Open 3D Soul Grid & Nebula Rift"));
-    tooltip.add(Component.literal("§8Sprint + Left-Click (in Grid): Lock Rift & Mini-Grid"));
+    int iotaCount = state.currentPage().entries().size();
+    tooltipComponents.add(Component.literal("§7Chapter: §d" + state.currentPage().title() + " §8(" + iotaCount + (iotaCount == 1 ? " Iota)" : " Iotas)")));
+    tooltipComponents.add(Component.literal("§8Right-Click: §fOpen 3D Soul Grid & Nebula Rift"));
+    tooltipComponents.add(Component.literal("§8Sprint + Left-Click (in Grid): §fLock Rift & Mini-Grid"));
+    tooltipComponents.add(Component.empty());
+    tooltipComponents.add(
+      Component.literal("One of the concepts of the world, myths said that it could weave imagination itself, on the back of the book is written \"The Creator's favorite\"")
+        .withStyle(net.minecraft.ChatFormatting.DARK_PURPLE, net.minecraft.ChatFormatting.ITALIC)
+    );
   }
 }
