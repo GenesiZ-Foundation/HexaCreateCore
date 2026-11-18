@@ -5,7 +5,7 @@ import com.genesiz.hexacreatecore.datagen.ModModelProvider;
 import com.genesiz.hexacreatecore.threedified.data.DialogueReloadListener;
 import com.genesiz.hexacreatecore.threedified.hologram.BlueprintReloadListener;
 import com.genesiz.hexacreatecore.entity.ModEntities;
-import com.genesiz.hexacreatecore.item.HexaCreateCoreItems;
+import com.genesiz.hexacreatecore.item.ModItems;
 import com.genesiz.hexacreatecore.item.ModCreativeModeTabs;
 import com.genesiz.hexacreatecore.registry.ModEffects;
 import com.mojang.logging.LogUtils;
@@ -27,11 +27,12 @@ public class HexaCreateCore {
     modEventBus.addListener(this::gatherData);
 
     ModCreativeModeTabs.register(modEventBus);
-    HexaCreateCoreItems.register(modEventBus);
+    ModItems.register(modEventBus);
     ModEntities.register(modEventBus);
     ModEffects.register(modEventBus);
 
     if (FMLEnvironment.dist.isClient()) {
+      preWarmHexXplat();
       modEventBus.addListener(DialogueReloadListener::onRegisterClientReloadListeners);
       modEventBus.addListener(BlueprintReloadListener::onRegisterClientReloadListeners);
       modEventBus.addListener(com.genesiz.hexacreatecore.animations.AnimationSequenceReloadListener::onRegisterClientReloadListeners);
@@ -50,5 +51,19 @@ public class HexaCreateCore {
       event.includeClient(), 
       new ModModelProvider(event.getGenerator().getPackOutput(), event.getExistingFileHelper())
     );
+  }
+
+  private static void preWarmHexXplat() {
+    ClassLoader prev = Thread.currentThread().getContextClassLoader();
+    try {
+      Thread.currentThread().setContextClassLoader(HexaCreateCore.class.getClassLoader());
+      Class.forName("at.petrak.hexcasting.xplat.IXplatAbstractions").getField("INSTANCE").get(null);
+      if (net.neoforged.fml.loading.FMLEnvironment.dist.isClient()) {
+        Class.forName("at.petrak.hexcasting.xplat.IClientXplatAbstractions").getField("INSTANCE").get(null);
+      }
+    } catch (Throwable ignored) {
+    } finally {
+      Thread.currentThread().setContextClassLoader(prev);
+    }
   }
 }

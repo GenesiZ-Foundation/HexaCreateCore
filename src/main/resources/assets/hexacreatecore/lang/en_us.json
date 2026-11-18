@@ -1,6 +1,4 @@
 {
-  "item.hexacreatecore.debugger": "Debugger",
-  "item.hexacreatecore.cursed_blacksmith_spawn_egg": "Cursed Blacksmith Spawn Egg",
   
   "creativetab.hexacreatecore.mod_items": "HexaCreate",
 
@@ -9,7 +7,11 @@
   "effect.hexacreatecore.soul_fracture": "Soul Fracture",
   "effect.hexacreatecore.soul_fracture.description": "Your severed soul has weakened your vessel, reducing Maximum Health by 33% per stack. Uncurable.",
 
+  "item.hexacreatecore.debugger": "Debugger",
+  "item.hexacreatecore.cursed_blacksmith_spawn_egg": "Cursed Blacksmith Spawn Egg",
   "item.hexacreatecore.everbook": "The Everbook",
+  "item.hexacreatecore.wonderum": "Wonderum",
+
   "key.categories.hexacreatecore": "HexaCreateCore",
   "key.hexacreatecore.delete_iota": "Delete Selected Iota",
   "key.hexacreatecore.difficulty_menu": "Open Difficulty Menu",

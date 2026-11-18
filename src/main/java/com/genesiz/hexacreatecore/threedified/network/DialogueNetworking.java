@@ -1,6 +1,7 @@
 package com.genesiz.hexacreatecore.threedified.network;
 
 import com.genesiz.hexacreatecore.HexaCreateCore;
+import com.genesiz.hexacreatecore.create.wonderum.WonderumAnchorPayload;
 import com.genesiz.hexacreatecore.decorators.annotations.DialogueAction;
 import com.genesiz.hexacreatecore.threedified.hologram.MultiblockHologramRenderer;
 import com.genesiz.hexacreatecore.hexcasting.HexagonalGridManager;
@@ -213,6 +214,24 @@ public final class DialogueNetworking {
         com.genesiz.hexacreatecore.hexcasting.everbook.EverbookEvalPayload.TYPE,
         com.genesiz.hexacreatecore.hexcasting.everbook.EverbookEvalPayload.STREAM_CODEC.cast(),
         com.genesiz.hexacreatecore.hexcasting.everbook.EverbookEvalPayload::handle
+      );
+
+      registrar.playToServer(
+        WonderumAnchorPayload.TYPE,
+        WonderumAnchorPayload.STREAM_CODEC,
+        WonderumAnchorPayload::handleServer
+      );
+
+      registrar.playToClient(
+        com.genesiz.hexacreatecore.create.wonderum.wormhole.WormholeSyncPayload.TYPE,
+        com.genesiz.hexacreatecore.create.wonderum.wormhole.WormholeSyncPayload.STREAM_CODEC,
+        com.genesiz.hexacreatecore.create.wonderum.wormhole.WormholeSyncPayload::handleClient
+      );
+
+      registrar.playToServer(
+        com.genesiz.hexacreatecore.create.wonderum.blueprint.WonderumDraftBlockPayload.TYPE,
+        com.genesiz.hexacreatecore.create.wonderum.blueprint.WonderumDraftBlockPayload.STREAM_CODEC,
+        com.genesiz.hexacreatecore.create.wonderum.blueprint.WonderumDraftBlockPayload::handleServer
       );
     }
   }

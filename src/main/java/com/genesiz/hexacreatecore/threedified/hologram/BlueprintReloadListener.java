@@ -19,6 +19,7 @@ public final class BlueprintReloadListener extends SimpleJsonResourceReloadListe
   private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
   private static final Map<String, MultiblockBlueprintData> BLUEPRINTS = new HashMap<>();
   private static boolean hasLoadedOnce = false;
+  private static final List<String> WONDERUM_IDS = new ArrayList<>();
 
   public BlueprintReloadListener() {
     super(GSON, "blueprints");
@@ -43,7 +44,8 @@ public final class BlueprintReloadListener extends SimpleJsonResourceReloadListe
       try (var reader = entry.getValue().openAsReader()) {
         JsonElement json = GsonHelper.fromJson(GSON, reader, JsonElement.class);
         if (json != null) {
-          parseAndStore(json);
+          boolean isWonderum = entry.getKey().getPath().contains("structures/wonderum/");
+          parseAndStore(json, isWonderum);
         }
       } catch (Exception e) {
         e.printStackTrace();
@@ -64,13 +66,16 @@ public final class BlueprintReloadListener extends SimpleJsonResourceReloadListe
   @Override
   protected void apply(Map<ResourceLocation, JsonElement> objects, ResourceManager manager, ProfilerFiller profiler) {
     BLUEPRINTS.clear();
+    WONDERUM_IDS.clear();
     hasLoadedOnce = true;
-    for (JsonElement element : objects.values()) {
-      parseAndStore(element);
+    for (Map.Entry<ResourceLocation, JsonElement> entry : objects.entrySet()) {
+      boolean isWonderum = entry.getKey().getPath().contains("structures/wonderum/");
+      parseAndStore(entry.getValue(), isWonderum);
     }
   }
 
-  private static void parseAndStore(JsonElement element) {
+  private static void parseAndStore(JsonElement element, boolean isWonderum) {
+
     JsonObject root = GsonHelper.convertToJsonObject(element, "blueprint");
     String structureId = GsonHelper.getAsString(root, "structure_id");
 
@@ -128,5 +133,15 @@ public final class BlueprintReloadListener extends SimpleJsonResourceReloadListe
     }
 
     BLUEPRINTS.put(structureId, new MultiblockBlueprintData(structureId, bgColor, borderColor, progressColor, arrX, arrY, arrZ, arrStates));
+    if (isWonderum && !WONDERUM_IDS.contains(structureId)) {
+      WONDERUM_IDS.add(structureId);
+    }
+  }
+
+  public static List<String> getWonderumBlueprintIds() {
+    if (!hasLoadedOnce) {
+      forceLoadFromClientResources();
+    }
+    return Collections.unmodifiableList(WONDERUM_IDS);
   }
 }

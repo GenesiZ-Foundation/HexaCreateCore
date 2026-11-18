@@ -400,4 +400,16 @@ public final class MultiblockHologramRenderer {
       delegate.putBulkData(pose, quad, brightness, red * this.redMul, green * this.greenMul, blue * this.blueMul, this.alpha / 255.0f, lightmap, packedOverlay, false);
     }
   }
+
+  public static boolean isPendingPlacement() {
+    return pendingPlacement;
+  }
+
+  public static String getActiveStructureId() {
+    return activeStructureId;
+  }
+
+  public static BlockPos getAnchorPos() {
+    return anchorPos;
+  }
 }

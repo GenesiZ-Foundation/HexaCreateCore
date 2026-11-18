@@ -17,6 +17,20 @@ public final class PortalShaderHook {
   private int angularSegments = 64;
   private int radialRings = 12;
   private boolean flushAfterRender = false;
+  private float centerZ = 0.0f;
+  private float halfDepth = 0.0f;
+
+  public PortalShaderHook at(float centerX, float centerY, float centerZ) {
+    this.centerX = centerX;
+    this.centerY = centerY;
+    this.centerZ = centerZ;
+    return this;
+  }
+
+  public PortalShaderHook depth(float halfDepth) {
+    this.halfDepth = halfDepth;
+    return this;
+  }
 
   private PortalShaderHook(ShaderDictionary dictionary) {
     this.dictionary = dictionary;
@@ -55,6 +69,21 @@ public final class PortalShaderHook {
       bufferSource.getBuffer(RawGeometry.DIALOGUE_SOLID),
       poseStack.last().pose(),
       centerX, centerY, halfWidth, halfHeight,
+      timeSeconds, angularSegments, radialRings,
+      dictionary
+    );
+    if (flushAfterRender && bufferSource instanceof MultiBufferSource.BufferSource buffered) {
+      buffered.endBatch(RawGeometry.DIALOGUE_SOLID);
+    }
+  }
+
+  public void render3D(PoseStack poseStack, MultiBufferSource bufferSource, float timeSeconds) {
+    com.genesiz.hexacreatecore.threedified.shaders.renderers.VolumetricSingularityRenderer.render(
+      poseStack,
+      bufferSource.getBuffer(RawGeometry.DIALOGUE_SOLID),
+      centerX, centerY, centerZ,
+      halfWidth, halfHeight,
+      halfDepth > 0.0f ? halfDepth : Math.min(halfWidth, halfHeight) * 0.45f,
       timeSeconds, angularSegments, radialRings,
       dictionary
     );

@@ -6,7 +6,8 @@
     "CameraMixin",
     "MouseHandlerMixin",
     "LocalPlayerMixin",
-    "EntityRenderDispatcherMixin"
+    "EntityRenderDispatcherMixin",
+    "KineticBlockEntityMixin"
   ],
   "client": [
     "SoundEngineMixin",

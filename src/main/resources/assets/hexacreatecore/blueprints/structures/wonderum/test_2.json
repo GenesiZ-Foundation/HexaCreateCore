@@ -1,0 +1,34 @@
+{
+  "structure_id": "test_2",
+  "bg_color": "#DD0D0814",
+  "border_color": "#22FF6600",
+  "progress_color": "FF21B7D1",
+  "legend": {
+    "C": "minecraft:stone"
+  },
+  "layers": [
+    [
+      "CCCCCCC",
+      "C C C C",
+      "CCCCCCC",
+      "C C C C",
+      "CCCCCCC"
+    ],
+    [
+      "C C C C",
+      "       ",
+      "C C C C",
+      "       ",
+      "C C C C"
+    ],
+    [
+      "CCCCCCC",
+      "C C C C",
+      "CCCCCCC",
+      "C C C C",
+      "CCCCCCC"
+    ]
+  ]
+}
+
+

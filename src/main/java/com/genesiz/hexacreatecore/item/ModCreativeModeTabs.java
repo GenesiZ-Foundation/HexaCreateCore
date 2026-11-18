@@ -18,12 +18,12 @@ public class ModCreativeModeTabs {
   () -> CreativeModeTab
     .builder()
     .icon(
-    ()-> new ItemStack(HexaCreateCoreItems.DEBUGGER.get()))
+    ()-> new ItemStack(ModItems.DEBUGGER.get()))
     .title(Component.translatable("creativetab.hexacreatecore.mod_items"))
     .displayItems(
     (ItemDisplayParameters, output) -> {
-        output.accept(HexaCreateCoreItems.DEBUGGER);
-        output.accept(HexaCreateCoreItems.CURSED_BLACKSMITH_SPAWN_EGG);
+        output.accept(ModItems.DEBUGGER);
+        output.accept(ModItems.CURSED_BLACKSMITH_SPAWN_EGG);
 
 
     }).build()
