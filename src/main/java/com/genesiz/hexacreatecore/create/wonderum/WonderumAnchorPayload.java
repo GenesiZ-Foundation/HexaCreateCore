@@ -45,21 +45,9 @@ public record WonderumAnchorPayload(UUID subLevelId) implements CustomPacketPayl
         Object serverHandler = handlerClass.getMethod("get", ServerLevel.class).invoke(null, level);
         serverHandler.getClass().getMethod("toggleLock", UUID.class).invoke(serverHandler, payload.subLevelId());
 
-        String statusMsg = "§b[Wonderum] §fSub-Level Spatial Anchor §aTOGGLED §7(" + payload.subLevelId().toString().substring(0, 8) + ")";
-        try {
-          Method isLockedMethod = serverHandler.getClass().getMethod("isLocked", UUID.class);
-          boolean locked = (boolean) isLockedMethod.invoke(serverHandler, payload.subLevelId());
-          statusMsg = locked ? "§b[Wonderum] §fSub-Level Spatial Anchor §aLOCKED" : "§b[Wonderum] §fSub-Level Spatial Anchor §eRELEASED";
-        } catch (Throwable ignored) {}
-
         level.playSound(null, sp.blockPosition(), SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 0.75f, 1.35f);
         level.sendParticles(ParticleTypes.END_ROD, sp.getX(), sp.getEyeY(), sp.getZ(), 12, 0.25D, 0.25D, 0.25D, 0.04D);
-        sp.displayClientMessage(Component.literal(statusMsg), false);
-      } catch (Throwable t) {
-        Throwable cause = (t.getCause() != null) ? t.getCause() : t;
-        sp.displayClientMessage(Component.literal("§c[AnchorServerErr] §f" + cause.getClass().getSimpleName() + ": " + cause.getMessage()), false);
-        cause.printStackTrace();
-      }
+      } catch (Throwable ignored) {}
     });
   }
 }
