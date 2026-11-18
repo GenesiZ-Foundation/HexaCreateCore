@@ -45,13 +45,22 @@ public final class MultiblockHologramRenderer {
   private static double smoothDirZ = 1.0D;
   private static boolean isOrbitInitialized = false;
 
+  private static net.minecraft.world.level.block.Rotation activeRotation = net.minecraft.world.level.block.Rotation.NONE;
+  private static net.minecraft.world.level.block.Mirror activeMirror = net.minecraft.world.level.block.Mirror.NONE;
+  private static String cachedPromptLabel = "";
+
+  private static Vec3 smoothedBlueprintListPos = null;
+  private static float smoothedBlueprintListYaw = 0.0f;
 
   public static void setProjection(HologramProjectionPayload payload) {
     if (payload.durationTicks() == -1) {
       pendingPlacement = true;
-      activeStructureId = null;
+      activeStructureId = payload.structureId().isEmpty() ? null : payload.structureId();
       anchorPos = null;
       remainingTicks = 0;
+      activeRotation = net.minecraft.world.level.block.Rotation.NONE;
+      activeMirror = net.minecraft.world.level.block.Mirror.NONE;
+      promptLines = null;
 
       Minecraft mc = Minecraft.getInstance();
       if (mc.player != null) {
@@ -63,14 +72,17 @@ public final class MultiblockHologramRenderer {
       activeStructureId = null;
       anchorPos = null;
       remainingTicks = 0;
-      isOrbitInitialized = false; // Reset smoothing tracker
+      activeRotation = net.minecraft.world.level.block.Rotation.NONE;
+      activeMirror = net.minecraft.world.level.block.Mirror.NONE;
+      promptLines = null;
+      isOrbitInitialized = false;
     } else {
       pendingPlacement = false;
       activeStructureId = payload.structureId();
       anchorPos = payload.anchorPos();
       remainingTicks = payload.durationTicks();
       elapsedSeconds = 0.0f;
-      isOrbitInitialized = false; // Reset smoothing tracker to capture clean startup point
+      isOrbitInitialized = false;
     }
   }
 
@@ -94,6 +106,7 @@ public final class MultiblockHologramRenderer {
 
     if (pendingPlacement) {
       renderPlacementPrompt(event.getPoseStack(), mc);
+      renderBlueprintSelectionStack(event.getPoseStack(), mc);
       return;
     }
 
@@ -102,16 +115,18 @@ public final class MultiblockHologramRenderer {
     MultiblockBlueprintData blueprint = BlueprintReloadListener.getBlueprint(activeStructureId);
     if (blueprint == null) return;
 
+    MultiblockBlueprintData.TransformedBlueprint transformed = getTransformedBlueprint(mc.level, anchorPos, blueprint);
+
     // Progress Assessment Phase
-    int totalBlocks = blueprint.blockCount();
-    int matchingBlocks = checkStructureProgress(mc, blueprint, totalBlocks);
+    int totalBlocks = transformed.blockCount();
+    int matchingBlocks = checkStructureProgress(mc, transformed, totalBlocks);
     float ratio = totalBlocks > 0 ? (float) matchingBlocks / totalBlocks : 0.0f;
     
     // Condition check: stop logic flow instantly if structure is 100% finished
     if (ratio >= 1.0f){
       clearActiveHologramProjector();
       return;
-    };
+    }
 
     // Structural Rendering Phase
     PoseStack poseStack = event.getPoseStack();
@@ -121,10 +136,10 @@ public final class MultiblockHologramRenderer {
     float deltaSeconds = mc.getTimer().getRealtimeDeltaTicks() / 20.0f;
     elapsedSeconds += deltaSeconds;
 
-    renderGhostBlocks(mc, poseStack, bufferSource, cam, blueprint, totalBlocks);
+    renderGhostBlocks(mc, poseStack, bufferSource, cam, transformed, totalBlocks);
 
     // Decoupled Orbiter Interface Rendering Phase
-    renderOrbitalProgressBar(mc, poseStack, bufferSource, cam, blueprint, totalBlocks, ratio);
+    renderOrbitalProgressBar(mc, poseStack, bufferSource, cam, blueprint, transformed, totalBlocks, ratio);
   }
 
   private static void clearActiveHologramProjector() {
@@ -141,7 +156,7 @@ public final class MultiblockHologramRenderer {
     }
   }
 
-  private static int checkStructureProgress(Minecraft mc, MultiblockBlueprintData blueprint, int totalBlocks) {
+  private static int checkStructureProgress(Minecraft mc, MultiblockBlueprintData.TransformedBlueprint blueprint, int totalBlocks) {
     int matchingBlocks = 0;
     int[] offX = blueprint.offsetX();
     int[] offY = blueprint.offsetY();
@@ -157,7 +172,7 @@ public final class MultiblockHologramRenderer {
     return matchingBlocks;
   }
 
-  private static void renderGhostBlocks(Minecraft mc, PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, Vec3 cam, MultiblockBlueprintData blueprint, int totalBlocks) {
+  private static void renderGhostBlocks(Minecraft mc, PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, Vec3 cam, MultiblockBlueprintData.TransformedBlueprint blueprint, int totalBlocks) {
     BlockRenderDispatcher blockRenderer = mc.getBlockRenderer();
     RenderType ghostRenderType = Sheets.translucentCullBlockSheet();
     VertexConsumer baseBuffer = bufferSource.getBuffer(ghostRenderType);
@@ -179,12 +194,11 @@ public final class MultiblockHologramRenderer {
       CURSOR_POS.set(anchorPos.getX() + offX[i], anchorPos.getY() + offY[i], anchorPos.getZ() + offZ[i]);
       BlockState worldState = mc.level.getBlockState(CURSOR_POS);
 
-      // Skip rendering if block is correctly in place
       if (worldState.is(expectedState.getBlock())) continue;
       if (0.0f >= rawProgress) continue;
 
       float t = rawProgress >= 1.0f ? 1.0f : rawProgress;
-      float ease = 1.0f - (float) Math.pow(1.0f - t, 3); // Cubic Ease Out
+      float ease = 1.0f - (float) Math.pow(1.0f - t, 3);
 
       int currentAlpha = (int) (140.0f * ease);
       if (1 > currentAlpha) continue;
@@ -224,10 +238,10 @@ public final class MultiblockHologramRenderer {
     return false;
   }
 
-  private static void renderOrbitalProgressBar(Minecraft mc, PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, Vec3 cam, MultiblockBlueprintData blueprint, int totalBlocks, float ratio) {
-    int[] offX = blueprint.offsetX();
-    int[] offY = blueprint.offsetY();
-    int[] offZ = blueprint.offsetZ();
+  private static void renderOrbitalProgressBar(Minecraft mc, PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, Vec3 cam, MultiblockBlueprintData blueprint, MultiblockBlueprintData.TransformedBlueprint transformed, int totalBlocks, float ratio) {
+    int[] offX = transformed.offsetX();
+    int[] offY = transformed.offsetY();
+    int[] offZ = transformed.offsetZ();
 
     int maxBoundsX = 0;
     int maxBoundsY = 0;
@@ -257,9 +271,7 @@ public final class MultiblockHologramRenderer {
       targetDirZ = 1.0D;
     }
 
-    // 1. ELASTIC FOLLOW INTERPOLATION: Compute lerp factor using delta time
     float deltaSeconds = mc.getTimer().getRealtimeDeltaTicks() / 20.0f;
-    // An interpolation scale of 10.0f gives it that identical cinematic swing delay as the dialogues
     float lerpFactor = 1.0f - (float) Math.exp(-10.0f * deltaSeconds);
 
     if (!isOrbitInitialized) {
@@ -273,7 +285,6 @@ public final class MultiblockHologramRenderer {
       smoothDirZ += (targetDirZ - smoothDirZ) * lerpFactor;
     }
 
-    // Re-normalize the smoothed tracking vectors to maintain a clean circular orbit radius perimeter
     double smoothDistance = Math.sqrt(smoothDirX * smoothDirX + smoothDirY * smoothDirY + smoothDirZ * smoothDirZ);
     if (smoothDistance > 0.001D) {
       smoothDirX /= smoothDistance;
@@ -284,14 +295,13 @@ public final class MultiblockHologramRenderer {
     double maxRadius = Math.max(maxBoundsX, Math.max(maxBoundsY, maxBoundsZ)) * 0.5D;
     double orbitRadius = maxRadius + 2.0D;
 
-    // Apply your -0.2D height tweak to sit perfectly weighted slightly below the crosshair line
     double barWorldX = centerX + (smoothDirX * orbitRadius);
     double barWorldY = centerY + (smoothDirY * orbitRadius) - 0.2D;
     double barWorldZ = centerZ + (smoothDirZ * orbitRadius);
 
     poseStack.pushPose();
     poseStack.translate(barWorldX - cam.x, barWorldY - cam.y, barWorldZ - cam.z);
-    
+
     poseStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(-camera.getYRot() - 180.0F));
     poseStack.mulPose(com.mojang.math.Axis.XP.rotationDegrees(-camera.getXRot()));
     poseStack.scale(0.015F, -0.015F, 0.015F);
@@ -299,11 +309,11 @@ public final class MultiblockHologramRenderer {
     net.minecraft.client.renderer.MultiBufferSource.BufferSource progressBuffers = mc.renderBuffers().bufferSource();
 
     RawGeometry.drawProgressBar(
-        poseStack, progressBuffers,
-        0.0f, 0.0f, 0.0f,
-        70.0f, 10.0f, 2.0f,
-        blueprint.bgColor(), blueprint.borderColor(), blueprint.progressColor(),
-        ratio
+      poseStack, progressBuffers,
+      0.0f, 0.0f, 0.0f,
+      70.0f, 10.0f, 2.0f,
+      blueprint.bgColor(), blueprint.borderColor(), blueprint.progressColor(),
+      ratio
     );
 
     progressBuffers.endBatch();
@@ -311,11 +321,21 @@ public final class MultiblockHologramRenderer {
   }
 
   private static void renderPlacementPrompt(PoseStack poseStack, Minecraft mc) {
-    if (promptLines == null) {
-      String label = "Use to place hologram";
-      promptLines = mc.font.split(net.minecraft.network.chat.Component.literal(label), 160);
-      promptBoxWidth = mc.font.width(label) + 16.0f;
-      promptBoxHeight = mc.font.lineHeight + 12.0f;
+    String rotKey = com.genesiz.hexacreatecore.create.wonderum.blueprint.WonderumBlueprintDrafter.ROTATE_HOLOGRAM_KEY
+    .getTranslatedKeyMessage().getString();
+    String mirKey = com.genesiz.hexacreatecore.create.wonderum.blueprint.WonderumBlueprintDrafter.MIRROR_HOLOGRAM_KEY
+    .getTranslatedKeyMessage().getString();
+
+    String label = "Use to place hologram\n§7" + formatOrientationLabel() + " §8([" + rotKey + "] Rot / [" + mirKey + "] Mirror)";
+    if (!label.equals(cachedPromptLabel) || promptLines == null) {
+      cachedPromptLabel = label;
+      promptLines = mc.font.split(net.minecraft.network.chat.Component.literal(label), 240);
+      int widest = 0;
+      for (var seq : promptLines) {
+        widest = Math.max(widest, mc.font.width(seq));
+      }
+      promptBoxWidth = widest + 16.0f;
+      promptBoxHeight = (promptLines.size() * mc.font.lineHeight) + 12.0f;
     }
 
     var camera = mc.getEntityRenderDispatcher().camera;
@@ -366,6 +386,134 @@ public final class MultiblockHologramRenderer {
     poseStack.popPose();
   }
 
+  private static void renderBlueprintSelectionStack(PoseStack poseStack, Minecraft mc) {
+    if (!mc.player.getMainHandItem().is(com.genesiz.hexacreatecore.item.ModItems.WONDERUM.get())) {
+      smoothedBlueprintListPos = null;
+      return;
+    }
+
+    java.util.List<String> allIds = BlueprintReloadListener.getWonderumBlueprintIds();
+    if (allIds.isEmpty()) {
+      smoothedBlueprintListPos = null;
+      return;
+    }
+
+    int selectedIdx = Math.floorMod(
+      com.genesiz.hexacreatecore.create.wonderum.blueprint.WonderumBlueprintDrafter.getSelectedIndex(),
+      allIds.size()
+    );
+
+    // Keep the 10-slot window centered around the currently selected blueprint
+    int maxVisible = 10;
+    int startIndex = Math.max(0, Math.min(selectedIdx - 4, Math.max(0, allIds.size() - maxVisible)));
+    int endIndex = Math.min(allIds.size(), startIndex + maxVisible);
+
+    var camera = mc.getEntityRenderDispatcher().camera;
+    Vec3 camPos = camera.getPosition();
+    float camYaw = camera.getYRot();
+
+    double yawRad = Math.toRadians(camYaw);
+    double lookX = -Math.sin(yawRad);
+    double lookZ = Math.cos(yawRad);
+    double leftX = Math.cos(yawRad);
+    double leftZ = Math.sin(yawRad);
+
+    double sineBob = Math.sin(System.currentTimeMillis() / 900.0D) * 0.04D;
+    Vec3 goalPos = new Vec3(
+      camPos.x + (lookX * 2.6D) + (leftX * 1.15D),
+      camPos.y + 0.55D + sineBob,
+      camPos.z + (lookZ * 2.6D) + (leftZ * 1.15D)
+    );
+
+    float dt = mc.getTimer().getRealtimeDeltaTicks() / 20.0f;
+    double sineEase = Math.sin(Math.min(1.0D, dt * 4.5D) * (Math.PI / 2.0D));
+
+    if (smoothedBlueprintListPos == null || smoothedBlueprintListPos.distanceToSqr(goalPos) > 64.0D) {
+      smoothedBlueprintListPos = goalPos;
+      smoothedBlueprintListYaw = camYaw;
+    } else {
+      smoothedBlueprintListPos = smoothedBlueprintListPos.lerp(goalPos, sineEase);
+      smoothedBlueprintListYaw += net.minecraft.util.Mth.wrapDegrees(camYaw - smoothedBlueprintListYaw) * (float) sineEase;
+    }
+
+    MultiBufferSource.BufferSource bufferSource = mc.renderBuffers().bufferSource();
+    net.minecraft.client.gui.Font font = mc.font;
+
+    poseStack.pushPose();
+    poseStack.translate(smoothedBlueprintListPos.x - camPos.x, smoothedBlueprintListPos.y - camPos.y, smoothedBlueprintListPos.z - camPos.z);
+    poseStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(-smoothedBlueprintListYaw - 180.0F));
+    poseStack.scale(0.0085F, -0.0085F, 0.0085F);
+
+    float currentLocalY = 0.0f;
+    int fixedBoxWidth = 156;
+    int maxTextWidth = fixedBoxWidth - 16;
+
+    var selectedStyle = com.genesiz.hexacreatecore.threedified.text.TextEffectStyle.aurora(0xFFFFFFFF, 0xFF00FFAA);
+    var defaultStyle = com.genesiz.hexacreatecore.threedified.text.TextEffectStyle.aurora(0xFFE2E8F0, 0xFFA855F7);
+
+    // Header badge showing slot position & Sneak+Left-Click cancel hint
+    String headerText = "Blueprints (" + (selectedIdx + 1) + "/" + allIds.size() + ")";
+    float headerHeight = font.lineHeight + 10.0f;
+    RawGeometry.drawDialogueNode(
+      poseStack, bufferSource, font,
+      0.0f, currentLocalY, 0.0f,
+      fixedBoxWidth, headerHeight, 2.5f, 2.5f,
+      0xCC0D0814, 0xFF21B7D1, java.util.List.of(), false
+    );
+    poseStack.pushPose();
+    poseStack.translate(0.0f, currentLocalY, 0.35f);
+    com.genesiz.hexacreatecore.threedified.text.ThreeDifiedTextRenderer.draw3D(
+      poseStack, bufferSource, font, headerText, -(font.width(headerText) * 0.5f), -(font.lineHeight * 0.5f), selectedStyle
+    );
+    poseStack.popPose();
+    currentLocalY += headerHeight + 8.0f;
+
+    // 10-slot scrollable blueprint stack
+    for (int i = startIndex; endIndex > i; i++) {
+      boolean isSelected = (i == selectedIdx);
+      String idName = allIds.get(i);
+      String idxPrefix = (isSelected ? "▶ [" : "[") + i + "] ";
+      String trimmed = font.plainSubstrByWidth(idxPrefix + idName, maxTextWidth);
+      float boxHeight = font.lineHeight + 10.0f;
+
+      poseStack.pushPose();
+      poseStack.translate(0.0f, currentLocalY, isSelected ? 4.0f : 0.0f);
+
+      RawGeometry.drawDialogueNode(
+        poseStack, bufferSource, font,
+        0.0f, 0.0f, 0.0f,
+        fixedBoxWidth, boxHeight, 2.5f, 2.5f,
+        isSelected ? 0xDD111C24 : 0xAA110E1A,
+        isSelected ? 0xFF00FFAA : 0xAA5A2E85,
+        java.util.List.of(), false
+      );
+
+      poseStack.pushPose();
+      poseStack.translate(0.0f, 0.0f, 0.35f);
+      float textLeftX = -(fixedBoxWidth * 0.5f) + 8.0f;
+      float textTopY = -(font.lineHeight * 0.5f);
+
+      String rest = trimmed.startsWith(idxPrefix) ? trimmed.substring(idxPrefix.length()) : trimmed;
+      font.drawInBatch(
+        idxPrefix, textLeftX, textTopY, isSelected ? 0xFF00FFAA : 0xFFFFFF55, true,
+        poseStack.last().pose(), bufferSource, net.minecraft.client.gui.Font.DisplayMode.NORMAL, 0,
+        LightTexture.FULL_BRIGHT
+      );
+      com.genesiz.hexacreatecore.threedified.text.ThreeDifiedTextRenderer.draw3D(
+        poseStack, bufferSource, font, rest, textLeftX + font.width(idxPrefix), textTopY,
+        isSelected ? selectedStyle : defaultStyle
+      );
+      poseStack.popPose();
+
+      poseStack.popPose();
+      currentLocalY += boxHeight + 6.0f;
+    }
+
+    bufferSource.endBatch(RawGeometry.DIALOGUE_SOLID);
+    bufferSource.endBatch();
+    poseStack.popPose();
+  }
+
   private static final class GhostVertexConsumer implements VertexConsumer {
     private VertexConsumer delegate;
     private int alpha;
@@ -401,6 +549,40 @@ public final class MultiblockHologramRenderer {
     }
   }
 
+  public static void cycleRotation() {
+    activeRotation = activeRotation.getRotated(net.minecraft.world.level.block.Rotation.CLOCKWISE_90);
+    promptLines = null;
+  }
+
+  public static void cycleMirror() {
+    activeMirror = switch (activeMirror) {
+      case NONE -> net.minecraft.world.level.block.Mirror.LEFT_RIGHT;
+      case LEFT_RIGHT -> net.minecraft.world.level.block.Mirror.FRONT_BACK;
+      case FRONT_BACK -> net.minecraft.world.level.block.Mirror.NONE;
+    };
+    promptLines = null;
+  }
+
+  public static MultiblockBlueprintData.TransformedBlueprint getTransformedBlueprint(net.minecraft.world.level.LevelAccessor level, BlockPos anchor, MultiblockBlueprintData blueprint) {
+    return blueprint.transformed(level, anchor, activeRotation, activeMirror);
+  }
+
+  public static String formatOrientationLabel() {
+    String rotDeg = switch (activeRotation) {
+      case NONE -> "0°";
+      case CLOCKWISE_90 -> "90°";
+      case CLOCKWISE_180 -> "180°";
+      case COUNTERCLOCKWISE_90 -> "270°";
+    };
+    String mirStr = switch (activeMirror) {
+      case NONE -> "None";
+      case LEFT_RIGHT -> "X-Axis";
+      case FRONT_BACK -> "Z-Axis";
+    };
+    return "Rot: " + rotDeg + " | Mirror: " + mirStr;
+  }
+
+
   public static boolean isPendingPlacement() {
     return pendingPlacement;
   }
@@ -412,4 +594,6 @@ public final class MultiblockHologramRenderer {
   public static BlockPos getAnchorPos() {
     return anchorPos;
   }
+  public static net.minecraft.world.level.block.Rotation getActiveRotation() { return activeRotation; }
+  public static net.minecraft.world.level.block.Mirror getActiveMirror() { return activeMirror; }
 }

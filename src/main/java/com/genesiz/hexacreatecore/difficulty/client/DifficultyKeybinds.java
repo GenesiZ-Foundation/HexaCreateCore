@@ -55,7 +55,11 @@ public final class DifficultyKeybinds {
         PacketDistributor.sendToServer(new DifficultyPackets.ActionPayload("UNLEASH_RIPOSTE", "", 0));
       }
 
-      boolean parryDown = PARRY_KEY.isDown();
+      boolean hologramActive = com.genesiz.hexacreatecore.threedified.hologram.MultiblockHologramRenderer.isPendingPlacement()
+      || (com.genesiz.hexacreatecore.threedified.hologram.MultiblockHologramRenderer.getActiveStructureId() != null
+      && mc.player.getMainHandItem().is(com.genesiz.hexacreatecore.item.ModItems.WONDERUM.get()));
+
+      boolean parryDown = !hologramActive && PARRY_KEY.isDown();
       if (parryDown && !wasParryDown) {
         DifficultyClientState.onParryKeyPressed();
       } else if (!parryDown && wasParryDown) {

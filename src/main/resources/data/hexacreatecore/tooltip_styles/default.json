@@ -204,6 +204,12 @@
     "lore_style": "glitch:#FF1E56",
     "border_color": "#FF1E56",
     "bg_color": "#EE16050A"
+  },
+  "hexacreatecore:wonderum": {
+    "title_style": "genesis",
+    "lore_style": "glitch:#FF1E56",
+    "border_color": "#FF1E56",
+    "bg_color": "#EE16050A"
   }
 }
 

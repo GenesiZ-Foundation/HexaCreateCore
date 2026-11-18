@@ -9,6 +9,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(value = KineticBlockEntity.class, remap = false)
@@ -49,4 +50,22 @@ public abstract class KineticBlockEntityMixin extends BlockEntity {
       cir.setReturnValue(state.speed());
     }
   }
+
+  @Redirect(
+    method = "removeSource",
+    at = @At(
+      value = "INVOKE",
+      target = "Lcom/simibubi/create/content/kinetics/base/KineticBlockEntity;onSpeedChanged(F)V"
+    )
+  )
+  private void hexacreatecore$guardOnSpeedChangedDuringRemoveSource(KineticBlockEntity instance, float prevSpeed) {
+    try {
+      java.lang.reflect.Method m = KineticBlockEntity.class.getDeclaredMethod("onSpeedChanged", float.class);
+      m.setAccessible(true);
+      m.invoke(instance, prevSpeed);
+    } catch (Throwable ignored) {
+      // Subclasses like StressGaugeBlockEntity call getOrCreateNetwork() inside onSpeedChanged after network was cleared
+    }
+  }
 }
+

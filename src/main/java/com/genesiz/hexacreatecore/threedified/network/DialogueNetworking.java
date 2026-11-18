@@ -233,6 +233,18 @@ public final class DialogueNetworking {
         com.genesiz.hexacreatecore.create.wonderum.blueprint.WonderumDraftBlockPayload.STREAM_CODEC,
         com.genesiz.hexacreatecore.create.wonderum.blueprint.WonderumDraftBlockPayload::handleServer
       );
+
+      registrar.playToClient(
+        ThreeDifiedNotifyPayload.TYPE,
+        ThreeDifiedNotifyPayload.STREAM_CODEC,
+        ThreeDifiedNotifyPayload::handleClient
+      );
+
+      registrar.playToServer(
+        com.genesiz.hexacreatecore.create.wonderum.WonderumKineticImpulsePayload.TYPE,
+        com.genesiz.hexacreatecore.create.wonderum.WonderumKineticImpulsePayload.STREAM_CODEC,
+        com.genesiz.hexacreatecore.create.wonderum.WonderumKineticImpulsePayload::handleServer
+      );
     }
   }
 }

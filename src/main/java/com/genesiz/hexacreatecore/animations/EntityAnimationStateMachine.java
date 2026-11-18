@@ -30,6 +30,10 @@ public final class EntityAnimationStateMachine implements IEntityComponent {
   private int randomActionTimer = 0;
   private int nextRandomActionThreshold = -1;
 
+  private String lastDebugSeq = "";
+  private Phase lastDebugPhase = null;
+
+
   public EntityAnimationStateMachine(Supplier<Boolean> dialogueCondition) {
     this.dialogueCondition = dialogueCondition;
   }
@@ -104,10 +108,12 @@ public final class EntityAnimationStateMachine implements IEntityComponent {
     
     // Action bar debug text channel
     Minecraft mc = Minecraft.getInstance();
-    if (mc.player != null) {
+    if (mc.player != null && (!this.currentSequenceId.equals(this.lastDebugSeq) || this.currentPhase != this.lastDebugPhase)) {
+      this.lastDebugSeq = this.currentSequenceId;
+      this.lastDebugPhase = this.currentPhase;
       String debugMsg = String.format("§b[Anim Debug] Seq: §e%s §7| Phase: §e%s §7| Data found: %s", 
           this.currentSequenceId, this.currentPhase, (activeData != null ? "§aYES" : "§cNO"));
-      mc.player.displayClientMessage(Component.literal(debugMsg), true);
+      com.genesiz.hexacreatecore.threedified.ThreeDifiedNotificationHud.show(debugMsg, 0xFF21B7D1, 30);
     }
 
     if (activeData == null) {

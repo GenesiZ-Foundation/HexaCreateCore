@@ -372,7 +372,9 @@ public final class HexagonalGridManager {
       return;
     }
 
-    player.displayClientMessage(net.minecraft.network.chat.Component.literal("§d[Arcane Grid] Signature: " + signature + " (" + startDir.name() + ")"), true);
+    com.genesiz.hexacreatecore.threedified.ThreeDifiedNotificationHud.show(
+      "§d[Arcane Grid] Signature: " + signature + " (" + startDir.name() + ")"
+    );
 
     String unifiedPayloadString = "hexacreatecore:cast_3d_spell;" + startDir.ordinal() + ";" + signature;
     net.neoforged.neoforge.network.PacketDistributor.sendToServer(new com.genesiz.hexacreatecore.threedified.network.DialogueActionPayload(player.getId(), unifiedPayloadString, false));

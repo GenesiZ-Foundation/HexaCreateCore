@@ -40,16 +40,16 @@ public class WonderumItem extends Item {
     Player player = context.getPlayer();
     ResourceLocation blockId = BuiltInRegistries.BLOCK.getKey(state.getBlock());
 
-    // 1. Create Wrench Behavior (onWrenched / onSneakWrenched via Create's IWrenchable contract)
-    if (tryInvokeCreateWrench(state.getBlock(), context, player != null && player.isShiftKeyDown())) {
-      return InteractionResult.sidedSuccess(level.isClientSide);
-    }
-
-    // 2. Kinetic Impulse Strike (jumpstarts shafts, cogs, flywheels, or hand cranks)
-    if (blockId != null && blockId.getNamespace().equals("create")) {
+    // 1. Sprint + Right-Click: Kinetic Impulse Strike (jumpstarts or boosts shafts, cogs, flywheels, etc.)
+    if (player != null && player.isSprinting() && blockId != null && blockId.getNamespace().equals("create")) {
       if (!level.isClientSide && tryKineticImpulse(level.getBlockEntity(pos))) {
         level.playSound(null, pos, SoundEvents.ANVIL_PLACE, SoundSource.BLOCKS, 0.5f, 1.6f);
       }
+      return InteractionResult.sidedSuccess(level.isClientSide);
+    }
+
+    // 2. Create Wrench Behavior (onWrenched / onSneakWrenched via Create's IWrenchable contract)
+    if (tryInvokeCreateWrench(state.getBlock(), context, player != null && player.isShiftKeyDown())) {
       return InteractionResult.sidedSuccess(level.isClientSide);
     }
 
@@ -154,12 +154,13 @@ public class WonderumItem extends Item {
 
   @Override
   public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
-    tooltipComponents.add(Component.literal("§8Right-Click Depot: §fManual Mechanical Press (1 item)"));
-    tooltipComponents.add(Component.literal("§8Right-Click / Sneak + Right-Click: §fCreate Wrench & Kinetic Impulse"));
+    tooltipComponents.add(Component.literal("Left-Click Depot: Manual Mechanical Press (1 item)"));
+    tooltipComponents.add(Component.literal("Right-Click / Sprint + Right-Click: Create Wrench & Kinetic Impulse"));
+    tooltipComponents.add(Component.literal("Sneak + Scroll / Right-Click: Select & Anchor Hologram"));
+    tooltipComponents.add(Component.literal("Sneak + Right-Click Kinetic Block: Link Gravitational Wormhole"));
     tooltipComponents.add(Component.empty());
     tooltipComponents.add(
       Component.literal("One of the concepts of the world, myths said that it could forge space and motion alike, engraved along the haft is \"The Creator's anvil\"")
-      .withStyle(net.minecraft.ChatFormatting.GRAY, net.minecraft.ChatFormatting.ITALIC)
     );
   }
 }

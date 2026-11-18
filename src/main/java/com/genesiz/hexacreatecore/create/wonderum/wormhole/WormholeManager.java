@@ -73,7 +73,7 @@ public final class WormholeManager {
       data.setPending(sp.getUUID(), clicked);
       serverLevel.playSound(null, pos, SoundEvents.END_PORTAL_FRAME_FILL, SoundSource.BLOCKS, 0.85f, 1.35f);
       serverLevel.sendParticles(ParticleTypes.END_ROD, pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D, 16, 0.25D, 0.25D, 0.25D, 0.04D);
-      sp.displayClientMessage(Component.literal("§b[Wonderum] §fWormhole Anchor §dA §fbound on §7" + face.getName().toUpperCase() + " §8— Sneak+Right-Click target node (>10 blocks away)"), true);
+      com.genesiz.hexacreatecore.threedified.ThreeDifiedNotificationHud.sendTo(sp, "§b[Wonderum] §fWormhole Anchor §dA §fbound on §7" + face.getName().toUpperCase() + " §8— Sneak+Right-Click target node (>10 blocks away)");
       syncAllPlayers(serverLevel.getServer());
       return;
     }
@@ -81,7 +81,7 @@ public final class WormholeManager {
     if (pending.dimension().equals(dim) && pending.pos().equals(pos)) {
       data.clearPending(sp.getUUID());
       serverLevel.playSound(null, pos, SoundEvents.BEACON_DEACTIVATE, SoundSource.BLOCKS, 0.7f, 0.9f);
-      sp.displayClientMessage(Component.literal("§b[Wonderum] §fPending Wormhole Anchor §eCLEARED"), true);
+      com.genesiz.hexacreatecore.threedified.ThreeDifiedNotificationHud.sendTo(sp, "§b[Wonderum] §fPending Wormhole Anchor §eCLEARED");
       syncAllPlayers(serverLevel.getServer());
       return;
     }
@@ -91,7 +91,7 @@ public final class WormholeManager {
       if (MIN_SAFE_DISTANCE * MIN_SAFE_DISTANCE >= distSq) {
         data.clearPending(sp.getUUID());
         triggerSpatialImplosion(serverLevel, pending.pos(), pos);
-        sp.displayClientMessage(Component.literal("§c[Wonderum] §4SPATIAL IMPLOSION! §fWormhole anchors cannot coexist within §e10 blocks§f!"), true);
+        com.genesiz.hexacreatecore.threedified.ThreeDifiedNotificationHud.sendTo(sp, "§c[Wonderum] §4SPATIAL IMPLOSION! §fWormhole anchors cannot coexist within §e10 blocks§f!");
         syncAllPlayers(serverLevel.getServer());
         return;
       }
@@ -105,14 +105,13 @@ public final class WormholeManager {
       releaseDrivenNode(serverLevel, pos);
     }
 
-    //releaseDrivenNode(serverLevel, pos);
-
     data.clearPending(sp.getUUID());
     data.addPair(pending, clicked);
     serverLevel.playSound(null, pos, SoundEvents.END_PORTAL_SPAWN, SoundSource.BLOCKS, 0.7f, 1.45f);
     serverLevel.sendParticles(ParticleTypes.REVERSE_PORTAL, pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D, 24, 0.3D, 0.3D, 0.3D, 0.08D);
-    sp.displayClientMessage(Component.literal("§b[Wonderum] §fGravitational Wormhole §aLINKED §8(" + pending.dimension().location().getPath() + " ↔ " + dim.location().getPath() + ")"), true);
+    com.genesiz.hexacreatecore.threedified.ThreeDifiedNotificationHud.sendTo(sp, "§b[Wonderum] §fGravitational Wormhole §aLINKED §8(" + pending.dimension().location().getPath() + " ↔ " + dim.location().getPath() + ")");
     syncAllPlayers(serverLevel.getServer());
+
   }
 
   @SubscribeEvent(priority = EventPriority.HIGH)
@@ -143,7 +142,7 @@ public final class WormholeManager {
       if (levelB != null) releaseDrivenNode(levelB, targetPair.b().pos());
 
       serverLevel.playSound(null, pos, SoundEvents.BEACON_DEACTIVATE, SoundSource.BLOCKS, 0.8f, 0.8f);
-      sp.displayClientMessage(Component.literal("§b[Wonderum] §fGravitational Wormhole §eCOLLAPSED"), true);
+      com.genesiz.hexacreatecore.threedified.ThreeDifiedNotificationHud.sendTo(sp, "§b[Wonderum] §fGravitational Wormhole §eCOLLAPSED");
       syncAllPlayers(server);
     }
   }
@@ -249,8 +248,10 @@ public final class WormholeManager {
       Level levelB = beB.getLevel();
       if (levelA == null || levelB == null) return;
 
-      boolean aDriven = WormholeKineticBridge.getDriven(levelA, beA.getBlockPos()) != null;
-      boolean bDriven = WormholeKineticBridge.getDriven(levelB, beB.getBlockPos()) != null;
+      boolean aDriven = WormholeKineticBridge.getDriven(levelA, beA.getBlockPos()) != null
+      && !com.genesiz.hexacreatecore.create.wonderum.WonderumKineticImpulsePayload.isImpulseNode(levelA, beA.getBlockPos());
+      boolean bDriven = WormholeKineticBridge.getDriven(levelB, beB.getBlockPos()) != null
+      && !com.genesiz.hexacreatecore.create.wonderum.WonderumKineticImpulsePayload.isImpulseNode(levelB, beB.getBlockPos());
 
       Method getSpeed = kbeClass.getMethod("getSpeed");
       float speedA = (float) getSpeed.invoke(beA);

@@ -305,7 +305,7 @@ public class DialoguePlaybackState {
       // Left-click: show inspect hint if defined in JSON
       if (!optData.rightClickLabel().isEmpty()) {
         node.onLeftClick = (targetEntity, player) -> {
-          player.displayClientMessage(Component.literal(optData.rightClickLabel()), true);
+          ThreeDifiedNotificationHud.show(optData.rightClickLabel());
         };
       }
 

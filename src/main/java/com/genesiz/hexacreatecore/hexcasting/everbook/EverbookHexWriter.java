@@ -35,7 +35,7 @@ public final class EverbookHexWriter {
       ListIota listIota = new ListIota(iotas);
       if (iotaHolder.writeIota(listIota, true)) {
         iotaHolder.writeIota(listIota, false);
-        player.displayClientMessage(Component.literal("§d[Everbook] §aInscribed " + iotas.size() + " Iotas!"), true);
+        com.genesiz.hexacreatecore.threedified.ThreeDifiedNotificationHud.sendTo(player, "§d[Everbook] §aInscribed " + iotas.size() + " Iotas!");
         return;
       }
     }
@@ -43,7 +43,7 @@ public final class EverbookHexWriter {
     var hexHolder = IXplatAbstractions.INSTANCE.findHexHolder(targetStack);
     if (hexHolder != null && !hexHolder.hasHex()) {
       hexHolder.writeHex(iotas, HexAPI.instance().getColorizer(player), 0L);
-      player.displayClientMessage(Component.literal("§d[Everbook] §aInscribed " + iotas.size() + " Iotas into casting item!"), true);
+      com.genesiz.hexacreatecore.threedified.ThreeDifiedNotificationHud.sendTo(player, "§d[Everbook] §aInscribed " + iotas.size() + " Iotas into casting item!");
     }
   }
 

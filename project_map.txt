@@ -1,0 +1,170 @@
+src/main/java/com/genesiz/hexacreatecore/animations/AnimationSequenceData.java
+src/main/java/com/genesiz/hexacreatecore/animations/AnimationSequenceReloadListener.java
+src/main/java/com/genesiz/hexacreatecore/animations/EntityAnimationStateMachine.java
+src/main/java/com/genesiz/hexacreatecore/bossrush/BossRushManager.java
+src/main/java/com/genesiz/hexacreatecore/bossrush/client/BossHealthBarRenderer.java
+src/main/java/com/genesiz/hexacreatecore/bossrush/client/BossRushClientHud.java
+src/main/java/com/genesiz/hexacreatecore/bossrush/data/BossHealthBarData.java
+src/main/java/com/genesiz/hexacreatecore/bossrush/data/BossRushData.java
+src/main/java/com/genesiz/hexacreatecore/bossrush/data/BossRushReloadListener.java
+src/main/java/com/genesiz/hexacreatecore/bossrush/network/BossRushSyncPayload.java
+src/main/java/com/genesiz/hexacreatecore/compat/WitherReincarnatedCompat.java
+src/main/java/com/genesiz/hexacreatecore/components/IEntityComponent.java
+src/main/java/com/genesiz/hexacreatecore/components/IProceduralAnimConfig.java
+src/main/java/com/genesiz/hexacreatecore/create/wonderum/AeronauticsAnchorHandler.java
+src/main/java/com/genesiz/hexacreatecore/create/wonderum/blueprint/WonderumBlueprintDrafter.java
+src/main/java/com/genesiz/hexacreatecore/create/wonderum/blueprint/WonderumDraftBlockPayload.java
+src/main/java/com/genesiz/hexacreatecore/create/wonderum/WonderumAnchorPayload.java
+src/main/java/com/genesiz/hexacreatecore/create/wonderum/WonderumClientEvents.java
+src/main/java/com/genesiz/hexacreatecore/create/wonderum/WonderumDepotHandler.java
+src/main/java/com/genesiz/hexacreatecore/create/wonderum/WonderumItemRenderer.java
+src/main/java/com/genesiz/hexacreatecore/create/wonderum/wormhole/WormholeClientRenderer.java
+src/main/java/com/genesiz/hexacreatecore/create/wonderum/wormhole/WormholeKineticBridge.java
+src/main/java/com/genesiz/hexacreatecore/create/wonderum/wormhole/WormholeManager.java
+src/main/java/com/genesiz/hexacreatecore/create/wonderum/wormhole/WormholeSavedData.java
+src/main/java/com/genesiz/hexacreatecore/create/wonderum/wormhole/WormholeSyncPayload.java
+src/main/java/com/genesiz/hexacreatecore/datagen/ModModelProvider.java
+src/main/java/com/genesiz/hexacreatecore/decorators/annotations/DialogueAction.java
+src/main/java/com/genesiz/hexacreatecore/decorators/annotations/DifficultyAttackCallback.java
+src/main/java/com/genesiz/hexacreatecore/decorators/annotations/Overload.java
+src/main/java/com/genesiz/hexacreatecore/difficulty/client/Difficulty3DRingRenderer.java
+src/main/java/com/genesiz/hexacreatecore/difficulty/client/DifficultyAtmosphereController.java
+src/main/java/com/genesiz/hexacreatecore/difficulty/client/DifficultyBannerHud.java
+src/main/java/com/genesiz/hexacreatecore/difficulty/client/DifficultyClientState.java
+src/main/java/com/genesiz/hexacreatecore/difficulty/client/DifficultyHudRenderer.java
+src/main/java/com/genesiz/hexacreatecore/difficulty/client/DifficultyKeybinds.java
+src/main/java/com/genesiz/hexacreatecore/difficulty/client/ParryFlowAfterImageRenderer.java
+src/main/java/com/genesiz/hexacreatecore/difficulty/client/SoulRecoveryClientRenderer.java
+src/main/java/com/genesiz/hexacreatecore/difficulty/data/DifficultyData.java
+src/main/java/com/genesiz/hexacreatecore/difficulty/data/DifficultyReloadListener.java
+src/main/java/com/genesiz/hexacreatecore/difficulty/DifficultyManager.java
+src/main/java/com/genesiz/hexacreatecore/difficulty/DifficultySavedData.java
+src/main/java/com/genesiz/hexacreatecore/difficulty/effect/SoulFractureEffect.java
+src/main/java/com/genesiz/hexacreatecore/difficulty/network/DifficultyNetworking.java
+src/main/java/com/genesiz/hexacreatecore/difficulty/network/DifficultyPackets.java
+src/main/java/com/genesiz/hexacreatecore/difficulty/SoulRecoveryManager.java
+src/main/java/com/genesiz/hexacreatecore/entity/client/CursedBlacksmithModel.java
+src/main/java/com/genesiz/hexacreatecore/entity/client/CursedBlacksmithRenderer.java
+src/main/java/com/genesiz/hexacreatecore/entity/custom/CursedBlacksmithEntity.java
+src/main/java/com/genesiz/hexacreatecore/entity/ModEntities.java
+src/main/java/com/genesiz/hexacreatecore/event/ModEvents.java
+src/main/java/com/genesiz/hexacreatecore/HexaCreateCoreClient.java
+src/main/java/com/genesiz/hexacreatecore/HexaCreateCore.java
+src/main/java/com/genesiz/hexacreatecore/hexcasting/actions/HexCastingActions.java
+src/main/java/com/genesiz/hexacreatecore/hexcasting/ArcaneGridRenderer.java
+src/main/java/com/genesiz/hexacreatecore/hexcasting/ArcaneNode3D.java
+src/main/java/com/genesiz/hexacreatecore/hexcasting/Cast3DSpellPayload.java
+src/main/java/com/genesiz/hexacreatecore/hexcasting/ClientRenderSubscriber.java
+src/main/java/com/genesiz/hexacreatecore/hexcasting/everbook/EverbookData.java
+src/main/java/com/genesiz/hexacreatecore/hexcasting/everbook/EverbookDryRunEnv.java
+src/main/java/com/genesiz/hexacreatecore/hexcasting/everbook/EverbookEvalPayload.java
+src/main/java/com/genesiz/hexacreatecore/hexcasting/everbook/EverbookHexWriter.java
+src/main/java/com/genesiz/hexacreatecore/hexcasting/everbook/EverbookKeybinds.java
+src/main/java/com/genesiz/hexacreatecore/hexcasting/everbook/EverbookMiniGridConfig.java
+src/main/java/com/genesiz/hexacreatecore/hexcasting/everbook/EverbookRiftMath.java
+src/main/java/com/genesiz/hexacreatecore/hexcasting/everbook/EverbookRiftRenderer.java
+src/main/java/com/genesiz/hexacreatecore/hexcasting/everbook/EverbookSandboxEvaluator.java
+src/main/java/com/genesiz/hexacreatecore/hexcasting/everbook/EverbookSessionState.java
+src/main/java/com/genesiz/hexacreatecore/hexcasting/everbook/EverbookSyncPayload.java
+src/main/java/com/genesiz/hexacreatecore/hexcasting/everbook/TruncatedIcosahedronCage.java
+src/main/java/com/genesiz/hexacreatecore/hexcasting/HexagonalGridManager.java
+src/main/java/com/genesiz/hexacreatecore/hexcasting/HexCastingClientEvents.java
+src/main/java/com/genesiz/hexacreatecore/hexcasting/HexCastingGeometry.java
+src/main/java/com/genesiz/hexacreatecore/hexcasting/HexCastingGridInterceptor.java
+src/main/java/com/genesiz/hexacreatecore/item/custom/BossRushTriggerItem.java
+src/main/java/com/genesiz/hexacreatecore/item/custom/EverbookItem.java
+src/main/java/com/genesiz/hexacreatecore/item/custom/WonderumItem.java
+src/main/java/com/genesiz/hexacreatecore/item/ModCreativeModeTabs.java
+src/main/java/com/genesiz/hexacreatecore/item/ModItems.java
+src/main/java/com/genesiz/hexacreatecore/mixins/BossHealthOverlayMixin.java
+src/main/java/com/genesiz/hexacreatecore/mixins/CameraMixin.java
+src/main/java/com/genesiz/hexacreatecore/mixins/ClientLevelMixin.java
+src/main/java/com/genesiz/hexacreatecore/mixins/EntityRenderDispatcherMixin.java
+src/main/java/com/genesiz/hexacreatecore/mixins/KineticBlockEntityMixin.java
+src/main/java/com/genesiz/hexacreatecore/mixins/LocalPlayerMixin.java
+src/main/java/com/genesiz/hexacreatecore/mixins/MouseHandlerMixin.java
+src/main/java/com/genesiz/hexacreatecore/mixins/SoundEngineMixin.java
+src/main/java/com/genesiz/hexacreatecore/registry/ModEffects.java
+src/main/java/com/genesiz/hexacreatecore/threedified/actions/CursedBlacksmithActions.java
+src/main/java/com/genesiz/hexacreatecore/threedified/data/DialogueReloadListener.java
+src/main/java/com/genesiz/hexacreatecore/threedified/data/DialogueTreeData.java
+src/main/java/com/genesiz/hexacreatecore/threedified/DialogueClickAction.java
+src/main/java/com/genesiz/hexacreatecore/threedified/DialogueInputHandler.java
+src/main/java/com/genesiz/hexacreatecore/threedified/DialogueNode.java
+src/main/java/com/genesiz/hexacreatecore/threedified/DialoguePlaybackState.java
+src/main/java/com/genesiz/hexacreatecore/threedified/DialogueRaycaster.java
+src/main/java/com/genesiz/hexacreatecore/threedified/DialogueText.java
+src/main/java/com/genesiz/hexacreatecore/threedified/DialogueTransformState.java
+src/main/java/com/genesiz/hexacreatecore/threedified/hologram/BlueprintReloadListener.java
+src/main/java/com/genesiz/hexacreatecore/threedified/hologram/MultiblockBlueprintData.java
+src/main/java/com/genesiz/hexacreatecore/threedified/hologram/MultiblockHologramRenderer.java
+src/main/java/com/genesiz/hexacreatecore/threedified/network/DialogueActionPayload.java
+src/main/java/com/genesiz/hexacreatecore/threedified/network/DialogueClientPackets.java
+src/main/java/com/genesiz/hexacreatecore/threedified/network/DialogueNetworking.java
+src/main/java/com/genesiz/hexacreatecore/threedified/network/DialogueStackSyncPayload.java
+src/main/java/com/genesiz/hexacreatecore/threedified/network/HologramProjectionPayload.java
+src/main/java/com/genesiz/hexacreatecore/threedified/network/LiveStackUpdatePayload.java
+src/main/java/com/genesiz/hexacreatecore/threedified/RawGeometry.java
+src/main/java/com/genesiz/hexacreatecore/threedified/shaders/dictionaries/AuroraRimDictionary.java
+src/main/java/com/genesiz/hexacreatecore/threedified/shaders/dictionaries/BlackHoleDictionary.java
+src/main/java/com/genesiz/hexacreatecore/threedified/shaders/dictionaries/CompositeDictionary.java
+src/main/java/com/genesiz/hexacreatecore/threedified/shaders/dictionaries/CosmicOceanDictionary.java
+src/main/java/com/genesiz/hexacreatecore/threedified/shaders/dictionaries/ShaderDictionary.java
+src/main/java/com/genesiz/hexacreatecore/threedified/shaders/hooks/PolyhedronFaceShaderHook.java
+src/main/java/com/genesiz/hexacreatecore/threedified/shaders/hooks/PortalShaderHook.java
+src/main/java/com/genesiz/hexacreatecore/threedified/shaders/renderers/SuperellipsePortalRenderer.java
+src/main/java/com/genesiz/hexacreatecore/threedified/shaders/renderers/VolumetricSingularityRenderer.java
+src/main/java/com/genesiz/hexacreatecore/threedified/SmoothPositionState.java
+src/main/java/com/genesiz/hexacreatecore/threedified/text/TextEffectStyle.java
+src/main/java/com/genesiz/hexacreatecore/threedified/text/ThreeDifiedTextRenderer.java
+src/main/java/com/genesiz/hexacreatecore/threedified/ThreeDified.java
+src/main/java/com/genesiz/hexacreatecore/threedified/ThreeDifiedRenderer.java
+src/main/java/com/genesiz/hexacreatecore/threedified/ThreeDifiedVec3.java
+src/main/java/com/genesiz/hexacreatecore/threedified/threedishapes_factory/ShapeAnchor.java
+src/main/java/com/genesiz/hexacreatecore/threedified/threedishapes_factory/ShapeBlueprint.java
+src/main/java/com/genesiz/hexacreatecore/threedified/threedishapes_factory/ThreeDiShapeFactory.java
+src/main/java/com/genesiz/hexacreatecore/threedified/threedishapes_hooks/ThreeDiShapeHooks.java
+src/main/java/com/genesiz/hexacreatecore/threedified/threedishapes_hooks/UiShapeTarget.java
+src/main/java/com/genesiz/hexacreatecore/threedified/threedishapes_renderers/IShapeRenderer.java
+src/main/java/com/genesiz/hexacreatecore/threedified/threedishapes_renderers/ThreeDiShapeRendererRegistry.java
+src/main/java/com/genesiz/hexacreatecore/threedified/tooltip/CustomTooltipRenderer.java
+src/main/java/com/genesiz/hexacreatecore/threedified/tooltip/TooltipCategoryClassifier.java
+src/main/java/com/genesiz/hexacreatecore/threedified/tooltip/TooltipStyleRegistry.java
+src/main/java/com/genesiz/hexacreatecore/threedified/volumetrics/dictionaries/BlackHoleVolumetricDictionary.java
+src/main/java/com/genesiz/hexacreatecore/threedified/volumetrics/dictionaries/SiftRiftVolumetricDictionary.java
+src/main/java/com/genesiz/hexacreatecore/threedified/volumetrics/dictionaries/VolumetricDictionary.java
+src/main/java/com/genesiz/hexacreatecore/threedified/volumetrics/hooks/VolumetricHook.java
+src/main/java/com/genesiz/hexacreatecore/threedified/volumetrics/renderers/UnifiedVolumetricEngine.java
+=== UI & POPUP REFERENCES ===
+src/main/java/com/genesiz/hexacreatecore/HexaCreateCore.java:6:import com.genesiz.hexacreatecore.threedified.hologram.BlueprintReloadListener;
+src/main/java/com/genesiz/hexacreatecore/threedified/DialoguePlaybackState.java:308:          player.displayClientMessage(Component.literal(optData.rightClickLabel()), true);
+src/main/java/com/genesiz/hexacreatecore/threedified/network/DialogueNetworking.java:6:import com.genesiz.hexacreatecore.threedified.hologram.MultiblockHologramRenderer;
+src/main/java/com/genesiz/hexacreatecore/threedified/network/HologramProjectionPayload.java:17:      new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath("hexacreatecore", "hologram_projection"));
+src/main/java/com/genesiz/hexacreatecore/threedified/actions/CursedBlacksmithActions.java:24:  @DialogueAction("hexacreatecore:clear_completed_hologram")
+src/main/java/com/genesiz/hexacreatecore/threedified/hologram/MultiblockHologramRenderer.java:1:package com.genesiz.hexacreatecore.threedified.hologram;
+src/main/java/com/genesiz/hexacreatecore/threedified/hologram/MultiblockHologramRenderer.java:139:        new com.genesiz.hexacreatecore.threedified.network.DialogueActionPayload(mc.player.getId(), "hexacreatecore:clear_completed_hologram", true)
+src/main/java/com/genesiz/hexacreatecore/threedified/hologram/MultiblockHologramRenderer.java:315:      String label = "Use to place hologram";
+src/main/java/com/genesiz/hexacreatecore/threedified/hologram/BlueprintReloadListener.java:1:package com.genesiz.hexacreatecore.threedified.hologram;
+src/main/java/com/genesiz/hexacreatecore/threedified/hologram/MultiblockBlueprintData.java:1:package com.genesiz.hexacreatecore.threedified.hologram;
+src/main/java/com/genesiz/hexacreatecore/hexcasting/HexagonalGridManager.java:375:    player.displayClientMessage(net.minecraft.network.chat.Component.literal("§d[Arcane Grid] Signature: " + signature + " (" + startDir.name() + ")"), true);
+src/main/java/com/genesiz/hexacreatecore/hexcasting/everbook/EverbookHexWriter.java:38:        player.displayClientMessage(Component.literal("§d[Everbook] §aInscribed " + iotas.size() + " Iotas!"), true);
+src/main/java/com/genesiz/hexacreatecore/hexcasting/everbook/EverbookHexWriter.java:46:      player.displayClientMessage(Component.literal("§d[Everbook] §aInscribed " + iotas.size() + " Iotas into casting item!"), true);
+src/main/java/com/genesiz/hexacreatecore/animations/EntityAnimationStateMachine.java:110:      mc.player.displayClientMessage(Component.literal(debugMsg), true);
+src/main/java/com/genesiz/hexacreatecore/create/wonderum/WonderumAnchorPayload.java:57:        sp.displayClientMessage(Component.literal(statusMsg), false);
+src/main/java/com/genesiz/hexacreatecore/create/wonderum/WonderumAnchorPayload.java:60:        sp.displayClientMessage(Component.literal("§c[AnchorServerErr] §f" + cause.getClass().getSimpleName() + ": " + cause.getMessage()), false);
+src/main/java/com/genesiz/hexacreatecore/create/wonderum/blueprint/WonderumBlueprintDrafter.java:5:import com.genesiz.hexacreatecore.threedified.hologram.BlueprintReloadListener;
+src/main/java/com/genesiz/hexacreatecore/create/wonderum/blueprint/WonderumBlueprintDrafter.java:6:import com.genesiz.hexacreatecore.threedified.hologram.MultiblockBlueprintData;
+src/main/java/com/genesiz/hexacreatecore/create/wonderum/blueprint/WonderumBlueprintDrafter.java:7:import com.genesiz.hexacreatecore.threedified.hologram.MultiblockHologramRenderer;
+src/main/java/com/genesiz/hexacreatecore/create/wonderum/blueprint/WonderumBlueprintDrafter.java:52:      event.getEntity().displayClientMessage(
+src/main/java/com/genesiz/hexacreatecore/create/wonderum/blueprint/WonderumBlueprintDrafter.java:63:    event.getEntity().displayClientMessage(
+src/main/java/com/genesiz/hexacreatecore/create/wonderum/blueprint/WonderumBlueprintDrafter.java:76:    // 1. Anchoring a pending Wonderum blueprint hologram
+src/main/java/com/genesiz/hexacreatecore/create/wonderum/blueprint/WonderumBlueprintDrafter.java:81:      event.getEntity().displayClientMessage(
+src/main/java/com/genesiz/hexacreatecore/create/wonderum/blueprint/WonderumBlueprintDrafter.java:122:      mc.player.displayClientMessage(
+src/main/java/com/genesiz/hexacreatecore/create/wonderum/blueprint/WonderumBlueprintDrafter.java:135:      player.displayClientMessage(
+src/main/java/com/genesiz/hexacreatecore/create/wonderum/AeronauticsAnchorHandler.java:138:          mc.player.displayClientMessage(
+src/main/java/com/genesiz/hexacreatecore/create/wonderum/AeronauticsAnchorHandler.java:159:        mc.player.displayClientMessage(
+src/main/java/com/genesiz/hexacreatecore/create/wonderum/wormhole/WormholeManager.java:76:      sp.displayClientMessage(Component.literal("§b[Wonderum] §fWormhole Anchor §dA §fbound on §7" + face.getName().toUpperCase() + " §8— Sneak+Right-Click target node (>10 blocks away)"), true);
+src/main/java/com/genesiz/hexacreatecore/create/wonderum/wormhole/WormholeManager.java:84:      sp.displayClientMessage(Component.literal("§b[Wonderum] §fPending Wormhole Anchor §eCLEARED"), true);
+src/main/java/com/genesiz/hexacreatecore/create/wonderum/wormhole/WormholeManager.java:94:        sp.displayClientMessage(Component.literal("§c[Wonderum] §4SPATIAL IMPLOSION! §fWormhole anchors cannot coexist within §e10 blocks§f!"), true);
+src/main/java/com/genesiz/hexacreatecore/create/wonderum/wormhole/WormholeManager.java:114:    sp.displayClientMessage(Component.literal("§b[Wonderum] §fGravitational Wormhole §aLINKED §8(" + pending.dimension().location().getPath() + " ↔ " + dim.location().getPath() + ")"), true);
+src/main/java/com/genesiz/hexacreatecore/create/wonderum/wormhole/WormholeManager.java:146:      sp.displayClientMessage(Component.literal("§b[Wonderum] §fGravitational Wormhole §eCOLLAPSED"), true);

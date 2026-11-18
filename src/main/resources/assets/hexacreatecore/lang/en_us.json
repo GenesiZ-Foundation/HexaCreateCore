@@ -16,5 +16,8 @@
   "key.hexacreatecore.delete_iota": "Delete Selected Iota",
   "key.hexacreatecore.difficulty_menu": "Open Difficulty Menu",
   "key.hexacreatecore.parry": "Parry",
-  "key.hexacreatecore.unleash_riposte": "Unleash Riposte"
+  "key.hexacreatecore.unleash_riposte": "Unleash Riposte",
+    "key.hexacreatecore.mirror_hologram": "Mirror Hologram",
+  "key.hexacreatecore.open_draft_palette": "Open Hologram Palette",
+  "key.hexacreatecore.rotate_hologram": "Rotate Hologram"
 }

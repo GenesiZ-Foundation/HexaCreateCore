@@ -51,6 +51,7 @@ public final class BlueprintReloadListener extends SimpleJsonResourceReloadListe
         e.printStackTrace();
       }
     }
+    loadExportedConfigBlueprints();
   }
 
   private static int parseHexColor(String hex, int fallback) {
@@ -72,6 +73,8 @@ public final class BlueprintReloadListener extends SimpleJsonResourceReloadListe
       boolean isWonderum = entry.getKey().getPath().contains("structures/wonderum/");
       parseAndStore(entry.getValue(), isWonderum);
     }
+
+    loadExportedConfigBlueprints();
   }
 
   private static void parseAndStore(JsonElement element, boolean isWonderum) {
@@ -143,5 +146,36 @@ public final class BlueprintReloadListener extends SimpleJsonResourceReloadListe
       forceLoadFromClientResources();
     }
     return Collections.unmodifiableList(WONDERUM_IDS);
+  }
+
+  public static void registerRuntimeBlueprint(MultiblockBlueprintData data, boolean addToWonderum) {
+    BLUEPRINTS.put(data.structureId(), data);
+    if (addToWonderum && !WONDERUM_IDS.contains(data.structureId())) {
+      WONDERUM_IDS.add(data.structureId());
+    }
+  }
+
+  private static void loadExportedConfigBlueprints() {
+    try {
+      java.nio.file.Path exportDir = net.neoforged.fml.loading.FMLPaths.CONFIGDIR.get()
+      .resolve("hexacreatecore")
+      .resolve("exported_blueprints");
+      if (!java.nio.file.Files.exists(exportDir)) return;
+
+      try (var stream = java.nio.file.Files.list(exportDir)) {
+        stream.filter(p -> p.toString().endsWith(".json")).forEach(path -> {
+          try (var reader = java.nio.file.Files.newBufferedReader(path, java.nio.charset.StandardCharsets.UTF_8)) {
+            JsonElement json = GsonHelper.fromJson(GSON, reader, JsonElement.class);
+            if (json != null) {
+              parseAndStore(json, true);
+            }
+          } catch (Exception e) {
+            e.printStackTrace();
+          }
+        });
+      }
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
   }
 }
