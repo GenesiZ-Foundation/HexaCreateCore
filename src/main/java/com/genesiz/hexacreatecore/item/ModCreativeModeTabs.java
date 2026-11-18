@@ -24,8 +24,8 @@ public class ModCreativeModeTabs {
     (ItemDisplayParameters, output) -> {
         output.accept(ModItems.DEBUGGER);
         output.accept(ModItems.CURSED_BLACKSMITH_SPAWN_EGG);
-
-
+        output.accept(ModItems.EVERBOOK);
+        output.accept(ModItems.WONDERUM);
     }).build()
   );
 
