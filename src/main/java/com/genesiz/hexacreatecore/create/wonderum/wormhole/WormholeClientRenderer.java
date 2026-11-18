@@ -31,6 +31,9 @@ public final class WormholeClientRenderer {
   private static final long EPOCH_NANOS = System.nanoTime();
   private static List<WormholeSyncPayload.SyncNode> activeNodes = new ArrayList<>();
   private static WormholeSyncPayload.SyncNode pendingNode = null;
+  private static final java.util.Map<String, Long> SPAWN_TIMES = new java.util.concurrent.ConcurrentHashMap<>();
+  private static final long SPAWN_ANIM_MS = 550L;
+
 
   private WormholeClientRenderer() {}
 
@@ -46,7 +49,10 @@ public final class WormholeClientRenderer {
   @SubscribeEvent
   public static void onRenderWorld(RenderLevelStageEvent event) {
     if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS) return;
-    if (activeNodes.isEmpty() && pendingNode == null) return;
+    if (activeNodes.isEmpty() && pendingNode == null) {
+      SPAWN_TIMES.clear();
+      return;
+    }
 
     Minecraft mc = Minecraft.getInstance();
     if (mc.level == null || mc.player == null) return;
@@ -56,19 +62,45 @@ public final class WormholeClientRenderer {
     MultiBufferSource.BufferSource buf = mc.renderBuffers().bufferSource();
     float timeSec = (float) ((System.nanoTime() - EPOCH_NANOS) * 1.0e-9D);
 
+    long nowMs = System.currentTimeMillis();
+    java.util.Set<String> visibleKeys = new java.util.HashSet<>();
+
     for (WormholeSyncPayload.SyncNode node : activeNodes) {
-      renderFaceWormhole(ps, buf, cam, node.pos(), node.face(), 1.05f, 0.36f, timeSec);
+      String key = "active_" + node.pos().asLong() + "_" + node.face().getName();
+      visibleKeys.add(key);
+      float scale = computeRubberBandScale(key, nowMs);
+      renderFaceWormhole(ps, buf, cam, node.pos(), node.face(), 1.05f, 0.36f, timeSec, scale);
     }
 
     if (pendingNode != null) {
-      renderFaceWormhole(ps, buf, cam, pendingNode.pos(), pendingNode.face(), 0.72f, 0.22f, timeSec);
+      String key = "pending_" + pendingNode.pos().asLong() + "_" + pendingNode.face().getName();
+      visibleKeys.add(key);
+      float scale = computeRubberBandScale(key, nowMs);
+      renderFaceWormhole(ps, buf, cam, pendingNode.pos(), pendingNode.face(), 0.72f, 0.22f, timeSec, scale);
     }
+
+    SPAWN_TIMES.keySet().removeIf(k -> !visibleKeys.contains(k));
   }
+
+  private static float computeRubberBandScale(String key, long nowMs) {
+    long bornMs = SPAWN_TIMES.computeIfAbsent(key, k -> nowMs);
+    float t = Math.min(1.0f, Math.max(0.0f, (nowMs - bornMs) / (float) SPAWN_ANIM_MS));
+    if (t >= 1.0f) return 1.0f;
+
+    // easeOutBack rubber-band overshoot (0.0 -> ~1.18 -> 1.0)
+    float c1 = 2.4f;
+    float c3 = c1 + 1.0f;
+    float u = t - 1.0f;
+    return 1.0f + c3 * (u * u * u) + c1 * (u * u);
+  }
+
 
   private static void renderFaceWormhole(
     PoseStack ps, MultiBufferSource.BufferSource buf, Vec3 cam,
-    BlockPos pos, Direction face, float discSize, float crownDepth, float timeSec
+    BlockPos pos, Direction face, float discSize, float crownDepth, float timeSec, float spawnScale
   ) {
+    if (spawnScale <= 0.001f) return;
+
     double fx = pos.getX() + 0.5D + face.getStepX() * 0.506D;
     double fy = pos.getY() + 0.5D + face.getStepY() * 0.506D;
     double fz = pos.getZ() + 0.5D + face.getStepZ() * 0.506D;
@@ -77,9 +109,9 @@ public final class WormholeClientRenderer {
     ps.pushPose();
     ps.translate(fx - cam.x, fy - cam.y, fz - cam.z);
     orientToFace(ps, face);
+    ps.scale(spawnScale, spawnScale, spawnScale);
 
-
-    // 1. Face-aligned square relativistic accretion halo at z = 0.0f
+    // 1. Face-aligned square relativistic accretion halo at z = 0.05f
     ps.pushPose();
     ps.translate(0.0f, 0.0f, 0.05f);
     PortalShaderHook.bind(BlackHoleDictionary.SILVER_SINGULARITY)
@@ -97,17 +129,14 @@ public final class WormholeClientRenderer {
       .eventHorizon(0.095f, 5)
       .render(ps, buf, timeSec);
 
-    // 3. Sift-Rift translucent white wobbling crown hugging the 3D core's perimeter
+    // 3. Sift-Rift translucent white wobbling crown shifted back (-0.065f) to sit flush with the event horizon
     RenderSystem.enableBlend();
     RenderSystem.defaultBlendFunc();
     RenderSystem.disableCull();
     RenderSystem.depthMask(false);
 
-    //VertexConsumer vc = buf.getBuffer(RawGeometry.DIALOGUE_SOLID);
-    //float crownHalf = coreHalf + 0.075f;
-    // 3. True 3D Volumetric Sift-Rift Crown wrapping the black-hole perimeter (inner wall, outer wall, and front 3D cap)
     VolumetricHook.bind(SiftRiftVolumetricDictionary.WHITE_RIFT)
-      .at(0.0f, 0.0f, -0.005f)
+      .at(0.0f, 0.0f, 0.045f)
       .coreSize(coreHalf * 0.915f, coreHalf * 0.915f, 0.0f)
       .renderCrown(ps, buf, 0.095f, -crownDepth, 6, timeSec);
     buf.endBatch(RawGeometry.DIALOGUE_SOLID);
