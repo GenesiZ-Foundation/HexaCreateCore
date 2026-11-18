@@ -31,8 +31,6 @@ public final class AeronauticsAnchorHandler {
 
   public static final double ANCHOR_RANGE = 24.0D;
   private static final long EPOCH_NANOS = System.nanoTime();
-  private static boolean loggedSubMethods = false;
-  private static boolean loggedPadlockPos = false;
 
   private AeronauticsAnchorHandler() {}
 
@@ -133,12 +131,6 @@ public final class AeronauticsAnchorHandler {
         if (sub == null) continue;
 
         Vec3 worldPos = findOpenAirWorldAboveContraption(sub);
-        if (!loggedPadlockPos) {
-          loggedPadlockPos = true;
-          mc.player.displayClientMessage(
-            net.minecraft.network.chat.Component.literal("§b[PadlockPos] §f" + String.format("(%.2f, %.2f, %.2f)", worldPos.x, worldPos.y, worldPos.z)), false
-          );
-        }
         if (cam.distanceToSqr(worldPos) > 128.0D * 128.0D) continue;
 
         float bobY = (float) Math.sin(timeSec * 2.6f) * 0.08f;
@@ -152,16 +144,7 @@ public final class AeronauticsAnchorHandler {
         ps.popPose();
       }
       buf.endBatch(RawGeometry.DIALOGUE_SOLID);
-    } catch (Throwable t) {
-      if (!loggedPadlockPos) {
-        loggedPadlockPos = true;
-        Throwable cause = (t.getCause() != null) ? t.getCause() : t;
-        mc.player.displayClientMessage(
-          net.minecraft.network.chat.Component.literal("§c[PadlockErr] §f" + cause.getClass().getSimpleName() + ": " + cause.getMessage()), false
-        );
-        cause.printStackTrace();
-      }
-    }
+    } catch (Throwable ignored) {}
   }
 
   private static Vec3 findOpenAirWorldAboveContraption(Object sub) throws Exception {
