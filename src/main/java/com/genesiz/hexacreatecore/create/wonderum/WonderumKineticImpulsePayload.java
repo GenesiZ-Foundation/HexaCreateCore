@@ -115,6 +115,14 @@ public record WonderumKineticImpulsePayload(BlockPos targetPos) implements Custo
         it.remove();
       } else {
         entry.setValue(nextTicks);
+        // If wrenched/rotated to a new axis while active, Create detaches its network — re-apply onto the new axis
+        try {
+          float curSpeed = (float) be.getClass().getMethod("getSpeed").invoke(be);
+          boolean hasNet = (boolean) be.getClass().getMethod("hasNetwork").invoke(be);
+          if (!hasNet || Math.abs(curSpeed) < 0.01f) {
+            applyImpulseNetwork(level, key.pos(), be, IMPULSE_RPM, PER_RPM_SU);
+          }
+        } catch (Throwable ignored) {}
       }
     }
   }
@@ -130,9 +138,10 @@ public record WonderumKineticImpulsePayload(BlockPos targetPos) implements Custo
       WormholeKineticBridge.setDriven(level.dimension(), pos, speed, perRpmCap);
 
       // 2. If not already attached to a spinning network, assign this block as a source root
-      Object existingNet = kbeClass.getMethod("getOrCreateNetwork").invoke(be);
+      boolean hasNet = (boolean) kbeClass.getMethod("hasNetwork").invoke(be);
+      Object existingNet = hasNet ? kbeClass.getMethod("getOrCreateNetwork").invoke(be) : null;
       float currentSpeed = (float) kbeClass.getMethod("getSpeed").invoke(be);
-      if (existingNet == null || Math.abs(currentSpeed) < 0.01f) {
+      if (!hasNet || existingNet == null || Math.abs(currentSpeed) < 0.01f) {
         kbeClass.getMethod("detachKinetics").invoke(be);
         kbeClass.getMethod("setSpeed", float.class).invoke(be, speed);
         kbeClass.getMethod("setNetwork", Long.class).invoke(be, pos.asLong());

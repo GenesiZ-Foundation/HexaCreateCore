@@ -62,6 +62,15 @@ public final class WormholeManager {
     WormholeSavedData.Endpoint pending = data.getPending(sp.getUUID());
 
     if (!isKinetic && pending == null) return;
+    if (!hasKineticConnectionOnFace(serverLevel, pos, face)) {
+      serverLevel.playSound(null, pos, SoundEvents.NOTE_BLOCK_BASS.value(), SoundSource.BLOCKS, 0.7f, 0.7f);
+      com.genesiz.hexacreatecore.threedified.ThreeDifiedNotificationHud.sendTo(
+        sp,
+        "§c[Wonderum] §fNo kinetic shaft connection on §e" + face.getName().toUpperCase() + " §fface!"
+      );
+      return;
+    }
+
 
     event.setCanceled(true);
     event.setCancellationResult(InteractionResult.CONSUME);
@@ -184,7 +193,8 @@ public final class WormholeManager {
         continue;
       }
 
-      bridgeKineticRotation(beA, beB);
+      bridgeKineticRotation(beA, pair.a().face(), beB, pair.b().face());
+
     }
 
     if (changed) syncAllPlayers(server);
@@ -238,7 +248,7 @@ public final class WormholeManager {
     } catch (Throwable ignored) {}
   }
 
-  private static void bridgeKineticRotation(BlockEntity beA, BlockEntity beB) {
+  private static void bridgeKineticRotation(BlockEntity beA, Direction faceA, BlockEntity beB, Direction faceB) {
     try {
       Class<?> kbeClass = Class.forName("com.simibubi.create.content.kinetics.base.KineticBlockEntity");
       Class<?> netClass = Class.forName("com.simibubi.create.content.kinetics.KineticNetwork");
@@ -249,9 +259,9 @@ public final class WormholeManager {
       if (levelA == null || levelB == null) return;
 
       boolean aDriven = WormholeKineticBridge.getDriven(levelA, beA.getBlockPos()) != null
-      && !com.genesiz.hexacreatecore.create.wonderum.WonderumKineticImpulsePayload.isImpulseNode(levelA, beA.getBlockPos());
+        && !com.genesiz.hexacreatecore.create.wonderum.WonderumKineticImpulsePayload.isImpulseNode(levelA, beA.getBlockPos());
       boolean bDriven = WormholeKineticBridge.getDriven(levelB, beB.getBlockPos()) != null
-      && !com.genesiz.hexacreatecore.create.wonderum.WonderumKineticImpulsePayload.isImpulseNode(levelB, beB.getBlockPos());
+        && !com.genesiz.hexacreatecore.create.wonderum.WonderumKineticImpulsePayload.isImpulseNode(levelB, beB.getBlockPos());
 
       Method getSpeed = kbeClass.getMethod("getSpeed");
       float speedA = (float) getSpeed.invoke(beA);
@@ -259,21 +269,37 @@ public final class WormholeManager {
 
       BlockEntity driver = beA;
       BlockEntity receiver = beB;
+      Direction driverFace = faceA;
+      Direction receiverFace = faceB;
       float driverSpeed = speedA;
 
       if (aDriven && !bDriven) {
         driver = beB;
         receiver = beA;
+        driverFace = faceB;
+        receiverFace = faceA;
         driverSpeed = speedB;
       } else if (!aDriven && !bDriven && Math.abs(speedB) > Math.abs(speedA)) {
         driver = beB;
         receiver = beA;
+        driverFace = faceB;
+        receiverFace = faceA;
         driverSpeed = speedB;
+      }
+
+      boolean faceDriverValid = hasKineticConnectionOnFace(driver.getLevel(), driver.getBlockPos(), driverFace);
+      boolean faceReceiverValid = hasKineticConnectionOnFace(receiver.getLevel(), receiver.getBlockPos(), receiverFace);
+      if (!faceDriverValid || !faceReceiverValid) {
+        driverSpeed = 0.0f;
       }
 
       Level recvLevel = receiver.getLevel();
       BlockPos recvPos = receiver.getBlockPos();
       if (recvLevel == null) return;
+      if (com.genesiz.hexacreatecore.create.wonderum.WonderumKineticImpulsePayload.isImpulseNode(recvLevel, recvPos)) {
+        return;
+      }
+
 
       Object driverNet = kbeClass.getMethod("getOrCreateNetwork").invoke(driver);
       float driverCapacity = driverNet != null ? (float) netClass.getMethod("calculateCapacity").invoke(driverNet) : 0.0f;
@@ -281,8 +307,13 @@ public final class WormholeManager {
 
       WormholeKineticBridge.DrivenState prev = WormholeKineticBridge.getDriven(recvLevel, recvPos);
       boolean changed = prev == null
-      || Math.abs(prev.speed() - driverSpeed) > 0.01f
-      || Math.abs(prev.perRpmCapacity() - perRpmCap) > 0.05f;
+        || Math.abs(prev.speed() - driverSpeed) > 0.01f
+        || Math.abs(prev.perRpmCapacity() - perRpmCap) > 0.05f;
+
+      // If faces are misaligned and this receiver was never driven by the wormhole, don't overwrite its independent rotation!
+      if ((!faceDriverValid || !faceReceiverValid) && prev == null) {
+        return;
+      }
 
       if (Math.abs(driverSpeed) > 0.01f) {
         WormholeKineticBridge.setDriven(recvLevel.dimension(), recvPos, driverSpeed, perRpmCap);
@@ -347,4 +378,25 @@ public final class WormholeManager {
       hasPendingInDim ? new WormholeSyncPayload.SyncNode(pending.pos(), pending.face()) : new WormholeSyncPayload.SyncNode(BlockPos.ZERO, Direction.UP)
     ));
   }
+
+  private static boolean hasKineticConnectionOnFace(Level level, BlockPos pos, Direction face) {
+    if (level == null) return false;
+    var state = level.getBlockState(pos);
+    var block = state.getBlock();
+    try {
+      Class<?> iRotateClass = Class.forName("com.simibubi.create.content.kinetics.base.IRotate");
+      if (iRotateClass.isInstance(block)) {
+        Method hasShaftTowards = iRotateClass.getMethod(
+          "hasShaftTowards",
+          net.minecraft.world.level.LevelReader.class,
+          BlockPos.class,
+          net.minecraft.world.level.block.state.BlockState.class,
+          Direction.class
+        );
+        return (boolean) hasShaftTowards.invoke(block, level, pos, state, face);
+      }
+    } catch (Throwable ignored) {}
+    return true;
+  }
+
 }
