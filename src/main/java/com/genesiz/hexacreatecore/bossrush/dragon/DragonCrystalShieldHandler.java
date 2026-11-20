@@ -24,11 +24,13 @@ public final class DragonCrystalShieldHandler {
     boolean novaShieldActive = level.getEntitiesOfClass(
       EnderDragon.class,
       AABB.ofSize(crystal.position(), 140.0D, 110.0D, 140.0D)
-    ).stream().anyMatch(d ->
-      d.isAlive()
-        && d instanceof IMhEnderDragon mh
-        && mh.hexacreatecore$getActiveAction() == DragonAnimState.DragonAction.NOVA_CHARGE
-    );
+    ).stream().anyMatch(d -> {
+      if (!d.isAlive() || !(d instanceof IMhEnderDragon mh)) return false;
+      DragonAnimState.DragonAction act = mh.hexacreatecore$getActiveAction();
+      return act == DragonAnimState.DragonAction.NOVA_PRE_CHARGE
+        || act == DragonAnimState.DragonAction.NOVA_CHARGE
+        || (act == DragonAnimState.DragonAction.NOVA_END_CHARGE && 80 > mh.hexacreatecore$getActionTick());
+    });
 
     if (novaShieldActive || crystal.isInvulnerable()) {
       event.setCanceled(true);

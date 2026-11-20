@@ -211,7 +211,7 @@
     "display_distance": 500.0,
     "hp_phases": [
       {
-        "below_hp": 100.0,
+        "below_hp": 300.0,
         "display_name": "The End Dragon",
         "border_color": "#FF1E56",
         "background_color": "#17060C",

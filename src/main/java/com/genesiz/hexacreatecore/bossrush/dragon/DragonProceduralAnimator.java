@@ -186,6 +186,7 @@ public final class DragonProceduralAnimator {
     boolean lockNeckForAttack = (action == DragonAction.SAFI_ROAR
       || action == DragonAction.FIREBALL_SHORT
       || action == DragonAction.AIR_DASH
+      || isNovaAnim(action)
       || action == DragonAction.BREATH_SWIPE_90
       || action == DragonAction.DESPERATION_SPIN_CW
       || action == DragonAction.DESPERATION_SPIN_CCW);
@@ -276,6 +277,7 @@ public final class DragonProceduralAnimator {
     MhEnderDragonModel<?> model, EnderDragon dragon, ClientAnimData anim, float ageTicks,
     boolean isAirborne, DragonPoseMode mode, DragonAction action, float prog
   ) {
+    if (isNovaAnim(action)) return;
     float whipWave = 0.0f;
     if (action == DragonAction.TAIL_SWIPE_LR || action == DragonAction.TAIL_SWIPE_RL) {
       float dir = (action == DragonAction.TAIL_SWIPE_LR) ? 1.0f : -1.0f;
@@ -313,6 +315,9 @@ public final class DragonProceduralAnimator {
     MhEnderDragonModel<?> model, EnderDragon dragon, ClientAnimData anim, float ageTicks,
     boolean isAirborne, DragonPoseMode mode, DragonAction action, float prog
   ) {
+    if (action == DragonAction.AIR_DASH || isNovaAnim(action)) {
+      return;
+    }
     GeoBone wingL = getBone(model, dragon, "wing");
     GeoBone tipL = getBone(model, dragon, "wingtip");
     GeoBone wingR = getBone(model, dragon, "wing1");
@@ -524,16 +529,18 @@ public final class DragonProceduralAnimator {
 
   private static void resetProceduralBones(MhEnderDragonModel<?> model, EnderDragon dragon, DragonPoseMode mode, DragonAction action) {
     resetBoneToBind(getBone(model, dragon, "root"));
-    if (action != DragonAction.FIREBALL_SHORT && action != DragonAction.AIR_DASH) {
+    if (action != DragonAction.FIREBALL_SHORT && action != DragonAction.AIR_DASH && !isNovaAnim(action)) {
       for (String name : NECK_CHAIN) {
         resetBoneToBind(getBone(model, dragon, name));
       }
     }
-    for (String name : TAIL_CHAIN) {
-      resetBoneToBind(getBone(model, dragon, name));
+    if (!isNovaAnim(action)) {
+      for (String name : TAIL_CHAIN) {
+        resetBoneToBind(getBone(model, dragon, name));
+      }
     }
     boolean grounded = (mode == DragonPoseMode.GROUND_IDLE || mode == DragonPoseMode.GROUND_WALK);
-    if (!grounded && action != DragonAction.LIFT_OFF_GROUND && action != DragonAction.AIR_DASH && action != DragonAction.FIREBALL_SHORT) {
+    if (!grounded && action != DragonAction.LIFT_OFF_GROUND && action != DragonAction.AIR_DASH && action != DragonAction.FIREBALL_SHORT && !isNovaAnim(action)) {
       resetBoneToBind(getBone(model, dragon, "wing"));
       resetBoneToBind(getBone(model, dragon, "wingtip"));
       resetBoneToBind(getBone(model, dragon, "wing1"));
@@ -551,5 +558,11 @@ public final class DragonProceduralAnimator {
     bone.setRotX(snap.getRotX());
     bone.setRotY(snap.getRotY());
     bone.setRotZ(snap.getRotZ());
+  }
+
+  private static boolean isNovaAnim(DragonAction action) {
+    return action == DragonAction.NOVA_PRE_CHARGE
+    || action == DragonAction.NOVA_CHARGE
+    || action == DragonAction.NOVA_END_CHARGE;
   }
 }

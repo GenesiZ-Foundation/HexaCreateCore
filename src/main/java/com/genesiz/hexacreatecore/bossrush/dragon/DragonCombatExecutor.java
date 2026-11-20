@@ -161,6 +161,17 @@ public final class DragonCombatExecutor {
           dragon.move(net.minecraft.world.entity.MoverType.SELF, new Vec3(0.0D, 1.0D, 0.0D));
         }
       }
+      case NOVA_PRE_CHARGE -> {
+        if (tick == 1) {
+          level.playSound(null, dragon.blockPosition(), SoundEvents.WARDEN_SONIC_CHARGE, SoundSource.HOSTILE, 3.0f, 0.65f);
+        }
+        if (tick % 10 == 0) {
+          emitNovaFloorBreath(level, dragon);
+        }
+        if (tick % 2 == 0) {
+          stepNovaGalaxyWaves(level, dragon, tick);
+        }
+      }
       case NOVA_CHARGE -> {
         float chargeProg = tick / (float) Math.max(1, dur);
         if (tick % 5 == 0) {
@@ -171,7 +182,39 @@ public final class DragonCombatExecutor {
           emitNovaFloorBreath(level, dragon);
         }
         if (tick % 2 == 0) {
-          stepNovaGalaxyWaves(level, dragon, tick);
+          stepNovaGalaxyWaves(level, dragon, 40 + tick);
+        }
+      }
+      case NOVA_END_CHARGE -> {
+        if (80 > tick) {
+          // Final 4.0 seconds of charge before explosion at tick 80 (4.0s)
+          if (tick % 5 == 0) {
+            level.playSound(null, dragon.blockPosition(), SoundEvents.BEACON_AMBIENT, SoundSource.HOSTILE, 2.8f, 1.80f);
+          }
+          if (tick % 10 == 0) {
+            emitNovaFloorBreath(level, dragon);
+          }
+          if (tick % 2 == 0) {
+            stepNovaGalaxyWaves(level, dragon, 320 + tick);
+          }
+        } else if (tick == 80) {
+          // Exact 4.0s mark: Unlock 5-crystal shields, deal safe-zone check damage, and trigger explosion!
+          Vec3 origin = (dragon instanceof IMhEnderDragon mh) ? mh.hexacreatecore$getArenaOrigin() : dragon.position().subtract(0.0D, 10.0D, 0.0D);
+          for (net.minecraft.world.entity.boss.enderdragon.EndCrystal c : level.getEntitiesOfClass(
+            net.minecraft.world.entity.boss.enderdragon.EndCrystal.class,
+            net.minecraft.world.phys.AABB.ofSize(origin, 110.0D, 80.0D, 110.0D)
+          )) {
+            c.setInvulnerable(false);
+          }
+          for (Player p : level.players()) {
+            if (p.isAlive() && !p.isCreative() && !p.isSpectator() && p.distanceToSqr(dragon.getX(), origin.y, dragon.getZ()) > 42.0D) {
+              p.hurt(level.damageSources().magic(), 36.0f);
+            }
+          }
+          level.playSound(null, dragon.blockPosition(), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 4.0f, 0.55f);
+          level.playSound(null, dragon.blockPosition(), SoundEvents.ENDER_DRAGON_GROWL, SoundSource.HOSTILE, 3.5f, 0.70f);
+          level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, dragon.getX(), dragon.getY() + 1.0D, dragon.getZ(), 12, 8.0D, 3.0D, 8.0D, 0.0D);
+          level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, dragon.getX(), dragon.getY(), dragon.getZ(), 160, 28.0D, 4.0D, 28.0D, 0.25D);
         }
       }
       case NOVA_DETONATE -> {

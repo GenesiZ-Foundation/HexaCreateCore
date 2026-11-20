@@ -81,14 +81,16 @@ public final class DragonArenaVisualRenderer {
       AABB.ofSize(mc.player.position(), 256.0D, 256.0D, 256.0D)
     );
 
-    // 1. Everbook Cosmic Ocean Cages (smoothly glides between dragon body and floor safe-zone)
     boolean anyCageRendered = false;
     for (EnderDragon dragon : dragons) {
       if (!(dragon instanceof IMhEnderDragon mh)) continue;
 
       Vec3 dPos = dragon.getPosition(partialTick);
       Vec3 origin = mh.hexacreatecore$getArenaOrigin();
-      boolean isChargingNova = (mh.hexacreatecore$getActiveAction() == DragonAnimState.DragonAction.NOVA_CHARGE);
+      DragonAnimState.DragonAction act = mh.hexacreatecore$getActiveAction();
+      boolean isChargingNova = (act == DragonAnimState.DragonAction.NOVA_PRE_CHARGE
+        || act == DragonAnimState.DragonAction.NOVA_CHARGE
+        || (act == DragonAnimState.DragonAction.NOVA_END_CHARGE && 80 > mh.hexacreatecore$getActionTick()));
       boolean hasShield = mh.hexacreatecore$hasBarrierShield();
 
       float targetBlend = isChargingNova ? 1.0f : 0.0f;
@@ -125,17 +127,21 @@ public final class DragonArenaVisualRenderer {
       buf.endBatch();
     }
 
-    // 2. Growing & Collapsing Cubic Black Hole 10 blocks higher above the dragon during NOVA_CHARGE
+    // 2. Growing & Collapsing Cubic Black Hole 10 blocks higher above the dragon across the 20s Nova Charge
     for (EnderDragon dragon : dragons) {
       if (!(dragon instanceof IMhEnderDragon mh)) continue;
-      if (mh.hexacreatecore$getActiveAction() != DragonAnimState.DragonAction.NOVA_CHARGE) {
+      DragonAnimState.DragonAction act = mh.hexacreatecore$getActiveAction();
+      boolean isChargingNova = (act == DragonAnimState.DragonAction.NOVA_PRE_CHARGE
+        || act == DragonAnimState.DragonAction.NOVA_CHARGE
+        || (act == DragonAnimState.DragonAction.NOVA_END_CHARGE && 80 > mh.hexacreatecore$getActionTick()));
+
+      if (!isChargingNova) {
         NOVA_START_WALL_SEC.remove(dragon.getUUID());
         continue;
       }
 
       double startWall = NOVA_START_WALL_SEC.computeIfAbsent(dragon.getUUID(), id -> nowWallSec);
-      float totalDurSec = Math.max(1, mh.hexacreatecore$getActionDuration()) * 0.05f;
-      float prog = Mth.clamp((float) ((nowWallSec - startWall) / totalDurSec), 0.0f, 1.0f);
+      float prog = Mth.clamp((float) ((nowWallSec - startWall) / 20.0D), 0.0f, 1.0f);
 
       float orbRadius;
       if (0.92f > prog) {
@@ -145,23 +151,25 @@ public final class DragonArenaVisualRenderer {
         orbRadius = Math.max(0.25f, 11.5f * (collapseT * collapseT));
       }
 
-      Vec3 novaCenter = dragon.getPosition(partialTick).add(0.0D, 14.5D, 0.0D);
+      Vec3 novaCenter = dragon.getPosition(partialTick).add(0.0D, 29.5D, 0.0D);
       renderCubicBlackHole(ps, buf, cam, novaCenter, orbRadius, timeSec * 2.5f, 48, 12);
     }
 
-    // 3. Quadruple Expanding Sift-Rift Shockwave Crowns during NOVA_DETONATE
+    // 3. Quadruple Expanding Sift-Rift Shockwave Crowns starting at 4.0s (tick 80) of end_charging_nova_1
     for (EnderDragon dragon : dragons) {
       if (!(dragon instanceof IMhEnderDragon mh)) continue;
-      if (mh.hexacreatecore$getActiveAction() != DragonAnimState.DragonAction.NOVA_DETONATE) {
+      DragonAnimState.DragonAction act = mh.hexacreatecore$getActiveAction();
+      boolean isDetonating = (act == DragonAnimState.DragonAction.NOVA_END_CHARGE && mh.hexacreatecore$getActionTick() >= 80);
+
+      if (!isDetonating) {
         DETONATE_START_WALL_SEC.remove(dragon.getUUID());
         continue;
       }
 
       double startWall = DETONATE_START_WALL_SEC.computeIfAbsent(dragon.getUUID(), id -> nowWallSec);
-      float totalDurSec = Math.max(1, mh.hexacreatecore$getActionDuration()) * 0.05f;
-      float prog = Mth.clamp((float) ((nowWallSec - startWall) / totalDurSec), 0.0f, 1.0f);
+      float prog = Mth.clamp((float) ((nowWallSec - startWall) / 1.35D), 0.0f, 1.0f);
 
-      Vec3 crownBase = dragon.getPosition(partialTick).subtract(0.0D, 20.0D, 0.0D);
+      Vec3 crownBase = dragon.getPosition(partialTick).subtract(0.0D, 30.0D, 0.0D);
       renderNovaSiftCrowns(ps, buf, cam, crownBase, prog, timeSec);
     }
 

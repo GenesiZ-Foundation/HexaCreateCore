@@ -26,7 +26,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.animation.AnimatableManager;
 import software.bernie.geckolib.animation.AnimationController;
@@ -94,6 +93,13 @@ public abstract class EnderDragonMixin extends Mob implements IMhEnderDragon {
   private DragonAction hexacreatecore$lastStanceAction = DragonAction.NONE;
   @Unique
   private static final RawAnimation ANIM_PRE_CHARGE_FLIGHT = RawAnimation.begin().thenPlay("pre_charge_flight");
+  @Unique
+  private static final RawAnimation ANIM_PRE_CHARGING_NOVA_1 = RawAnimation.begin().thenPlay("pre_charging_nova_1");
+  @Unique
+  private static final RawAnimation ANIM_CHARGING_NOVA_1 = RawAnimation.begin().thenLoop("charging_nova_1");
+  @Unique
+  private static final RawAnimation ANIM_END_CHARGING_NOVA_1 = RawAnimation.begin().thenPlay("end_charging_nova_1");
+
 
 
   protected EnderDragonMixin(EntityType<? extends Mob> entityType, Level level) {
@@ -143,6 +149,17 @@ public abstract class EnderDragonMixin extends Mob implements IMhEnderDragon {
       return state.setAndContinue(ANIM_PRE_CHARGE_FLIGHT);
     }
 
+    if (action == DragonAction.NOVA_PRE_CHARGE) {
+      return state.setAndContinue(ANIM_PRE_CHARGING_NOVA_1);
+    }
+    if (action == DragonAction.NOVA_CHARGE) {
+      return state.setAndContinue(ANIM_CHARGING_NOVA_1);
+    }
+    if (action == DragonAction.NOVA_END_CHARGE) {
+      return state.setAndContinue(ANIM_END_CHARGING_NOVA_1);
+    }
+
+
 
     if (action == DragonAction.SAFI_ROAR || action == DragonAction.FORWARD_STOMP || action == DragonAction.NOVA_CHARGE || mode == DragonPoseMode.REAR_UP) {
       if (action == DragonAction.SAFI_ROAR) {
@@ -184,7 +201,11 @@ public abstract class EnderDragonMixin extends Mob implements IMhEnderDragon {
   @Unique
   private PlayState hexacreatecore$mouthPredicate(AnimationState<EnderDragonMixin> state) {
     DragonAction action = hexacreatecore$getActiveAction();
-    if (action == DragonAction.FIREBALL_SHORT || action == DragonAction.AIR_DASH) {
+    if (action == DragonAction.FIREBALL_SHORT
+      || action == DragonAction.AIR_DASH
+      || action == DragonAction.NOVA_PRE_CHARGE
+      || action == DragonAction.NOVA_CHARGE
+      || action == DragonAction.NOVA_END_CHARGE) {
       return PlayState.STOP;
     }
 
