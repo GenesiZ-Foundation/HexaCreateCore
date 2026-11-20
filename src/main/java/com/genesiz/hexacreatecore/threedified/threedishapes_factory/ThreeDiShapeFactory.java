@@ -51,4 +51,20 @@ public final class ThreeDiShapeFactory {
       padding, linkThickness, 0.0f, 0.0f, -3.8f, flowSpeedDeg, chainPrimary, chainSecondary, 56
     );
   }
+
+  /** Smooth geometric Providence/Seraph Eye at top-center with upper radiant rays (no bottom rays) */
+  public static ShapeBlueprint seraphEye(float width, float offsetY, int scleraColor, int rayColor) {
+    return new ShapeBlueprint(
+      "seraph_eye", ShapeAnchor.TOP_CENTER,
+      width, 2.5f, 0.0f, offsetY, 2.0f, 0.0f, scleraColor, rayColor, 28
+    );
+  }
+
+  /** Animated flapping Seraphic Golden Wings (1, 2, or 3 pairs per side with inverted middle/bottom order for 3 pairs) */
+  public static ShapeBlueprint seraphWings(int pairCount, float wingSpan, float flapSpeedDeg, int featherGold, int featherAmber) {
+    return new ShapeBlueprint(
+      "seraph_wings", ShapeAnchor.LEFT_AND_RIGHT,
+      wingSpan, 2.4f, 0.0f, 0.0f, 1.5f, flapSpeedDeg, featherGold, featherAmber, Math.max(1, Math.min(3, pairCount))
+    );
+  }
 }

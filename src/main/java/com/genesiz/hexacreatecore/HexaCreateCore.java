@@ -11,6 +11,7 @@ import com.genesiz.hexacreatecore.registry.ModEffects;
 import com.mojang.logging.LogUtils;
 
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.data.event.GatherDataEvent;
@@ -65,5 +66,10 @@ public class HexaCreateCore {
     } finally {
       Thread.currentThread().setContextClassLoader(prev);
     }
+  }
+
+  @SubscribeEvent
+  public static void onRegisterRenderers(net.neoforged.neoforge.client.event.EntityRenderersEvent.RegisterRenderers event) {
+    event.registerEntityRenderer(net.minecraft.world.entity.EntityType.ENDER_DRAGON, com.genesiz.hexacreatecore.bossrush.dragon.MhEnderDragonRenderer::create);
   }
 }

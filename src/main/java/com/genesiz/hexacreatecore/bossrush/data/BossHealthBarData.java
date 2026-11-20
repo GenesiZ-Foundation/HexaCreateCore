@@ -7,6 +7,7 @@ import com.genesiz.hexacreatecore.decorators.annotations.Overload;
 
 public final class BossHealthBarData {
 
+  private static final java.util.Map<java.util.UUID, Float> LOWEST_HP_TRACKER = new java.util.concurrent.ConcurrentHashMap<>();
   
   public record HpPhaseOverride(
     float belowHp,
@@ -33,6 +34,7 @@ public final class BossHealthBarData {
     String moveDirection,
     float moveSpeed,
     boolean bossRushOnly,
+    float displayDistance,
     List<HpPhaseOverride> hpPhases
   ) {
 
@@ -137,8 +139,30 @@ public final class BossHealthBarData {
         best.moveDirection(),
         best.moveSpeed(),
         bossRushOnly,
+        displayDistance,
         List.of()
       );
     }
+
+    @Overload
+    public HealthBarStyle resolveForHp(java.util.UUID bossUuid, float currentHp, float maxHp, float hpScale) {
+      if (bossUuid == null) return resolveForHp(currentHp, hpScale);
+
+      // Reset phase latch if the boss healed back to full HP (out of combat)
+      if (maxHp > 0.0f && currentHp >= maxHp - 0.1f) {
+        LOWEST_HP_TRACKER.remove(bossUuid);
+        return this;
+      }
+
+      float lowestHp = LOWEST_HP_TRACKER.compute(bossUuid, (id, prev) ->
+      (prev == null || prev > currentHp) ? currentHp : prev
+      );
+
+      return resolveForHp(lowestHp, hpScale);
+    }
+  }
+
+  public static void clearLatchedPhase(java.util.UUID bossUuid) {
+    if (bossUuid != null) LOWEST_HP_TRACKER.remove(bossUuid);
   }
 }

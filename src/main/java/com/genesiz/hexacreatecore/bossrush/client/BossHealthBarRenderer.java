@@ -31,7 +31,7 @@ public final class BossHealthBarRenderer {
     float lagOffsetX,
     float lagOffsetY
   ) {
-    try{
+    try {
       if (boss == null || !boss.isAlive()) {
         trackedEntityId = -1;
         return;
@@ -51,7 +51,7 @@ public final class BossHealthBarRenderer {
         }
       }
 
-      style = style.resolveForHp(currentHp, hpScale);
+      style = style.resolveForHp(boss.getUUID(), currentHp, maxHp, hpScale);
 
       float targetRatio = currentHp / maxHp;
 
@@ -66,8 +66,8 @@ public final class BossHealthBarRenderer {
 
       // 1. Top Box: Entity Nameplate with gradient-colored characters
       String rawName = (style.displayName() != null && !style.displayName().isEmpty())
-      ? style.displayName()
-      : boss.getDisplayName().getString();
+        ? style.displayName()
+        : boss.getDisplayName().getString();
       MutableComponent gradientName = buildGradientText(rawName, style);
       int nameTextWidth = font.width(gradientName);
       float nameBoxWidth = Math.max(96.0f, nameTextWidth + 22.0f);

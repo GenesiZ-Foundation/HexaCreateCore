@@ -8,6 +8,7 @@
     {
       "id": "phase_one",
       "name": "The Fool's Path",
+      "border_decoration_name": "seraph_eye",
       "description": "another fool... Fine then, advance",
       "music": "feral_amalgamation_dm_dokuro",
       "music_title": "Feral Amalgamation - DM Dokuro",
@@ -30,6 +31,7 @@
     {
       "id": "phase_two",
       "name": "Challenger's Might",
+      "border_decoration_name": "seraph_eye_wings_1",
       "description": "you ought to be of much interest... CONTINUE",
       "music": "cd_music_ensemble_of_fools",
       "music_title": "Ensemble of fools - CDMusic",
@@ -52,6 +54,7 @@
     {
       "id": "phase_three",
       "name": "The Grand Hero",
+      "border_decoration_name": "seraph_eye_wings_2",
       "description": "These challengers aren't good enough for thee, prove yourslf",
       "music": "scourge_of_the_universe_dm_dokuro",
       "music_title": "Scourge of the Universe - DM Dokuro",
@@ -70,6 +73,7 @@
     {
       "id": "phase_four",
       "name": "Godslayer",
+      "border_decoration_name": "seraph_eye_wings_3",
       "description": "A miriad of challenges conquered... End it all !",
       "music": "omniscience_of_gods_the_trester",
       "music_title": "Omniscience of Gods - The Trester",

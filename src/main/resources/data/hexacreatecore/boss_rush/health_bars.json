@@ -208,6 +208,7 @@
     "move_direction": "right",
     "move_speed": 2.2,
     "boss_rush_only": false,
+    "display_distance": 500.0,
     "hp_phases": [
       {
         "below_hp": 100.0,

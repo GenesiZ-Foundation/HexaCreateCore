@@ -1,0 +1,60 @@
+Phase 1:
+Flying/End Crystals 100%-100%
+During this phase the dragon is invulnerable to any types of damage (we can have a sort of shield like we had for the everbook's bubble)
+
+-The ender dragon fly in a circle pattern around 0 0 in a radius of 30 blocks;
+-Occasionally it will latch onto one of the pillars protecting an end crystal and shooting a volley of fireball (similar to a scared yian garuga in MH) then fly off;
+-Occasionally it will stop mid air (do an animation) and launch itself on a player (like alatreon's landing charge)
+-After 5 crystals are down the dragon will put a shield around the crystals, go to 0 0 and do a nova (the players must go under the dragon, they will have 20sec);
+-After all crystals are downed the dragon will do another nova
+
+Phase 2:
+Ground Phase 100%-30%
+
+In this phase the dragon will behave like a monster from MH (meaning that it's attacks will be distance based, with 3 invisible rings around the dragon denoting if the player is close combat, medium range or long range, with 4 cones in front and in the back to denote if the player is in front or behind or on the sides);
+
+-90deg claw attack (left/right swipe)
+-Double forward claw attack (moves forward while doing so)
+-Forward stomp (goes on it's 2 legs and lands down on the front back to 4 legs)
+-Quick wing flap forward (moves the player away)
+-Quick side wing flap (either left or right, moves the player away)
+-Simple bite (if the player is close enough, hitbox on the head)
+-Stronger bite (moves a bit forward and does damage in front of her)
+-Short volley of fireball (moves it's head up and swipe fireballs in front of her)
+-Long volley of fireball (flies off backward and carpet bombs the area it was on with fireballs) (puts her in the air)
+-Fire breath swipe (in a 90deg angle in front of her, breath a long range breath)
+-Forward flying fire breath (flies back in the air and breath fire where she was, the fire breath extends 45deg from the point it hits the ground) (puts her in the air)
+-Back leg swipe (Swipe her back leg from it's current position to back based on if the player is behind Left or behind Right of the dragon, like Safi jiva)
+-Tail Swipe (swipe the tail from left to right or right to left if the player is behind)
+-Repositionning (the dragon will try to turn towards the player 90deg by 90deg, if the player intentionally circle her, she will simply attempt an attack);
+-Air dash (while in the air she will dash back to the ground aiming the player and continue dashing for a bit)
+-Air Charged fireball (while in the air, she can charge a fireball which will have 2x the radius of a normal fireball as well as 2x the damage)
+-Air stomp (while in the air, at her current position, violently charges down and stomps the ground, players hit by it will get ragdolled (we have a mod for it that works with Sable), players around it will get pushed away)
+
+Phase 3:
+Blackhole, semi air/ground 30%-1%:
+
+When entering this phase the dragon roars and pushes every players away from her, she then flies towards 0 0 where she'd usually perch and then starts charging a new nova (this one is a bit special), the players have 20sec to go up, 3 islands will spawn above 0 0 (100 blocks), by that point it is expected that the player played with HexCasting and that they have a movement option so they will have to go up on their own. After 20sec the dragon explodes the entire end island violently and a blackhole covers the entire island, the dragon then flies up to the island and stands in the middle, she will start by throwing a volley of fireballs at 1 island and covering it entirely in a special fire that gets out after 2min (this is the main gimmick of this phase), the blackhole covering the island is an insta-kill no matter what;
+
+While flying - Has a shield for 20s everytime this phase is triggered:
+-Lasers (the dragon concentrate her breath into a highly precise laser aimed at a player, shot 3x)
+-Dash (the dragon charges a player chosen at random at high speed)
+-Bite (the dragon lands briefly on the side of an island, bites the nearest player then flies back to the center)
+-Meteors (the dragon summons end portals above one island and bombards it with fireballs)
+-Spectral Dash (the dragon dives in the blackhole, choses one island and dashes through it)
+-Multidirectional laser (she cover herself in a shield (that one doesn't protect her from damage), and throws multiple lasers at once, there's at least 20 of them, and at least 1 of them are aimed at a player (see Musou Zerureusu for inspiration))
+-Laser swipe (the dragon throws a laser that swipe an entire island)
+-Wing push (if a player is too close to a ledge, she will attempt to push the player off of it to fall into the blackhole)
+
+at 20% hp triggers the first nova of this phase:
+the dragon moves behind a chosen island that isn't covered in flames already  (that is a full animation) and starts breathing a massive amount of fire on it, the players within have 5sec to move to another island, then the firebreath become a giant laser for a bit (till the end of the breath animation), she then flies back to the center;
+
+another flight phase until 15% hp:
+at this threshold she will violently dash on top of an island without fire and start gaining her ground patterns (phase 2)
+
+at 7% hp:
+another nova where she breath fire and light an island ablaze;
+she will only stay in flight mode here;
+
+Desperation Phase 1%hp (she automatically goes down to 0% after it);
+Every island's fire gets wiped out and all 3 islands are now available, she will start throwing a ton of fireballs upward, causing a lot fireballs to spawn on every islands until the phase is done, she then readies herself on the center of all 3 islands and throws a swiping laser in a 360deg motion, she then does it again the other direction this time, she then plunges down in the blackhole, the blackhole completely colapses and explodes, the explosion throws out stars all around the islands which starts to throw lasers in random directions aimed toward the islands 3x and then explodes (they'll be close enough to the islands the the explosion can reach the player but far enough that being near the center of an island is enough to dodge), the star explosion is an instant kill, after this the dragon flies upward and start charging a final breath on the island with the most amount of players, the player have 10sec to get out of the breath that will then turn into a final giant laser (is also an instant kill), after this the dragon collapses into a final blackhole (this one is purely cosmetic) and the fight is over

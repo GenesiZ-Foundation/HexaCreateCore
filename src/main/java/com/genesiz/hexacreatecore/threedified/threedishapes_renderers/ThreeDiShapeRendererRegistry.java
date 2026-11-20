@@ -13,6 +13,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public final class ThreeDiShapeRendererRegistry {
+  private static int[][] cachedSolarWingPixels = null;
+  private static boolean triedLoadingSolarWing = false;
 
   private static final Map<String, IShapeRenderer> RENDERERS = new ConcurrentHashMap<>();
 
@@ -23,6 +25,8 @@ public final class ThreeDiShapeRendererRegistry {
     register("side_wings", ThreeDiShapeRendererRegistry::renderSideWings);
     register("kingdom_crown", ThreeDiShapeRendererRegistry::renderKingdomCrown);
     register("interlaced_chains", ThreeDiShapeRendererRegistry::renderInterlacedChains);
+    register("seraph_eye", ThreeDiShapeRendererRegistry::renderSeraphEye);
+    register("seraph_wings", ThreeDiShapeRendererRegistry::renderSeraphWings);
   }
 
   private ThreeDiShapeRendererRegistry() {}
@@ -373,6 +377,184 @@ public final class ThreeDiShapeRendererRegistry {
     int g = Math.min(255, Math.round(FastColor.ARGB32.green(argb) * factor));
     int b = Math.min(255, Math.round(FastColor.ARGB32.blue(argb) * factor));
     return FastColor.ARGB32.color(a, r, g, b);
+  }
+
+  private static void renderSeraphEye(PoseStack ps, MultiBufferSource buf, ShapeBlueprint bp, float boxW, float boxH, float timeSec) {
+    VertexConsumer vc = buf.getBuffer(RawGeometry.DIALOGUE_SOLID);
+    float ax = (bp.anchor().normX * boxW) + bp.offsetX();
+    float ay = (bp.anchor().normY * boxH) + bp.offsetY();
+
+    // 15 wide x 13 tall pixel-art Providence Eye (matches Terraria/Providence style, upper rays only)
+    // Legend: '.' = transparent, 'K' = dark outline, 'W' = white sclera, 'S' = shaded sclera,
+    //         'I' = slate iris, 'P' = black pupil, 'G' = gold ray, 'Y' = bright yellow-white ray tip
+    String[] grid = {
+      ".......Y.......",
+      ".......G.......",
+      "...Y...G...Y...",
+      "....G.KKK.G....",
+      "....KKPPPKK....",
+      "..KKIIPPPIIKK..",
+      ".KWIIIIPIIIIWK.",
+      "KKWWIIIIIIIWWKK",
+      ".KWWWSSSSSWWWK.",
+      "..KKWWWWWWWKK..",
+      "....KKWWWKK....",
+      "......KKK......"
+    };
+
+    int rows = grid.length;
+    int cols = grid[0].length();
+    float pxSize = bp.size() / (float) cols; // ~1.6f per pixel
+    float d = bp.depth();
+
+    ps.pushPose();
+    ps.translate(ax, ay - (rows * pxSize * 0.35f), bp.offsetZ());
+    Matrix4f mat = ps.last().pose();
+
+    for (int r = 0; rows > r; r++) {
+      String row = grid[r];
+      for (int c = 0; cols > c; c++) {
+        char ch = row.charAt(c);
+        if (ch == '.') continue;
+
+        int colPrimary = switch (ch) {
+          case 'K' -> 0xFF18141E;
+          case 'W' -> 0xFFF8FAFC;
+          case 'S' -> 0xFFCBD5E1;
+          case 'I' -> 0xFF5B6E8A;
+          case 'P' -> 0xFF09070D;
+          case 'G' -> 0xFFF59E0B;
+          case 'Y' -> 0xFFFFF59D;
+          default -> 0xFFFFFFFF;
+        };
+        int colShade = switch (ch) {
+          case 'K' -> 0xFF0D0A12;
+          case 'W' -> 0xFFE2E8F0;
+          case 'S' -> 0xFF94A3B8;
+          case 'I' -> 0xFF3E4C63;
+          case 'P' -> 0xFF000000;
+          case 'G' -> 0xFFD97706;
+          case 'Y' -> 0xFFFDE047;
+          default -> colPrimary;
+        };
+
+        float x0 = (c - cols * 0.5f) * pxSize;
+        float y0 = (r - rows * 0.5f) * pxSize;
+        drawExtrudedBox(vc, mat, x0, y0, x0 + pxSize, y0 + pxSize, d, colPrimary, colShade);
+      }
+    }
+
+    ps.popPose();
+  }
+
+  private static void renderSeraphWings(PoseStack ps, MultiBufferSource buf, ShapeBlueprint bp, float boxW, float boxH, float timeSec) {
+    int[][] pixels = getSolarWingPixels();
+    if (pixels == null || pixels.length == 0) return;
+
+    VertexConsumer vc = buf.getBuffer(RawGeometry.DIALOGUE_SOLID);
+    float hw = boxW * 0.5f;
+    int pairCount = Math.max(1, Math.min(3, bp.segments()));
+    float flapFreq = bp.spinSpeedDegPerSec();
+
+    int rows = pixels.length;
+    int cols = pixels[0].length;
+    float pxSize = bp.size() / (float) cols;
+    float d = bp.depth();
+
+    float rootCol = cols - 1.5f;
+    float rootRow = rows * 0.72f;
+
+    // Config format: { anchorY, baseDeg, scale, phaseOffset, zOffset }
+    // Lower wings have negative zOffset so they always render behind the upper wings.
+    float[][] wingConfigs = switch (pairCount) {
+      case 1 -> new float[][] {
+        { -boxH * 0.50f - 4.5f, -4.0f, 1.00f, 0.0f, -3.5f }
+      };
+      case 2 -> new float[][] {
+        {  boxH * 0.28f,         26.0f, 0.92f, 0.55f, -3.5f }, // w = 0: Drawn last (bottom wing, in front of top pair)
+        { -boxH * 0.50f - 4.5f, -10.0f, 1.04f, 0.0f,  -6.5f }  // w = 1: Drawn 1st (top wing, behind bottom pair)
+      };
+      default -> new float[][] {
+        {  boxH * 0.32f,         48.0f, 1.14f, 0.45f, -3.5f }, // w = 0: Drawn last (bottom wing, frontmost behind box)
+        { -boxH * 0.16f,         12.0f, 1.02f, 0.90f, -6.5f }, // w = 1: Drawn 2nd (middle wing, enlarged + above top wing)
+        { -boxH * 0.50f - 4.5f, -14.0f, 1.04f, 0.0f,  -9.5f }  // w = 2: Drawn 1st (top wing, furthest back)
+      };
+    };
+
+    for (int side : new int[]{ -1, 1 }) {
+      // Render from back-to-front (lowest wing first) so translucent/3D depth sorts cleanly
+      for (int w = wingConfigs.length - 1; w >= 0; w--) {
+        float[] cfg = wingConfigs[w];
+        float anchorY = cfg[0];
+        float baseDeg = cfg[1];
+        float scale = cfg[2];
+        float phase = cfg[3];
+        float zOffset = cfg[4];
+
+        float flapWave = (float) Math.sin((timeSec * flapFreq) - phase);
+        float flapDeg = flapWave * 12.0f;
+        float bobY = -flapWave * 1.1f;
+
+        ps.pushPose();
+        ps.translate(side * (hw - 2.0f), anchorY + bobY, bp.offsetZ() + zOffset);
+        ps.mulPose(Axis.ZP.rotationDegrees(side * (baseDeg + flapDeg)));
+        ps.scale(scale, scale, 1.0f);
+        Matrix4f mat = ps.last().pose();
+
+        for (int r = 0; rows > r; r++) {
+          for (int c = 0; cols > c; c++) {
+            int argb = pixels[r][c];
+            int alpha = (argb >>> 24) & 0xFF;
+            if (alpha < 20) continue;
+
+            int shade = scaleColor(argb, 0.82f);
+            float x0 = side * ((rootCol - c) * pxSize);
+            float x1 = side * ((rootCol - c + 1.0f) * pxSize);
+            float y0 = (r - rootRow) * pxSize;
+            float y1 = y0 + pxSize;
+
+            drawExtrudedBox(vc, mat, x0, y0, x1, y1, d, argb, shade);
+          }
+        }
+
+        ps.popPose();
+      }
+    }
+  }
+
+  private static int[][] getSolarWingPixels() {
+    if (triedLoadingSolarWing) return cachedSolarWingPixels;
+    triedLoadingSolarWing = true;
+
+    try {
+      net.minecraft.resources.ResourceLocation texLoc = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(
+        "hexacreatecore", "textures/gui/seraph_solar_wing.png"
+      );
+      var resOpt = net.minecraft.client.Minecraft.getInstance().getResourceManager().getResource(texLoc);
+      if (resOpt.isPresent()) {
+        try (var stream = resOpt.get().open();
+        com.mojang.blaze3d.platform.NativeImage img = com.mojang.blaze3d.platform.NativeImage.read(stream)) {
+          int w = img.getWidth();
+          int h = img.getHeight();
+          int[][] grid = new int[h][w];
+          for (int y = 0; h > y; y++) {
+            for (int x = 0; w > x; x++) {
+              // NativeImage#getPixelRGBA returns ABGR in little-endian -> convert to standard ARGB
+              int abgr = img.getPixelRGBA(x, y);
+              int a = (abgr >>> 24) & 0xFF;
+              int b = (abgr >>> 16) & 0xFF;
+              int g = (abgr >>> 8) & 0xFF;
+              int r = abgr & 0xFF;
+              grid[y][x] = (a << 24) | (r << 16) | (g << 8) | b;
+            }
+          }
+          cachedSolarWingPixels = grid;
+        }
+      }
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+    return cachedSolarWingPixels;
   }
 }
 

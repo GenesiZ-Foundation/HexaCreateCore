@@ -76,6 +76,8 @@ public final class BossRushClientHud {
   private static float lagOffsetX = 0.0f;
   private static float lagOffsetY = 0.0f;
 
+  private static String phaseBorderDecoration = "";
+
   private static final TextEffectStyle PHASE_TITLE_STYLE = TextEffectStyle.spectrum();
   private static final TextEffectStyle PHASE_DESC_STYLE = TextEffectStyle.glitch();
   private static final TextEffectStyle MUSIC_TOAST_STYLE = TextEffectStyle.prismaticOutline();
@@ -98,15 +100,16 @@ public final class BossRushClientHud {
     }
 
     LivingEntity nearestGlobalBoss = null;
-    double bestDistSq = 48.0D * 48.0D;
+    double bestDistSq = Double.MAX_VALUE;
 
     for (Entity entity : mc.level.entitiesForRendering()) {
       if (!(entity instanceof LivingEntity living) || living == mc.player || !living.isAlive()) continue;
       ResourceLocation typeId = BuiltInRegistries.ENTITY_TYPE.getKey(living.getType());
       HealthBarStyle style = CLIENT_HEALTH_BARS.get(typeId.toString());
       if (style != null && !style.bossRushOnly()) {
+        double maxDistSq = (double) style.displayDistance() * (double) style.displayDistance();
         double distSq = mc.player.distanceToSqr(living);
-        if (bestDistSq > distSq) {
+        if (maxDistSq >= distSq && bestDistSq > distSq) {
           bestDistSq = distSq;
           nearestGlobalBoss = living;
         }
@@ -181,6 +184,7 @@ public final class BossRushClientHud {
       phaseName = "";
       fullDescription = "";
       bannerStartMs = 0L;
+      phaseBorderDecoration = "";
 
       if (!payload.musicId().isEmpty()) {
         playBossRushMusic(payload.musicId(), false);
@@ -202,6 +206,7 @@ public final class BossRushClientHud {
       fullDescription = payload.phaseDescription();
       revealedChars = 0;
       bannerStartMs = System.currentTimeMillis();
+      phaseBorderDecoration = payload.borderDecorationName();
     }
 
     if (!payload.musicId().isEmpty()) {
@@ -399,20 +404,23 @@ public final class BossRushClientHud {
         slideProgress = (float) Math.sin(t * (Math.PI / 2.0D));
       }
 
-      float targetCenterY = 48.0f + (boxHeight * 0.5f);
+      // Push title box down to 68.0f when a Boss Health Bar is visible so the upper wings & eye never clip it
+      float baseTopY = (displayedBoss != null) ? 68.0f : 48.0f;
+      float targetCenterY = baseTopY + (boxHeight * 0.5f);
       float offscreenCenterY = -(boxHeight * 0.5f) - 10.0f;
       float centerX = screenCenterX + lagOffsetX;
       float centerY = Mth.lerp(slideProgress, offscreenCenterY, targetCenterY) + lagOffsetY;
 
+      // Render attached wings & eye first (at z = 0.0f), then draw the dialogue box forward (at z = 1.0f) so wings tuck behind the border
+      ThreeDiShapeHooks.renderAttachedShapes(
+        poseStack, bufferSource, UiShapeTarget.BOSS_RUSH_TITLE, phaseBorderDecoration,
+        centerX, centerY, -1.0f, boxWidth, boxHeight
+      );
       RawGeometry.drawDialogueNode(
         poseStack, bufferSource, font,
         centerX, centerY, 0.0f,
         boxWidth, boxHeight, 3.0f, 3.0f,
         0xCC110E1A, 0xFFFFAA00, List.of(), true
-      );
-      ThreeDiShapeHooks.renderAttachedShapes(
-        poseStack, bufferSource, UiShapeTarget.BOSS_RUSH_TITLE, "",
-        centerX, centerY, 0.0f, boxWidth, boxHeight
       );
 
       drawCustomTitle = true;

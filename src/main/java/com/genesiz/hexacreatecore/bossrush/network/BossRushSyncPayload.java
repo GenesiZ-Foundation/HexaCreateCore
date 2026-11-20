@@ -9,6 +9,7 @@ import net.minecraft.resources.ResourceLocation;
 public record BossRushSyncPayload(
   boolean active,
   String phaseName,
+  String borderDecorationName,
   String phaseDescription,
   String musicId,
   String musicTitle,
@@ -20,12 +21,13 @@ public record BossRushSyncPayload(
 ) implements CustomPacketPayload {
 
   public static final Type<BossRushSyncPayload> TYPE =
-    new Type<>(ResourceLocation.fromNamespaceAndPath(HexaCreateCore.MODID, "boss_rush_sync"));
+  new Type<>(ResourceLocation.fromNamespaceAndPath(HexaCreateCore.MODID, "boss_rush_sync"));
 
   public static final StreamCodec<FriendlyByteBuf, BossRushSyncPayload> STREAM_CODEC = StreamCodec.of(
-    (buf, p) -> {
+  (buf, p) -> {
       buf.writeBoolean(p.active());
       buf.writeUtf(p.phaseName() != null ? p.phaseName() : "", 32767);
+      buf.writeUtf(p.borderDecorationName() != null ? p.borderDecorationName() : "", 32767);
       buf.writeUtf(p.phaseDescription() != null ? p.phaseDescription() : "", 32767);
       buf.writeUtf(p.musicId() != null ? p.musicId() : "", 32767);
       buf.writeUtf(p.musicTitle() != null ? p.musicTitle() : "", 32767);
@@ -44,6 +46,7 @@ public record BossRushSyncPayload(
       buf.readUtf(32767),
       buf.readUtf(32767),
       buf.readUtf(32767),
+      buf.readUtf(32767),
       buf.readInt(),
       buf.readUtf(262144)
     )
@@ -54,3 +57,4 @@ public record BossRushSyncPayload(
     return TYPE;
   }
 }
+

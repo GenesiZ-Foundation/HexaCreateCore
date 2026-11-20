@@ -62,7 +62,7 @@ public final class DifficultyData {
     public static HealthBarStyle defaultGauge(int accent) {
       return new HealthBarStyle(
         "", accent, 0xCC110E1A, List.of(0xFF1A1626, accent, 0xFFFFFFFF),
-        List.of(0.15f, 0.65f, 0.95f), 0.5f, -15.0f, "right", 1.5f, false, List.of()
+        List.of(0.15f, 0.65f, 0.95f), 0.5f, -15.0f, "right", 1.5f, false, 200.0f, List.of()
       );
     }
 

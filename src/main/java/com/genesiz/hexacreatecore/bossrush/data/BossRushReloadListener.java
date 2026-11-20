@@ -110,6 +110,7 @@ public final class BossRushReloadListener extends SimpleJsonResourceReloadListen
       String moveDir = obj.has("move_direction") ? obj.get("move_direction").getAsString() : "none";
       float moveSpeed = obj.has("move_speed") ? net.minecraft.util.Mth.clamp(obj.get("move_speed").getAsFloat(), 0.0f, 20.0f) : 0.0f;
       boolean bossRushOnly = !obj.has("boss_rush_only") || obj.get("boss_rush_only").getAsBoolean();
+      float displayDistance = obj.has("display_distance") ? Math.max(16.0f, obj.get("display_distance").getAsFloat()) : 200.0f;
 
       List<BossHealthBarData.HpPhaseOverride> hpPhases = new ArrayList<>();
       if (obj.has("hp_phases") && obj.get("hp_phases").isJsonArray()) {
@@ -149,10 +150,10 @@ public final class BossRushReloadListener extends SimpleJsonResourceReloadListen
         }
       }
 
-      map.put(entry.getKey(), new BossHealthBarData.HealthBarStyle(
-        displayName, border, bg, colors, positions, pixelDensity, colorAngle, moveDir, moveSpeed, bossRushOnly, hpPhases
+          map.put(entry.getKey(), new BossHealthBarData.HealthBarStyle(
+        displayName, border, bg, colors, positions, pixelDensity, colorAngle, moveDir, moveSpeed, bossRushOnly, displayDistance, hpPhases
       ));
-    }
+}
     return map;
   }
 
@@ -172,6 +173,7 @@ public final class BossRushReloadListener extends SimpleJsonResourceReloadListen
 
         String id = p.has("id") ? p.get("id").getAsString() : "phase_" + phases.size();
         String name = p.has("name") ? p.get("name").getAsString() : id;
+        String borderDecorationName = p.has("border_decoration_name") ? p.get("border_decoration_name").getAsString() : "";
         String desc = p.has("description") ? p.get("description").getAsString() : "";
         String music = p.has("music") ? p.get("music").getAsString() : "";
         String musicTitle = p.has("music_title") ? p.get("music_title").getAsString() : music;
@@ -194,7 +196,7 @@ public final class BossRushReloadListener extends SimpleJsonResourceReloadListen
           if (eff.has("on_end")) onEnd = eff.get("on_end").getAsString();
         }
 
-        phases.add(new PhaseConfig(id, name, desc, music, musicTitle, onCompletion, onCompletionSound, bosses, new PhaseEffects(onStart, onEnd)));
+        phases.add(new PhaseConfig(id, name, borderDecorationName, desc, music, musicTitle, onCompletion, onCompletionSound, bosses, new PhaseEffects(onStart, onEnd)));
       }
     }
 

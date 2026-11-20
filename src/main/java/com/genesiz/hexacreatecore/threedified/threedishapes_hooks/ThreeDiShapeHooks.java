@@ -34,7 +34,8 @@ public final class ThreeDiShapeHooks {
     attach(UiShapeTarget.DIFFICULTY_CARD, "ethereal", List.of(
       ThreeDiShapeFactory.cornerBrackets(7.0f, 2.0f, 0xFF38BDF8, 0xFF0284C7)
     ));
-        attach(UiShapeTarget.TOOLTIP_FRAME, "genesis", List.of(
+
+    attach(UiShapeTarget.TOOLTIP_FRAME, "genesis", List.of(
       ThreeDiShapeFactory.interlacedChains(5.0f, 1.6f, 20.0f, 0xFFFF1E56, 0xFF7F0019)
     ));
     attach(UiShapeTarget.TOOLTIP_FRAME, "amethyst", List.of(
@@ -44,8 +45,29 @@ public final class ThreeDiShapeHooks {
     attach(UiShapeTarget.TOOLTIP_FRAME, "spawner", List.of(
       ThreeDiShapeFactory.cornerBrackets(6.0f, 1.8f, 0xFF38BDF8, 0xFF1D4ED8)
     ));
+
     attach(UiShapeTarget.TOOLTIP_FRAME, "weapon", List.of(
       ThreeDiShapeFactory.cornerBrackets(6.0f, 1.8f, 0xFFA8A29E, 0xFF3B3230)
+    ));
+
+    // 1. Eye only (sitting directly on top of the dialogue box border)
+    attach(UiShapeTarget.BOSS_RUSH_TITLE, "seraph_eye", List.of(
+      ThreeDiShapeFactory.seraphEye(22.0f, -2.0f, 0xFFF8FAFC, 0xFFFFD700)
+    ));
+    // 2. Eye + 1 pair of animated top Solar-style golden wings
+    attach(UiShapeTarget.BOSS_RUSH_TITLE, "seraph_eye_wings_1", List.of(
+      ThreeDiShapeFactory.seraphEye(22.0f, -2.0f, 0xFFF8FAFC, 0xFFFFD700),
+      ThreeDiShapeFactory.seraphWings(1, 36.0f, 3.2f, 0xFFFFD700, 0xFFD97706)
+    ));
+    // 3. Eye + 2 pairs of animated Solar-style golden wings
+    attach(UiShapeTarget.BOSS_RUSH_TITLE, "seraph_eye_wings_2", List.of(
+      ThreeDiShapeFactory.seraphEye(23.0f, -2.0f, 0xFFF8FAFC, 0xFFFFD700),
+      ThreeDiShapeFactory.seraphWings(2, 40.0f, 3.6f, 0xFFFFD700, 0xFFD97706)
+    ));
+    // 4. Eye + 3 pairs of animated Solar-style golden wings (middle & bottom pairs inverted)
+    attach(UiShapeTarget.BOSS_RUSH_TITLE, "seraph_eye_wings_3", List.of(
+      ThreeDiShapeFactory.seraphEye(24.0f, -2.0f, 0xFFF8FAFC, 0xFFFFD700),
+      ThreeDiShapeFactory.seraphWings(3, 44.0f, 4.0f, 0xFFFFE066, 0xFFB45309)
     ));
   }
 

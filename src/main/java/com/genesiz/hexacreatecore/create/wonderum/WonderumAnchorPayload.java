@@ -5,7 +5,6 @@ import com.genesiz.hexacreatecore.item.ModItems;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
@@ -15,7 +14,6 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
-import java.lang.reflect.Method;
 import java.util.UUID;
 
 public record WonderumAnchorPayload(UUID subLevelId) implements CustomPacketPayload {

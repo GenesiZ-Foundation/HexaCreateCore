@@ -93,7 +93,6 @@ public final class BossRushManager {
     return true;
   }
 
-
   private static void beginPhase(ServerPlayer player, RushSession session, int index, String totemItemId, String totemSoundId) {
     session.phaseIndex = index;
     session.bossIndexInPhase = 0;
@@ -104,6 +103,7 @@ public final class BossRushManager {
     PacketDistributor.sendToPlayer(player, new BossRushSyncPayload(
       true,
       phase.name(),
+      phase.borderDecorationName(),
       phase.description(),
       phase.music(),
       phase.musicTitle(),
@@ -144,6 +144,7 @@ public final class BossRushManager {
           false,
           "",
           "",
+          "",
           session.sequence.endingMusic(),
           session.sequence.endingMusicTitle(),
           phase.onCompletionItem(),
@@ -178,14 +179,18 @@ public final class BossRushManager {
 
     if (spawned != null) {
       if (spawned instanceof EnderDragon dragon) {
-        dragon.setPos(spawnX, spawnY + 8.0D, spawnZ);
-        dragon.getPhaseManager().setPhase(EnderDragonPhase.HOLDING_PATTERN);
+        dragon.setPos(spawnX, spawnY + 12.0D, spawnZ);
+        if (dragon instanceof com.genesiz.hexacreatecore.bossrush.dragon.IMhEnderDragon mh) {
+          mh.hexacreatecore$setMhDragon(true, session.originPos);
+        }
+        com.genesiz.hexacreatecore.bossrush.dragon.DragonArenaController.setupBossRushArena(level, session.originPos);
       }
       session.currentBossUuid = spawned.getUUID();
       session.allSpawnedEntities.add(spawned.getUUID());
 
       PacketDistributor.sendToPlayer(player, new BossRushSyncPayload(
         true,
+        "",
         "",
         "",
         "",
@@ -211,8 +216,8 @@ public final class BossRushManager {
     }
     session.allSpawnedEntities.clear();
 
-      PacketDistributor.sendToPlayer(player, new BossRushSyncPayload(
-      false, "", "", "", "", "", "", reasonBanner, -1, "{}"
+    PacketDistributor.sendToPlayer(player, new BossRushSyncPayload(
+      false, "", "", "", "", "", "", "", reasonBanner, -1, "{}"
     ));
   }
 
@@ -259,8 +264,8 @@ public final class BossRushManager {
   @SubscribeEvent
   public static void onBossDeath(LivingDeathEvent event) {
     if (ACTIVE_SESSIONS.isEmpty() || event.getEntity().level().isClientSide()) return;
-    UUID deadUuid = event.getEntity().getUUID();
 
+    UUID deadUuid = event.getEntity().getUUID();
     for (RushSession session : new HashSet<>(ACTIVE_SESSIONS.values())) {
       if (deadUuid.equals(session.currentBossUuid)) {
         session.currentBossUuid = null;
@@ -286,7 +291,6 @@ public final class BossRushManager {
 
   private static void playOriginEffect(ServerLevel level, Vec3 origin, String effectId) {
     if (effectId == null || effectId.isEmpty()) return;
-
     CustomEffectScript script = BossRushReloadListener.getCustomEffect(effectId);
     if (script != null) {
       if (script.lightning()) {
@@ -318,7 +322,6 @@ public final class BossRushManager {
         options = directOptions;
       }
     }
-
     for (int i = 0; count > i; i++) {
       double angle = (2.0D * Math.PI * i) / count;
       double px = origin.x + Math.cos(angle) * radius;
@@ -331,7 +334,7 @@ public final class BossRushManager {
   public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
     if (event.getEntity() instanceof ServerPlayer sp) {
       PacketDistributor.sendToPlayer(sp, new BossRushSyncPayload(
-        false, "", "", "", "", "", "", "", -1, BossRushReloadListener.getRawHealthBarsJson()
+        false, "", "", "", "", "", "", "", "", -1, BossRushReloadListener.getRawHealthBarsJson()
       ));
     }
   }
@@ -341,12 +344,12 @@ public final class BossRushManager {
     String json = BossRushReloadListener.getRawHealthBarsJson();
     if (event.getPlayer() != null) {
       PacketDistributor.sendToPlayer(event.getPlayer(), new BossRushSyncPayload(
-        isPlayerInRush(event.getPlayer().getUUID()), "", "", "", "", "", "", "", -1, json
+        isPlayerInRush(event.getPlayer().getUUID()), "", "", "", "", "", "", "", "", -1, json
       ));
     } else {
       for (ServerPlayer sp : event.getPlayerList().getPlayers()) {
         PacketDistributor.sendToPlayer(sp, new BossRushSyncPayload(
-          isPlayerInRush(sp.getUUID()), "", "", "", "", "", "", "", -1, json
+          isPlayerInRush(sp.getUUID()), "", "", "", "", "", "", "", "", -1, json
         ));
       }
     }

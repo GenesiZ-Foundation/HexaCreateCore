@@ -7,12 +7,14 @@
     "MouseHandlerMixin",
     "LocalPlayerMixin",
     "EntityRenderDispatcherMixin",
-    "KineticBlockEntityMixin"
+    "KineticBlockEntityMixin",
+    "EnderDragonMixin"
   ],
   "client": [
     "SoundEngineMixin",
     "BossHealthOverlayMixin",
-    "ClientLevelMixin"
+    "ClientLevelMixin",
+    "ItemPropertiesMixin"
   ],
   "injectors": {
     "defaultRequire": 1

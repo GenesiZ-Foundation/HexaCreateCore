@@ -15,6 +15,7 @@ public final class BossRushData {
   public record PhaseConfig(
     String id,
     String name,
+    String borderDecorationName,
     String description,
     String music,
     String musicTitle,
