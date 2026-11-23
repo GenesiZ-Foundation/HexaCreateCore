@@ -79,6 +79,14 @@ public final class SoulRecoveryManager {
       syncSoul(player, null, 0);
       return;
     }
+    if (com.genesiz.hexacreatecore.bossrush.dragon.DragonCombatExecutor.isTrueKillBypassed(player)
+      || event.getSource().is(net.minecraft.world.damagesource.DamageTypes.GENERIC_KILL)) {
+      ACTIVE_SOULS.remove(player.getUUID());
+      player.setInvulnerable(false);
+      player.setPose(Pose.STANDING);
+      syncSoul(player, null, 0);
+      return;
+    }
 
     ServerLevel level = player.serverLevel();
     DifficultyTier tier = DifficultySavedData.get(level).getActiveTier();
@@ -173,6 +181,10 @@ public final class SoulRecoveryManager {
   @SubscribeEvent
   public static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
     if (event.getEntity() instanceof ServerPlayer player) {
+      if (Float.isNaN(player.getHealth())) {
+        player.setHealth(player.getMaxHealth());
+      }
+
       ActiveSoul soul = ACTIVE_SOULS.remove(player.getUUID());
       if (soul != null) {
         player.setInvulnerable(false);

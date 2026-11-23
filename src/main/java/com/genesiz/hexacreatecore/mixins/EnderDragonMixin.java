@@ -3,6 +3,7 @@ package com.genesiz.hexacreatecore.mixins;
 import com.genesiz.hexacreatecore.bossrush.dragon.DragonAnimState.ClientAnimData;
 import com.genesiz.hexacreatecore.bossrush.dragon.DragonAnimState.DragonAction;
 import com.genesiz.hexacreatecore.bossrush.dragon.DragonAnimState.DragonPoseMode;
+import com.genesiz.hexacreatecore.bossrush.dragon.DragonMultipartCollider;
 import com.genesiz.hexacreatecore.bossrush.dragon.EnderDragonMhBrain;
 import com.genesiz.hexacreatecore.bossrush.dragon.IMhEnderDragon;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -21,6 +22,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -62,6 +64,8 @@ public abstract class EnderDragonMixin extends Mob implements IMhEnderDragon {
   private static final EntityDataAccessor<Integer> HEXA_FIGHT_PHASE =
   SynchedEntityData.defineId(EnderDragon.class, EntityDataSerializers.INT);
 
+  @Shadow
+  protected abstract boolean reallyHurt(DamageSource source, float amount);
   @Unique
   private final AnimatableInstanceCache hexacreatecore$geoCache = GeckoLibUtil.createInstanceCache(this);
   @Unique
@@ -99,6 +103,19 @@ public abstract class EnderDragonMixin extends Mob implements IMhEnderDragon {
   private static final RawAnimation ANIM_CHARGING_NOVA_1 = RawAnimation.begin().thenLoop("charging_nova_1");
   @Unique
   private static final RawAnimation ANIM_END_CHARGING_NOVA_1 = RawAnimation.begin().thenPlay("end_charging_nova_1");
+  @Unique
+  private static final RawAnimation ANIM_GROUND_IDLE = RawAnimation.begin().thenLoop("ground_idle");
+  @Unique
+  private static final RawAnimation ANIM_GROUND_WALK = RawAnimation.begin().thenLoop("ground_walk");
+  @Unique
+  private static final RawAnimation ANIM_LANDING = RawAnimation.begin().thenPlay("landing");
+  @Unique
+  private static final RawAnimation ANIM_END_ROAR = RawAnimation.begin().thenPlay("end_roar");
+  @Unique
+  private static final RawAnimation ANIM_TURN_LEFT_90 = RawAnimation.begin().thenPlay("turn_left_90");
+  @Unique
+  private static final RawAnimation ANIM_TURN_RIGHT_90 = RawAnimation.begin().thenPlay("turn_right_90");
+
 
 
 
@@ -121,9 +138,9 @@ public abstract class EnderDragonMixin extends Mob implements IMhEnderDragon {
   @Override
   public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
     controllers.add(
-      new AnimationController<>(this, "base_stance", 6, this::hexacreatecore$stancePredicate),
       new AnimationController<>(this, "wings_overlay", 5, this::hexacreatecore$wingsPredicate),
-      new AnimationController<>(this, "mouth_overlay", 3, this::hexacreatecore$mouthPredicate)
+      new AnimationController<>(this, "mouth_overlay", 3, this::hexacreatecore$mouthPredicate),
+      new AnimationController<>(this, "stance", 3, this::hexacreatecore$stancePredicate)
     );
   }
 
@@ -131,10 +148,14 @@ public abstract class EnderDragonMixin extends Mob implements IMhEnderDragon {
   private PlayState hexacreatecore$stancePredicate(AnimationState<EnderDragonMixin> state) {
     DragonPoseMode mode = hexacreatecore$getPoseMode();
     DragonAction action = hexacreatecore$getActiveAction();
+    state.getController().setAnimationSpeed(1.0D);
 
     if (action != hexacreatecore$lastStanceAction) {
+      boolean seamlessRoarBlend = (hexacreatecore$lastStanceAction == DragonAction.LANDING && action == DragonAction.SAFI_ROAR);
       hexacreatecore$lastStanceAction = action;
-      state.getController().forceAnimationReset();
+      if (!seamlessRoarBlend) {
+        state.getController().forceAnimationReset();
+      }
     }
 
     if (action == DragonAction.FIREBALL_SHORT) {
@@ -158,21 +179,32 @@ public abstract class EnderDragonMixin extends Mob implements IMhEnderDragon {
     if (action == DragonAction.NOVA_END_CHARGE) {
       return state.setAndContinue(ANIM_END_CHARGING_NOVA_1);
     }
+    if (action == DragonAction.LANDING) {
+      return state.setAndContinue(ANIM_LANDING);
+    }
+    if (action == DragonAction.SAFI_ROAR) {
+      return state.setAndContinue(ANIM_END_ROAR);
+    }
+    if (action == DragonAction.TURN_LEFT_90 || action == DragonAction.CLAW_LEFT) {
+      return state.setAndContinue(ANIM_TURN_LEFT_90);
+    }
+    if (action == DragonAction.TURN_RIGHT_90 || action == DragonAction.CLAW_RIGHT) {
+      return state.setAndContinue(ANIM_TURN_RIGHT_90);
+    }
 
-
-
-    if (action == DragonAction.SAFI_ROAR || action == DragonAction.FORWARD_STOMP || action == DragonAction.NOVA_CHARGE || mode == DragonPoseMode.REAR_UP) {
-      if (action == DragonAction.SAFI_ROAR) {
-        int tick = hexacreatecore$getActionTick();
-        if (14 > tick) return state.setAndContinue(POSE_NEUTRAL_GROUND);
-        if (46 > tick) return state.setAndContinue(POSE_REAR_UP);
-        return state.setAndContinue(POSE_NEUTRAL_GROUND);
-      }
+    if (action == DragonAction.FORWARD_STOMP || mode == DragonPoseMode.REAR_UP) {
       return state.setAndContinue(POSE_REAR_UP);
     }
 
     return switch (mode) {
-      case GROUND_IDLE, GROUND_WALK, TOPPLED, PILLAR_PERCH -> state.setAndContinue(POSE_NEUTRAL_GROUND);
+      case GROUND_IDLE -> state.setAndContinue(ANIM_GROUND_IDLE);
+      case GROUND_WALK -> {
+        EnderDragon self = (EnderDragon) (Object) this;
+        double horizSpeed = Math.hypot(self.getDeltaMovement().x, self.getDeltaMovement().z);
+        state.getController().setAnimationSpeed(horizSpeed > 0.22D ? 2.0D : 1.0D);
+        yield state.setAndContinue(ANIM_GROUND_WALK);
+      }
+      case TOPPLED, PILLAR_PERCH -> state.setAndContinue(POSE_NEUTRAL_GROUND);
       case FLY_HOVER -> state.setAndContinue(POSE_NEUTRAL_FLY);
       case FLY_GLIDE -> state.setAndContinue(POSE_AIR_MOVE);
       default -> state.setAndContinue(POSE_NEUTRAL_FLY);
@@ -205,7 +237,13 @@ public abstract class EnderDragonMixin extends Mob implements IMhEnderDragon {
       || action == DragonAction.AIR_DASH
       || action == DragonAction.NOVA_PRE_CHARGE
       || action == DragonAction.NOVA_CHARGE
-      || action == DragonAction.NOVA_END_CHARGE) {
+      || action == DragonAction.NOVA_END_CHARGE
+      || action == DragonAction.LANDING
+      || action == DragonAction.SAFI_ROAR
+      || action == DragonAction.TURN_LEFT_90
+      || action == DragonAction.TURN_RIGHT_90
+      || action == DragonAction.CLAW_LEFT
+      || action == DragonAction.CLAW_RIGHT) {
       return PlayState.STOP;
     }
 
@@ -228,9 +266,12 @@ public abstract class EnderDragonMixin extends Mob implements IMhEnderDragon {
   @Inject(method = "aiStep", at = @At("HEAD"), cancellable = true)
   private void hexacreatecore$overrideVanillaDragonAi(CallbackInfo ci) {
     if (!hexacreatecore$isMhDragon()) return;
+    EnderDragon self = (EnderDragon) (Object) this;
+    if (!self.isAlive()) {
+      return; // Let vanilla EnderDragon#aiStep run tickDeath() & notify EndDragonFight#setDragonKilled
+    }
     ci.cancel();
 
-    EnderDragon self = (EnderDragon) (Object) this;
     self.setNoGravity(true);
     self.xo = self.getX();
     self.yo = self.getY();
@@ -246,6 +287,7 @@ public abstract class EnderDragonMixin extends Mob implements IMhEnderDragon {
       }
       self.yBodyRot = self.getYRot();
       self.yHeadRot = self.getYRot();
+      DragonMultipartCollider.syncHitboxes(self, this);
       return;
     }
 
@@ -267,7 +309,9 @@ public abstract class EnderDragonMixin extends Mob implements IMhEnderDragon {
 
     self.yBodyRot = self.getYRot();
     self.yHeadRot = self.getYRot();
+    DragonMultipartCollider.syncHitboxes(self, this);
   }
+
 
   @Inject(method = "hurt(Lnet/minecraft/world/entity/boss/EnderDragonPart;Lnet/minecraft/world/damagesource/DamageSource;F)Z", at = @At("HEAD"), cancellable = true)
   private void hexacreatecore$guardBarrierShield(
@@ -361,5 +405,46 @@ public abstract class EnderDragonMixin extends Mob implements IMhEnderDragon {
   @Inject(method = "createAttributes", at = @At("RETURN"))
   private static void hexacreatecore$setBaseMaxHealth(CallbackInfoReturnable<AttributeSupplier.Builder> cir) {
     cir.getReturnValue().add(Attributes.MAX_HEALTH, 1000.0D);
+  }
+
+  @Inject(method = "getParts", at = @At("HEAD"), cancellable = true)
+  private void hexacreatecore$getBoneParts(CallbackInfoReturnable cir) {
+    cir.setReturnValue(DragonMultipartCollider.getOrCreateRig((EnderDragon) (Object) this).all);
+  }
+
+  @Override
+  public boolean canCollideWith(net.minecraft.world.entity.Entity other) {
+    if (other instanceof DragonMultipartCollider.BonePart bp && bp.getParent() == (Object) this) {
+      return false;
+    }
+    return super.canCollideWith(other);
+  }
+
+  @Inject(method = "hurt(Lnet/minecraft/world/damagesource/DamageSource;F)Z", at = @At("HEAD"), cancellable = true)
+  private void hexacreatecore$routeBonePartDamage(
+    DamageSource source,
+    float amount,
+    CallbackInfoReturnable<Boolean> cir
+  ) {
+    if (!hexacreatecore$isMhDragon()) return;
+    EnderDragon self = (EnderDragon) (Object) this;
+
+    // Immune to her own dragon breath clouds, fireballs, and explosions
+    if (source.getEntity() == self || source.getDirectEntity() == self) {
+      cir.setReturnValue(false);
+      return;
+    }
+
+    if (hexacreatecore$hasBarrierShield()) {
+      self.level().playSound(null, self.blockPosition(), SoundEvents.ANVIL_PLACE, SoundSource.HOSTILE, 1.2f, 1.85f);
+      cir.setReturnValue(false);
+      return;
+    }
+
+    if (!source.is(net.minecraft.tags.DamageTypeTags.BYPASSES_INVULNERABILITY)) {
+      float maxPerHit = Math.max(1.0f, self.getMaxHealth() * 0.02f);
+      float cappedAmount = Math.min(amount, maxPerHit);
+      cir.setReturnValue(this.reallyHurt(source, cappedAmount));
+    }
   }
 }

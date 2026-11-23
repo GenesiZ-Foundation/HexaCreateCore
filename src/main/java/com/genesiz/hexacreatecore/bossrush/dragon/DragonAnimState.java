@@ -24,7 +24,7 @@ public final class DragonAnimState {
 
   public enum DragonAction {
     NONE(0, 0),
-    SAFI_ROAR(1, 60),
+    SAFI_ROAR(1, 120),
     CLAW_LEFT(2, 24),
     CLAW_RIGHT(3, 24),
     DOUBLE_CLAW(4, 36),
@@ -55,8 +55,10 @@ public final class DragonAnimState {
     DESPERATION_FINAL_BEAM(29, 200),
     LIFT_OFF_GROUND(30, 20),
     NOVA_PRE_CHARGE(31, 40),
-    NOVA_END_CHARGE(32, 125);
-
+    NOVA_END_CHARGE(32, 125),
+    LANDING(33, 20),
+    TURN_LEFT_90(34, 24),
+    TURN_RIGHT_90(35, 24);
 
 
     public final int id;
@@ -101,6 +103,12 @@ public final class DragonAnimState {
 
     public float lastDesiredYaw = 0.0f;
     public float lastDesiredPitch = 0.0f;
+
+    public float footOffsetFR = 0.0f;
+    public float footOffsetFL = 0.0f;
+    public float footOffsetRR = 0.0f;
+    public float footOffsetRL = 0.0f;
+
 
 
 

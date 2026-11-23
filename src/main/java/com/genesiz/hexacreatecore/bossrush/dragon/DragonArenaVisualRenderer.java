@@ -21,6 +21,7 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import net.neoforged.neoforge.client.event.ViewportEvent.ComputeCameraAngles;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -282,5 +283,40 @@ public final class DragonArenaVisualRenderer {
     buf.endBatch(RawGeometry.DIALOGUE_SOLID);
     RenderSystem.enableCull();
     ps.popPose();
+  }
+
+  @SubscribeEvent
+  public static void onComputeCameraAngles(ComputeCameraAngles event) {
+    net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+    if (mc.level == null || mc.player == null || mc.isPaused()) return;
+
+    float partialTick = (float) event.getPartialTick();
+    float maxIntensity = 0.0f;
+
+    for (EnderDragon dragon : mc.level.getEntitiesOfClass(
+      EnderDragon.class,
+      mc.player.getBoundingBox().inflate(72.0D)
+    )) {
+      if (!dragon.isAlive() || !(dragon instanceof IMhEnderDragon mh)) continue;
+      if (mh.hexacreatecore$getActiveAction() != DragonAnimState.DragonAction.SAFI_ROAR) continue;
+
+      float elapsedSec = (mh.hexacreatecore$getActionTick() + partialTick) / 20.0f;
+      if (elapsedSec >= 2.0f && 4.85f >= elapsedSec) {
+        double dist = mc.player.distanceTo(dragon);
+        float distFalloff = Mth.clamp(1.0f - (float) (dist / 64.0D), 0.0f, 1.0f);
+        float env = (2.25f > elapsedSec)
+        ? (elapsedSec - 2.0f) / 0.25f
+        : Mth.clamp((4.85f - elapsedSec) / 2.60f, 0.0f, 1.0f);
+        maxIntensity = Math.max(maxIntensity, distFalloff * env);
+      }
+    }
+
+    if (maxIntensity > 0.001f) {
+      float t = (mc.player.tickCount + partialTick) * 1.9f;
+      float amp = maxIntensity * 3.2f;
+      event.setYaw(event.getYaw() + (Mth.sin(t * 1.3f) * amp));
+      event.setPitch(event.getPitch() + (Mth.cos(t * 1.7f) * amp * 0.85f));
+      event.setRoll(event.getRoll() + (Mth.sin(t * 2.1f) * amp * 1.15f));
+    }
   }
 }

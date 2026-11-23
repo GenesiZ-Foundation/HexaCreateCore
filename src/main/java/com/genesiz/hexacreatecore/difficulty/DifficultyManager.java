@@ -194,6 +194,9 @@ public final class DifficultyManager {
 
     // 2. Player receiving ANY damage (melee, projectiles, explosions, fall, void, or even /kill)
     if (event.getEntity() instanceof ServerPlayer player) {
+      if (com.genesiz.hexacreatecore.bossrush.dragon.DragonCombatExecutor.isTrueKillBypassed(player)) {
+        return;
+      }
       PlayerCombatState state = getState(player.getUUID());
       long now = System.currentTimeMillis();
 

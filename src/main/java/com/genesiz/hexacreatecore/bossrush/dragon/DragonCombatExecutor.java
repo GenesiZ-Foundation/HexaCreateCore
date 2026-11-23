@@ -14,6 +14,58 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 public final class DragonCombatExecutor {
+  private static final java.util.Set<java.util.UUID> TRUE_KILL_BYPASS = java.util.concurrent.ConcurrentHashMap.newKeySet();
+
+  public static boolean isTrueKillBypassed(Player player) {
+    return TRUE_KILL_BYPASS.contains(player.getUUID())
+    || player.getPersistentData().getBoolean("hexacreatecore:bypass_soul_death");
+  }
+
+  public static void forceInstantKill(ServerLevel level, Player player) {
+    forceInstantKill(level, player, null, "%s body and soul got turned into stardust");
+  }
+
+
+  public static void forceInstantKill(
+    ServerLevel level,
+    Player player,
+    @org.jetbrains.annotations.Nullable net.minecraft.world.entity.Entity attacker,
+    String messageFormat
+  ) {
+    TRUE_KILL_BYPASS.add(player.getUUID());
+    player.getPersistentData().putBoolean("hexacreatecore:bypass_soul_death", true);
+    try {
+      if (Float.isNaN(player.getHealth())) {
+        player.setHealth(player.getMaxHealth());
+      }
+      player.removeAllEffects();
+      player.setInvulnerable(false);
+      net.minecraft.world.damagesource.DamageSource trueKillSource =
+        new net.minecraft.world.damagesource.DamageSource(
+          level.damageSources().genericKill().typeHolder(),
+          attacker,
+          attacker
+        ) {
+          @Override
+          public net.minecraft.network.chat.Component getLocalizedDeathMessage(
+            net.minecraft.world.entity.LivingEntity victim
+          ) {
+            return net.minecraft.network.chat.Component.literal(
+              String.format(messageFormat, victim.getDisplayName().getString())
+            );
+          }
+        };
+
+      player.hurt(trueKillSource, 1_000_000.0f);
+      if (player.isAlive() || Float.isNaN(player.getHealth())) {
+        player.setHealth(0.0f);
+        player.die(trueKillSource);
+      }
+    } finally {
+      TRUE_KILL_BYPASS.remove(player.getUUID());
+      player.getPersistentData().remove("hexacreatecore:bypass_soul_death");
+    }
+  }
 
   private DragonCombatExecutor() {}
 
@@ -23,28 +75,6 @@ public final class DragonCombatExecutor {
     Vec3 right = new Vec3(-forward.z, 0.0D, forward.x);
 
     switch (action) {
-      case SAFI_ROAR -> {
-        if (tick == 1) {
-          level.playSound(null, dragon.blockPosition(), SoundEvents.WARDEN_SONIC_CHARGE, SoundSource.HOSTILE, 3.0f, 0.65f);
-        } else if (tick == 16) {
-          level.playSound(null, dragon.blockPosition(), SoundEvents.ENDER_DRAGON_GROWL, SoundSource.HOSTILE, 4.0f, 0.70f);
-          level.playSound(null, dragon.blockPosition(), SoundEvents.WARDEN_ROAR, SoundSource.HOSTILE, 3.5f, 0.62f);
-          level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, dragon.getX(), dragon.getY() + 2.0D, dragon.getZ(), 2, 0.5D, 0.5D, 0.5D, 0.0D);
-          applyRadialKnockback(level, dragon.position(), 20.0D, 1.45D, 6.0f);
-        } else if (tick > 16 && 44 > tick && tick % 3 == 0) {
-          double ringR = (tick - 16) * 0.9D;
-          spawnHorizontalRing(level, dragon.position().add(0.0D, 1.5D, 0.0D), ringR, 28);
-        } else if (tick == 48) {
-          level.playSound(null, dragon.blockPosition(), SoundEvents.ANVIL_LAND, SoundSource.HOSTILE, 2.5f, 0.55f);
-        }
-      }
-      case CLAW_LEFT, CLAW_RIGHT -> {
-        if (tick == 10) {
-          double sideSign = (action == DragonAction.CLAW_LEFT) ? -1.0D : 1.0D;
-          Vec3 hitCenter = dragon.position().add(forward.scale(4.5D)).add(right.scale(sideSign * 3.0D));
-          damagePlayersInBox(level, dragon, hitCenter, 4.2D, 14.0f, forward.scale(0.8D).add(right.scale(sideSign * 0.9D)));
-        }
-      }
       case DOUBLE_CLAW -> {
         if (tick == 11 || tick == 23) {
           double sideSign = (tick == 11) ? -1.0D : 1.0D;
@@ -162,8 +192,10 @@ public final class DragonCombatExecutor {
         }
       }
       case NOVA_PRE_CHARGE -> {
-        if (tick == 1) {
-          level.playSound(null, dragon.blockPosition(), SoundEvents.WARDEN_SONIC_CHARGE, SoundSource.HOSTILE, 3.0f, 0.65f);
+        // Every 1.0s (tick 1, 21): zombie_villager.converted @ pitch 0.5, 200-block range
+        if (tick % 20 == 1) {
+          level.playSound(null, dragon.getX(), dragon.getY(), dragon.getZ(),
+            SoundEvents.ZOMBIE_VILLAGER_CONVERTED, SoundSource.MASTER, 12.5f, 0.5f);
         }
         if (tick % 10 == 0) {
           emitNovaFloorBreath(level, dragon);
@@ -173,10 +205,10 @@ public final class DragonCombatExecutor {
         }
       }
       case NOVA_CHARGE -> {
-        float chargeProg = tick / (float) Math.max(1, dur);
-        if (tick % 5 == 0) {
-          float pitch = 0.65f + (chargeProg * 1.15f);
-          level.playSound(null, dragon.blockPosition(), SoundEvents.BEACON_AMBIENT, SoundSource.HOSTILE, 2.5f, pitch);
+        // Every 1.0s (tick 1, 21, ...): zombie_villager.converted @ pitch 0.5, 200-block range
+        if (tick % 20 == 1) {
+          level.playSound(null, dragon.getX(), dragon.getY(), dragon.getZ(),
+            SoundEvents.ZOMBIE_VILLAGER_CONVERTED, SoundSource.MASTER, 12.5f, 0.5f);
         }
         if (tick % 10 == 0) {
           emitNovaFloorBreath(level, dragon);
@@ -187,9 +219,26 @@ public final class DragonCombatExecutor {
       }
       case NOVA_END_CHARGE -> {
         if (80 > tick) {
-          // Final 4.0 seconds of charge before explosion at tick 80 (4.0s)
-          if (tick % 5 == 0) {
-            level.playSound(null, dragon.blockPosition(), SoundEvents.BEACON_AMBIENT, SoundSource.HOSTILE, 2.8f, 1.80f);
+          // Every 1.0s (tick 1 = 4s left, 21 = 3s left, 41 = 2s left, 61 = 1s left)
+          if (tick % 20 == 1) {
+            level.playSound(null, dragon.getX(), dragon.getY(), dragon.getZ(),
+              SoundEvents.ZOMBIE_VILLAGER_CONVERTED, SoundSource.MASTER, 12.5f, 0.5f);
+
+            float sonicPitch = switch (tick) {
+              case 1 -> 1.0f;  // 4s left
+              case 21 -> 0.8f; // 3s left
+              case 41 -> 0.6f; // 2s left
+              default -> 0.2f; // 1s left (tick 61)
+            };
+            level.playSound(null, dragon.getX(), dragon.getY(), dragon.getZ(),
+              SoundEvents.WARDEN_SONIC_CHARGE, SoundSource.MASTER, 12.5f, sonicPitch);
+
+            if (tick == 61) {
+              level.playSound(null, dragon.getX(), dragon.getY(), dragon.getZ(),
+                net.minecraft.sounds.SoundEvent.createVariableRangeEvent(
+                  net.minecraft.resources.ResourceLocation.withDefaultNamespace("item.trident.return")
+                ), SoundSource.MASTER, 12.5f, 0.8f);
+            }
           }
           if (tick % 10 == 0) {
             emitNovaFloorBreath(level, dragon);
@@ -198,8 +247,8 @@ public final class DragonCombatExecutor {
             stepNovaGalaxyWaves(level, dragon, 320 + tick);
           }
         } else if (tick == 80) {
-          // Exact 4.0s mark: Unlock 5-crystal shields, deal safe-zone check damage, and trigger explosion!
-          Vec3 origin = (dragon instanceof IMhEnderDragon mh) ? mh.hexacreatecore$getArenaOrigin() : dragon.position().subtract(0.0D, 10.0D, 0.0D);
+          // Exact 4.0s mark: Unlock 5-crystal shields & apply true instant-kill safe-zone check
+          Vec3 origin = (dragon instanceof IMhEnderDragon mh) ? mh.hexacreatecore$getArenaOrigin() : dragon.position().subtract(0.0D, 20.0D, 0.0D);
           for (net.minecraft.world.entity.boss.enderdragon.EndCrystal c : level.getEntitiesOfClass(
             net.minecraft.world.entity.boss.enderdragon.EndCrystal.class,
             net.minecraft.world.phys.AABB.ofSize(origin, 110.0D, 80.0D, 110.0D)
@@ -208,21 +257,120 @@ public final class DragonCombatExecutor {
           }
           for (Player p : level.players()) {
             if (p.isAlive() && !p.isCreative() && !p.isSpectator() && p.distanceToSqr(dragon.getX(), origin.y, dragon.getZ()) > 42.0D) {
-              p.hurt(level.damageSources().magic(), 36.0f);
+              forceInstantKill(level, p, dragon, "%s was obliterated by the Ender Dragon's blackhole collapse");
             }
           }
-          level.playSound(null, dragon.blockPosition(), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 4.0f, 0.55f);
+          // Detonation sound & particle layer
+          level.playSound(null, dragon.getX(), dragon.getY(), dragon.getZ(),
+            SoundEvents.WARDEN_DEATH, SoundSource.MASTER, 12.5f, 0.3f);
+          level.playSound(null, dragon.getX(), dragon.getY(), dragon.getZ(),
+            SoundEvents.WITHER_SPAWN, SoundSource.MASTER, 12.5f, 0.8f);
+          level.playSound(null, dragon.getX(), dragon.getY(), dragon.getZ(),
+            net.minecraft.sounds.SoundEvent.createVariableRangeEvent(
+              net.minecraft.resources.ResourceLocation.withDefaultNamespace("item.trident.return")
+            ), SoundSource.MASTER, 12.5f, 0.5f);
           level.playSound(null, dragon.blockPosition(), SoundEvents.ENDER_DRAGON_GROWL, SoundSource.HOSTILE, 3.5f, 0.70f);
-          level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, dragon.getX(), dragon.getY() + 1.0D, dragon.getZ(), 12, 8.0D, 3.0D, 8.0D, 0.0D);
-          level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, dragon.getX(), dragon.getY(), dragon.getZ(), 160, 28.0D, 4.0D, 28.0D, 0.25D);
+          level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, dragon.getX(), dragon.getY(), dragon.getZ(), 500, 28.0D, 4.0D, 28.0D, 0.25D);
         }
       }
-      case NOVA_DETONATE -> {
+
+      case LANDING -> {
+        // 20 ticks (1.0s): 0.0-0.5s (t 1..10) = -2 blocks, 0.5-0.75s (t 11..15) = -1 block, 0.75-1.0s (t 16..20) = -1 block
+        dragon.setPos(dragon.getX(), dragon.getY() - 0.20D, dragon.getZ());
+        dragon.setDeltaMovement(Vec3.ZERO);
         if (tick == 1) {
-          level.playSound(null, dragon.blockPosition(), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 4.0f, 0.55f);
-          level.playSound(null, dragon.blockPosition(), SoundEvents.ENDER_DRAGON_GROWL, SoundSource.HOSTILE, 3.5f, 0.70f);
-          level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, dragon.getX(), dragon.getY() + 1.0D, dragon.getZ(), 12, 8.0D, 3.0D, 8.0D, 0.0D);
-          level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, dragon.getX(), dragon.getY(), dragon.getZ(), 160, 28.0D, 4.0D, 28.0D, 0.25D);
+          level.playSound(null, dragon.getX(), dragon.getY(), dragon.getZ(),
+            SoundEvents.ENDER_DRAGON_FLAP, SoundSource.MASTER, 2.0f, 0.90f);
+        } else if (tick == 20) {
+          level.playSound(null, dragon.getX(), dragon.getY(), dragon.getZ(),
+            SoundEvents.ANVIL_LAND, SoundSource.MASTER, 1.4f, 0.65f);
+        }
+      }
+      case SAFI_ROAR -> {
+        // end_roar (6.0s = 120 ticks) with 2x louder layered roar audio & front knockback
+        if (tick == 5) {
+          // 0.25s: Push players away if in front melee circle + flap + warden sonic_charge buffer
+          for (Player p : level.players()) {
+            if (!p.isAlive() || p.isCreative() || p.isSpectator()) continue;
+            Vec3 toP = p.position().subtract(dragon.position());
+            double dist = Math.hypot(toP.x, toP.z);
+            if (10.5D >= dist && dist > 0.01D) {
+              Vec3 dirXZ = new Vec3(toP.x, 0.0D, toP.z).normalize();
+              if (dirXZ.dot(forward) > 0.25D) {
+                Vec3 push = dirXZ.scale(1.85D).add(0.0D, 0.45D, 0.0D);
+                p.push(push.x, push.y, push.z);
+                p.hurtMarked = true;
+              }
+            }
+          }
+          level.playSound(null, dragon.getX(), dragon.getY(), dragon.getZ(),
+            SoundEvents.ENDER_DRAGON_FLAP, SoundSource.MASTER, 4.0f, 1.2f);
+          level.playSound(null, dragon.getX(), dragon.getY(), dragon.getZ(),
+            SoundEvents.WARDEN_SONIC_CHARGE, SoundSource.MASTER, 2.0f, 1.0f);
+        } else if (tick == 10) {
+          // 0.50s
+          level.playSound(null, dragon.getX(), dragon.getY(), dragon.getZ(),
+            SoundEvents.ENDER_DRAGON_GROWL, SoundSource.MASTER, 4.0f, 1.0f);
+        } else if (tick == 17) {
+          // 0.83s
+          level.playSound(null, dragon.getX(), dragon.getY(), dragon.getZ(),
+            net.minecraft.sounds.SoundEvent.createVariableRangeEvent(
+              net.minecraft.resources.ResourceLocation.withDefaultNamespace("item.brush.brushing.sand.complete")
+            ), SoundSource.MASTER, 2.0f, 0.1f);
+        } else if (tick == 40) {
+          // 2.00s: Massive layered roar + particle shockwave
+          level.playSound(null, dragon.getX(), dragon.getY(), dragon.getZ(),
+            SoundEvents.ENDER_DRAGON_GROWL, SoundSource.MASTER, 4.0f, 0.5f);
+          level.playSound(null, dragon.getX(), dragon.getY(), dragon.getZ(),
+            SoundEvents.WARDEN_DEATH, SoundSource.MASTER, 4.0f, 0.5f);
+          level.playSound(null, dragon.getX(), dragon.getY(), dragon.getZ(),
+            SoundEvents.ENDERMAN_DEATH, SoundSource.MASTER, 1.0f, 0.5f);
+          level.playSound(null, dragon.getX(), dragon.getY(), dragon.getZ(),
+            SoundEvents.ENDERMAN_SCREAM, SoundSource.MASTER, 2.0f, 0.2f);
+          level.playSound(null, dragon.getX(), dragon.getY(), dragon.getZ(),
+            SoundEvents.WITHER_DEATH, SoundSource.MASTER, 2.0f, 0.6f);
+
+          double dx = dragon.getX();
+          double dy = dragon.getY();
+          double dz = dragon.getZ();
+          level.sendParticles(ParticleTypes.END_ROD, dx, dy, dz, 250, 1.0D, 1.0D, 1.0D, 2.0D);
+          level.sendParticles(ParticleTypes.DRAGON_BREATH, dx, dy, dz, 250, 1.0D, 1.0D, 1.0D, 1.0D);
+          level.sendParticles(ParticleTypes.WITCH, dx, dy, dz, 500, 8.0D, 1.0D, 8.0D, 1.0D);
+        } else if (tick == 82) {
+          // 4.08s
+          level.playSound(null, dragon.getX(), dragon.getY(), dragon.getZ(),
+            SoundEvents.ENDER_DRAGON_FLAP, SoundSource.MASTER, 4.0f, 1.2f);
+          level.playSound(null, dragon.getX(), dragon.getY(), dragon.getZ(),
+            SoundEvents.ENDER_DRAGON_AMBIENT, SoundSource.MASTER, 4.0f, 0.8f);
+        }
+      }
+      case TURN_LEFT_90, TURN_RIGHT_90, CLAW_LEFT, CLAW_RIGHT -> {
+        // Active bite/sweep hitbox on head & neck between 0.25s (tick 5) and 0.79s (tick 16)
+        if (tick == 6) {
+          level.playSound(null, dragon.getX(), dragon.getY(), dragon.getZ(),
+            SoundEvents.ENDER_DRAGON_FLAP, SoundSource.MASTER, 1.4f, 1.15f);
+          level.playSound(null, dragon.getX(), dragon.getY(), dragon.getZ(),
+            SoundEvents.ENDER_DRAGON_GROWL, SoundSource.MASTER, 1.2f, 1.35f);
+        }
+        if (tick >= 5 && 16 >= tick) {
+          DragonMultipartCollider.PartRig rig = DragonMultipartCollider.getOrCreateRig(dragon);
+          net.minecraft.world.phys.AABB headBox = rig.head.getBoundingBox().inflate(1.15D, 1.25D, 1.15D);
+          net.minecraft.world.phys.AABB neckBox = rig.neckSpan.getBoundingBox().inflate(0.95D, 1.10D, 0.95D);
+
+          boolean isLeft = (action == DragonAction.TURN_LEFT_90 || action == DragonAction.CLAW_LEFT);
+          float sweepAngleDeg = dragon.getYRot() + (isLeft ? -45.0f : 45.0f);
+          Vec3 sweepPush = Vec3.directionFromRotation(0.0f, sweepAngleDeg).normalize().scale(1.35D).add(0.0D, 0.35D, 0.0D);
+
+          for (Player p : level.players()) {
+            if (!p.isAlive() || p.isCreative() || p.isSpectator()) continue;
+            net.minecraft.world.phys.AABB pBox = p.getBoundingBox();
+            if (pBox.intersects(headBox) || pBox.intersects(neckBox)) {
+              if (p.hurt(level.damageSources().mobAttack(dragon), 27.0f)) {
+                p.push(sweepPush.x, sweepPush.y, sweepPush.z);
+                p.hurtMarked = true;
+              }
+            }
+          }
         }
       }
       default -> {}

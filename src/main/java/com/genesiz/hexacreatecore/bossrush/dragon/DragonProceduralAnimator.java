@@ -20,30 +20,32 @@ public final class DragonProceduralAnimator {
     "tail", "tail2", "tail3", "tail4", "tail5", "tail6",
     "tail7", "tail8", "tail9", "tail10", "tail11", "tail12"
   };
+  private static final java.util.Map<java.util.UUID, ClientAnimData> CLIENT_DATA = new java.util.HashMap<>();
+
+
 
   private DragonProceduralAnimator() {}
 
   public static void applyProceduralRig(MhEnderDragonModel<?> model, EnderDragon dragon, IMhEnderDragon mh, float partialTick) {
-    ClientAnimData anim = mh.hexacreatecore$getClientAnimData();
+    if (dragon == null || mh == null) {
+      return;
+    }
+
+    ClientAnimData anim = CLIENT_DATA.computeIfAbsent(dragon.getUUID(), id -> new ClientAnimData());
     DragonPoseMode poseMode = mh.hexacreatecore$getPoseMode();
     DragonAction action = mh.hexacreatecore$getActiveAction();
     int actionTick = mh.hexacreatecore$getActionTick();
     int actionDur = Math.max(1, mh.hexacreatecore$getActionDuration());
-    float actionProg = Mth.clamp((actionTick + partialTick) / (float) actionDur, 0.0f, 1.0f);
+    float actionProg = (action == DragonAction.NONE)
+      ? 0.0f
+      : Mth.clamp((actionTick + partialTick) / actionDur, 0.0f, 1.0f);
 
-    float bodyYaw = Mth.rotLerp(partialTick, dragon.yBodyRotO, dragon.yBodyRot);
-    float entityPitch = Mth.rotLerp(partialTick, dragon.xRotO, dragon.getXRot());
     Vec3 vel = dragon.getDeltaMovement();
     float horizSpeed = (float) Math.hypot(vel.x, vel.z);
+    boolean isAirborne = (poseMode == DragonPoseMode.FLY_HOVER || poseMode == DragonPoseMode.FLY_GLIDE || dragon.getY() > mh.hexacreatecore$getArenaOrigin().y + 1.5D);
+    float bodyYaw = Mth.rotLerp(partialTick, dragon.yBodyRotO, dragon.yBodyRot);
+    float entityPitch = Mth.lerp(partialTick, dragon.xRotO, dragon.getXRot());
 
-    if (!anim.initialized) {
-      anim.initialized = true;
-      anim.prevBodyYaw = bodyYaw;
-    }
-
-    boolean isAirborne = (poseMode == DragonPoseMode.FLY_HOVER || poseMode == DragonPoseMode.FLY_GLIDE);
-
-    // Sample yaw/pitch velocity & tail inertia ring buffer once per game tick (20 Hz)
     if (dragon.tickCount != anim.lastSampleTick) {
       anim.lastSampleTick = dragon.tickCount;
       float rawYawDelta = Mth.wrapDegrees(bodyYaw - anim.prevBodyYaw);
@@ -65,11 +67,52 @@ public final class DragonProceduralAnimator {
     anim.supercriticalGlow = Mth.lerp(0.08f, anim.supercriticalGlow, targetGlow);
 
     resetProceduralBones(model, dragon, poseMode, action);
+
+    // Full-keyframe Blockbench clips (ground_idle, ground_walk, turn_90, landing, end_roar, nova_*)
+    // play with zero procedural body/neck/tail/wing wiggle; only terrain slope tilt applies on ground idle/walk.
+    if (isFullKeyframeAnim(poseMode, action)) {
+      GeoBone root = getBone(model, dragon, "root");
+      if (root != null) {
+        if (poseMode == DragonPoseMode.GROUND_IDLE || poseMode == DragonPoseMode.GROUND_WALK) {
+          root.setPosY(root.getPosY() + 29.5f);
+        }
+        if (action == DragonAction.NONE && (poseMode == DragonPoseMode.GROUND_IDLE || poseMode == DragonPoseMode.GROUND_WALK)) {
+          applyGroundSlopeTilt(root, dragon, anim);
+        }
+      }
+      return;
+    }
+
     applyRootAndBodyDynamics(model, dragon, anim, poseMode, action, actionProg, ageTicks, isAirborne);
     applyNeckAndHeadIk(model, dragon, anim, bodyYaw, isAirborne, poseMode, action, actionProg, partialTick);
     applyTailPhysics(model, dragon, anim, ageTicks, isAirborne, poseMode, action, actionProg);
     applyWingKinematics(model, dragon, anim, ageTicks, isAirborne, poseMode, action, actionProg);
     applyLimbIkAndAttacks(model, dragon, anim, poseMode, action, actionProg);
+  }
+
+  private static void applyGroundSlopeTilt(GeoBone root, EnderDragon dragon, ClientAnimData anim) {
+    float rawFR = raycastPawGroundDelta(dragon, -1.35D, 2.1D);
+    float rawFL = raycastPawGroundDelta(dragon,  1.35D, 2.1D);
+    float rawRR = raycastPawGroundDelta(dragon, -1.65D, -2.0D);
+    float rawRL = raycastPawGroundDelta(dragon,  1.65D, -2.0D);
+
+    anim.footOffsetFR = Mth.lerp(0.25f, anim.footOffsetFR, rawFR);
+    anim.footOffsetFL = Mth.lerp(0.25f, anim.footOffsetFL, rawFL);
+    anim.footOffsetRR = Mth.lerp(0.25f, anim.footOffsetRR, rawRR);
+    anim.footOffsetRL = Mth.lerp(0.25f, anim.footOffsetRL, rawRL);
+
+    float leftAvg  = (anim.footOffsetFL + anim.footOffsetRL) * 0.5f;
+    float rightAvg = (anim.footOffsetFR + anim.footOffsetRR) * 0.5f;
+    float frontAvg = (anim.footOffsetFR + anim.footOffsetFL) * 0.5f;
+    float rearAvg  = (anim.footOffsetRR + anim.footOffsetRL) * 0.5f;
+
+    float slopeRollDeg  = Mth.clamp((rightAvg - leftAvg) * 14.0f, -24.0f, 24.0f);
+    float slopePitchDeg = Mth.clamp((rearAvg - frontAvg) * 11.0f, -22.0f, 22.0f);
+    float centerLift    = Mth.clamp((leftAvg + rightAvg) * 0.5f, -1.25f, 1.25f);
+
+    root.setPosY(root.getPosY() + (centerLift * 16.0f));
+    root.setRotZ(root.getRotZ() + (slopeRollDeg * DEG_TO_RAD));
+    root.setRotX(root.getRotX() + (slopePitchDeg * DEG_TO_RAD));
   }
 
   private static void applyRootAndBodyDynamics(
@@ -93,7 +136,6 @@ public final class DragonProceduralAnimator {
       rootY += (float) Math.sin(ageTicks * 0.16f) * 2.2f;
     } else if (mode == DragonPoseMode.PILLAR_PERCH) {
       if (action == DragonAction.LIFT_OFF_GROUND) {
-        // Hold pillar offset during the 0.0s-0.38s crouch, then blend smoothly to 0 as she leaps off
         float airBlend = Mth.clamp((prog - 0.38f) / 0.45f, 0.0f, 1.0f);
         float keepPerch = 1.0f - airBlend;
         bodyPitch = -1.5f * keepPerch * DEG_TO_RAD;
@@ -104,6 +146,8 @@ public final class DragonProceduralAnimator {
         rootY += 13.5f;
         rootZ -= 24.0f;
       }
+    } else if (mode == DragonPoseMode.GROUND_IDLE || mode == DragonPoseMode.GROUND_WALK) {
+      rootY += 29.5f;
     } else if (mode == DragonPoseMode.TOPPLED) {
       rootY -= 11.0f;
       rootRoll += 72.0f * DEG_TO_RAD;
@@ -393,23 +437,64 @@ public final class DragonProceduralAnimator {
     DragonPoseMode mode, DragonAction action, float prog
   ) {
     boolean grounded = (mode == DragonPoseMode.GROUND_IDLE || mode == DragonPoseMode.GROUND_WALK);
-    if (grounded && (mode == DragonPoseMode.GROUND_WALK || anim.smoothedSpeed > 0.04f)) {
-      anim.gaitCycle += Math.max(0.18f, anim.smoothedSpeed * 1.4f);
-      float strideA = (float) Math.sin(anim.gaitCycle) * 22.0f * DEG_TO_RAD;
-      float liftA = Math.max(0.0f, (float) Math.cos(anim.gaitCycle)) * 18.0f * DEG_TO_RAD;
-      float strideB = (float) Math.sin(anim.gaitCycle + Math.PI) * 22.0f * DEG_TO_RAD;
-      float liftB = Math.max(0.0f, (float) Math.cos(anim.gaitCycle + Math.PI)) * 18.0f * DEG_TO_RAD;
-      applyLegStep(model, dragon, "frontleg", "frontlegtip", "frontfoot", strideA, liftA);
-      applyLegStep(model, dragon, "rearleg1", "rearlegtip1", "rearfoot1", strideA * 0.85f, liftA * 0.85f);
-      applyLegStep(model, dragon, "frontleg1", "frontlegtip1", "frontfoot1", strideB, liftB);
-      applyLegStep(model, dragon, "rearleg", "rearlegtip", "rearfoot", strideB * 0.85f, liftB * 0.85f);
-    }
+
     if (grounded) {
-      adaptFootToGround(model, dragon, "frontleg", "frontfoot", -1.2D, 1.8D);
-      adaptFootToGround(model, dragon, "frontleg1", "frontfoot1", 1.2D, 1.8D);
-      adaptFootToGround(model, dragon, "rearleg", "rearfoot", -1.5D, -1.8D);
-      adaptFootToGround(model, dragon, "rearleg1", "rearfoot1", 1.5D, -1.8D);
+      // 1. Raycast straight down at all 4 paw world positions
+      // Note: negative X in model space = dragon's right side ("frontleg", "rearleg"); positive X = dragon's left side ("frontleg1", "rearleg1")
+      float rawFR = raycastPawGroundDelta(dragon, -1.35D, 2.1D);
+      float rawFL = raycastPawGroundDelta(dragon,  1.35D, 2.1D);
+      float rawRR = raycastPawGroundDelta(dragon, -1.65D, -2.0D);
+      float rawRL = raycastPawGroundDelta(dragon,  1.65D, -2.0D);
+
+      anim.footOffsetFR = Mth.lerp(0.25f, anim.footOffsetFR, rawFR);
+      anim.footOffsetFL = Mth.lerp(0.25f, anim.footOffsetFL, rawFL);
+      anim.footOffsetRR = Mth.lerp(0.25f, anim.footOffsetRR, rawRR);
+      anim.footOffsetRL = Mth.lerp(0.25f, anim.footOffsetRL, rawRL);
+
+      // 2. Angle body pitch & roll from the 4-foot plane
+      // Left paws lower (negative delta) -> tilt left; Front paws higher (positive delta) -> pitch nose up
+      float leftAvg = (anim.footOffsetFL + anim.footOffsetRL) * 0.5f;
+      float rightAvg = (anim.footOffsetFR + anim.footOffsetRR) * 0.5f;
+      float frontAvg = (anim.footOffsetFR + anim.footOffsetFL) * 0.5f;
+      float rearAvg = (anim.footOffsetRR + anim.footOffsetRL) * 0.5f;
+
+      float slopeRollDeg = Mth.clamp((rightAvg - leftAvg) * 14.0f, -24.0f, 24.0f);
+      float slopePitchDeg = Mth.clamp((rearAvg - frontAvg) * 11.0f, -22.0f, 22.0f);
+      float centerLift = Mth.clamp((leftAvg + rightAvg) * 0.5f, -1.25f, 1.25f);
+
+      GeoBone root = getBone(model, dragon, "root");
+      if (root != null) {
+        root.setPosY(root.getPosY() + (centerLift * 16.0f));
+        root.setRotZ(root.getRotZ() + (slopeRollDeg * DEG_TO_RAD));
+        root.setRotX(root.getRotX() + (slopePitchDeg * DEG_TO_RAD));
+      }
+
+      // 3. Apply 3-joint IK per paw relative to the tilted body plane
+      float planeFR = centerLift + ((rightAvg - leftAvg) * 0.5f) + ((frontAvg - rearAvg) * 0.5f);
+      float planeFL = centerLift - ((rightAvg - leftAvg) * 0.5f) + ((frontAvg - rearAvg) * 0.5f);
+      float planeRR = centerLift + ((rightAvg - leftAvg) * 0.5f) - ((frontAvg - rearAvg) * 0.5f);
+      float planeRL = centerLift - ((rightAvg - leftAvg) * 0.5f) - ((frontAvg - rearAvg) * 0.5f);
+
+      applyThreeJointPawIk(model, dragon, "frontleg",  "frontlegtip",  "frontfoot",  anim.footOffsetFR - planeFR, true);
+      applyThreeJointPawIk(model, dragon, "frontleg1", "frontlegtip1", "frontfoot1", anim.footOffsetFL - planeFL, true);
+      applyThreeJointPawIk(model, dragon, "rearleg",   "rearlegtip",   "rearfoot",   anim.footOffsetRR - planeRR, false);
+      applyThreeJointPawIk(model, dragon, "rearleg1",  "rearlegtip1",  "rearfoot1",  anim.footOffsetRL - planeRL, false);
     }
+
+    // 4. Heavy diagonal quadruped walk cycle synced to actual ground velocity
+    if (grounded && (mode == DragonPoseMode.GROUND_WALK || anim.smoothedSpeed > 0.02f)) {
+      float strideA = (float) Math.sin(anim.gaitCycle) * 20.0f * DEG_TO_RAD;
+      float liftA = Math.max(0.0f, (float) Math.cos(anim.gaitCycle)) * 16.0f * DEG_TO_RAD;
+      float strideB = (float) Math.sin(anim.gaitCycle + Math.PI) * 20.0f * DEG_TO_RAD;
+      float liftB = Math.max(0.0f, (float) Math.cos(anim.gaitCycle + Math.PI)) * 16.0f * DEG_TO_RAD;
+
+      applyLegStep(model, dragon, "frontleg",  "frontlegtip",  "frontfoot",  strideA, liftA);
+      applyLegStep(model, dragon, "rearleg1",  "rearlegtip1",  "rearfoot1",  strideA * 0.85f, liftA * 0.85f);
+      applyLegStep(model, dragon, "frontleg1", "frontlegtip1", "frontfoot1", strideB, liftB);
+      applyLegStep(model, dragon, "rearleg",   "rearlegtip",   "rearfoot",   strideB * 0.85f, liftB * 0.85f);
+    }
+
+    // 5. Phase 2 Melee Limb Overrides
     switch (action) {
       case CLAW_LEFT -> {
         float swipe = swingCurve(prog, 0.32f, 0.58f);
@@ -458,6 +543,56 @@ public final class DragonProceduralAnimator {
       default -> {}
     }
   }
+
+    private static float raycastPawGroundDelta(EnderDragon dragon, double localSideX, double localForwardZ) {
+    float yawRad = dragon.getYRot() * DEG_TO_RAD;
+    double sin = Math.sin(yawRad);
+    double cos = Math.cos(yawRad);
+
+    double wx = dragon.getX() + (localSideX * cos) - (localForwardZ * sin);
+    double wz = dragon.getZ() + (localSideX * sin) + (localForwardZ * cos);
+    double baseY = dragon.getY();
+
+    Vec3 start = new Vec3(wx, baseY + 2.5D, wz);
+    Vec3 end = new Vec3(wx, baseY - 2.5D, wz);
+    net.minecraft.world.phys.BlockHitResult hit = dragon.level().clip(
+      new net.minecraft.world.level.ClipContext(
+        start, end,
+        net.minecraft.world.level.ClipContext.Block.COLLIDER,
+        net.minecraft.world.level.ClipContext.Fluid.NONE,
+        dragon
+      )
+    );
+    if (hit.getType() == net.minecraft.world.phys.HitResult.Type.MISS) {
+      return 0.0f;
+    }
+    return Mth.clamp((float) (hit.getLocation().y - baseY), -1.6f, 1.6f);
+  }
+
+  private static void applyThreeJointPawIk(
+    MhEnderDragonModel<?> model, EnderDragon dragon,
+    String upperName, String tipName, String footName,
+    float residualDeltaBlocks, boolean isFrontLeg
+  ) {
+    GeoBone upper = getBone(model, dragon, upperName);
+    GeoBone tip = getBone(model, dragon, tipName);
+    GeoBone foot = getBone(model, dragon, footName);
+    if (upper == null || tip == null) return;
+
+    float clamped = Mth.clamp(residualDeltaBlocks, -1.4f, 1.4f);
+    // Positive delta = ground higher than body plane (fold knee); negative = ground lower (extend leg downward)
+    float bendRad = clamped * 26.0f * DEG_TO_RAD;
+    if (isFrontLeg) {
+      upper.setRotX(upper.getRotX() - bendRad);
+      tip.setRotX(tip.getRotX() + (bendRad * 1.35f));
+      if (foot != null) foot.setRotX(foot.getRotX() - (bendRad * 0.35f));
+    } else {
+      upper.setRotX(upper.getRotX() - (bendRad * 0.90f));
+      tip.setRotX(tip.getRotX() + (bendRad * 1.25f));
+      if (foot != null) foot.setRotX(foot.getRotX() - (bendRad * 0.35f));
+    }
+  }
+
   private static void applyLegStep(MhEnderDragonModel<?> model, EnderDragon dragon, String upperName, String lowerName, String footName, float strideRad, float liftRad) {
     GeoBone upper = getBone(model, dragon, upperName);
     GeoBone lower = getBone(model, dragon, lowerName);
@@ -466,6 +601,7 @@ public final class DragonProceduralAnimator {
     if (lower != null) lower.setRotX(lower.getRotX() + liftRad * 1.4f);
     if (foot != null) foot.setRotX(foot.getRotX() - strideRad * 0.5f - liftRad * 0.4f);
   }
+
   private static void adaptFootToGround(MhEnderDragonModel<?> model, EnderDragon dragon, String legName, String footName, double localX, double localZ) {
     Level level = dragon.level();
     if (level == null) return;
@@ -529,18 +665,18 @@ public final class DragonProceduralAnimator {
 
   private static void resetProceduralBones(MhEnderDragonModel<?> model, EnderDragon dragon, DragonPoseMode mode, DragonAction action) {
     resetBoneToBind(getBone(model, dragon, "root"));
-    if (action != DragonAction.FIREBALL_SHORT && action != DragonAction.AIR_DASH && !isNovaAnim(action)) {
+    boolean fullKeyed = isFullKeyframeAnim(mode, action);
+    if (action != DragonAction.FIREBALL_SHORT && action != DragonAction.AIR_DASH && !fullKeyed) {
       for (String name : NECK_CHAIN) {
         resetBoneToBind(getBone(model, dragon, name));
       }
     }
-    if (!isNovaAnim(action)) {
+    if (!isNovaAnim(action) && action != DragonAction.SAFI_ROAR) {
       for (String name : TAIL_CHAIN) {
         resetBoneToBind(getBone(model, dragon, name));
       }
     }
-    boolean grounded = (mode == DragonPoseMode.GROUND_IDLE || mode == DragonPoseMode.GROUND_WALK);
-    if (!grounded && action != DragonAction.LIFT_OFF_GROUND && action != DragonAction.AIR_DASH && action != DragonAction.FIREBALL_SHORT && !isNovaAnim(action)) {
+    if (action != DragonAction.LIFT_OFF_GROUND && action != DragonAction.AIR_DASH && action != DragonAction.FIREBALL_SHORT && !fullKeyed) {
       resetBoneToBind(getBone(model, dragon, "wing"));
       resetBoneToBind(getBone(model, dragon, "wingtip"));
       resetBoneToBind(getBone(model, dragon, "wing1"));
@@ -564,5 +700,19 @@ public final class DragonProceduralAnimator {
     return action == DragonAction.NOVA_PRE_CHARGE
     || action == DragonAction.NOVA_CHARGE
     || action == DragonAction.NOVA_END_CHARGE;
+  }
+
+  private static boolean isFullKeyframeAnim(DragonPoseMode mode, DragonAction action) {
+    if (isNovaAnim(action)) return true;
+    if (action == DragonAction.LANDING
+      || action == DragonAction.SAFI_ROAR
+      || action == DragonAction.TURN_LEFT_90
+      || action == DragonAction.TURN_RIGHT_90
+      || action == DragonAction.CLAW_LEFT
+      || action == DragonAction.CLAW_RIGHT) {
+      return true;
+    }
+    return action == DragonAction.NONE
+      && (mode == DragonPoseMode.GROUND_IDLE || mode == DragonPoseMode.GROUND_WALK);
   }
 }

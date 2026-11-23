@@ -58,3 +58,77 @@ she will only stay in flight mode here;
 
 Desperation Phase 1%hp (she automatically goes down to 0% after it);
 Every island's fire gets wiped out and all 3 islands are now available, she will start throwing a ton of fireballs upward, causing a lot fireballs to spawn on every islands until the phase is done, she then readies herself on the center of all 3 islands and throws a swiping laser in a 360deg motion, she then does it again the other direction this time, she then plunges down in the blackhole, the blackhole completely colapses and explodes, the explosion throws out stars all around the islands which starts to throw lasers in random directions aimed toward the islands 3x and then explodes (they'll be close enough to the islands the the explosion can reach the player but far enough that being near the center of an island is enough to dodge), the star explosion is an instant kill, after this the dragon flies upward and start charging a final breath on the island with the most amount of players, the player have 10sec to get out of the breath that will then turn into a final giant laser (is also an instant kill), after this the dragon collapses into a final blackhole (this one is purely cosmetic) and the fight is over
+
+
+--------------------------------------------------------------------------
+PHASE 2 ANIM
+--------------------------------------------------------------------------
+
+1. Ground Locomotion & Repositioning
+
+• neutral_ground (Loop — ~2.0s)
+	• Heavy breathing idle on all fours. Keep the 4 feet planted cleanly on Y = 0 so our 4-paw raycast IK can adjust individual leg height and body roll on slopes.
+• ground_walk (Loop — ~1.5s per full 4-step stride)
+	• Slow, heavy quadrupedal walk (Safi'jiiva / Fatalis weight). Keep root forward translation at 0 (code drives velocity) and cycle all 4 legs cleanly.
+• turn_left_90 & turn_right_90 (Play once — ~0.75s each)
+	• Stepping pivot turning 90° left or right (lift front paws, swing torso/tail, plant). Code will apply the actual ±90° entity yaw rotation in sync with the step.
+• safi_roar (Play once — ~3.0s, roar impact at 0.80s)
+	• Phase 2 entrance roar right after landing: crouch anticipation → rear up / spread wings and roar at 0.80s → settle back onto all fours.
+
+2. Grounded Melee Attacks
+
+• claw_left & claw_right (Play once — ~1.25s each, hit frame at 0.50s)
+	• 90° sweeping front-paw claw slash on the left or right side.
+• double_claw (Play once — ~1.75s, left hit at 0.55s, right hit at 1.15s)
+	• Alternating left-then-right forward claw slams; animate the forward lunge weight (code adds the forward impulse).
+• forward_stomp (Play once — ~1.60s, slam impact at 0.95s)
+	• Rears up onto her 2 hind legs (0.0s–0.75s), then slams both front legs down onto the ground at 0.95s.
+• wing_flap_forward (Play once — ~1.10s, gust frame at 0.45s)
+	• Quick forward wing-buffet that blasts wind forward to push close players back.
+• wing_flap_left & wing_flap_right (Play once — ~1.10s each, gust frame at 0.45s)
+	• Quick side wing-sweep (left or right) to knock flanking players away.
+• bite_quick (Play once — ~0.95s, snap frame at 0.40s)
+	• Fast close-range jaw snap straight ahead (procedural head IK will aim the strike toward the player).
+• bite_lunge (Play once — ~1.40s, snap frame at 0.65s)
+	• Telegraphed neck coil followed by a heavier forward lunging bite.
+• back_leg_left & back_leg_right (Play once — ~1.15s each, kick frame at 0.50s)
+	• Safi'jiiva-style backward hind-leg kick/swipe for players positioned behind-left or behind-right.
+• tail_swipe_lr & tail_swipe_rl (Play once — ~1.50s each, active sweep 0.50s–1.10s)
+	• Full-body weight shift whipping the tail across the rear arc (left-to-right or right-to-left).
+
+3. Grounded Ranged, Breath & Takeoff Moves
+
+• ground_fireball_short (Play once — ~1.60s, shots at 0.50s, 0.70s, 0.90s)
+	• Raises her head up and sweeps a short volley of fireballs across the front cone.
+• fireball_carpet (Play once — ~2.40s, takeoff at 0.45s, carpet volley 0.75s–1.75s)
+	• Leaps/flies backward into the air while carpet-bombing the ground area she just left (leaves her airborne for Phase 2 air follow-ups).
+• breath_swipe_90 (Play once — ~2.50s, beam active 0.55s–2.05s)
+	• Plants her stance and sweeps a long-range fire breath across a 90° arc in front of her.
+• flying_breath_45 (Play once — ~2.40s, takeoff at 0.45s, breath 0.75s–1.95s)
+	• Flies backward into the air and breathes fire down onto her previous spot, angling outward at 45° (leaves her airborne).
+
+4. Phase 2 Airborne Follow-Up Attacks (Return to Ground)
+
+(Triggered while airborne after fireball_carpet or flying_breath_45)
+• air_charged_fireball (Play once — ~1.80s, release at 1.10s)
+	• Hovers in place, gathers energy in her jaws (0.0s–1.10s), and fires a 2× radius / 2× damage fireball.
+• air_dash (Play once — ~1.80s, dive begins at 0.55s, ground skid 1.00s–1.55s)
+	• Mid-air aim windup followed by a diagonal dive-dash straight into the ground through the player, skidding to a halt (returns her to grounded stance).
+• air_stomp (Play once — ~1.50s, slam impact at 0.90s)
+	• Hovers briefly (0.0s–0.50s), then drops straight down in a violent vertical body/claw slam (returns her to grounded stance and triggers ragdoll + knockback).
+
+
+-------------------------------------------------------
+PHASE 3
+-------------------------------------------------------
+
+Nova transition:
+
+Dragon goes up 80 blocks above the arena
+starts animation:
+Dragon starts throwing dragon fire for 5sec after aiming down (radius of 20 blocks in a cone shape from the dragon to the ground)
+The firebreath concentrate into a single laser that grows in size (goes from 3 blocks wide to 15 blocks wide) that lasts for 10sec, during this the ground starts emiting light like a star would with each second the glow becoming way more intense
+During 2sec the light shrinks down to a center point on the arena (1 block hyper dense star) and explodes after these 2sec and collapses into a giant blackhole that covers the entire arena
+
+The concentrated laser, the star, the supernova and the blackhole are all instant kill
+The dragon breath inflict a fixed 10% hp of dmg every seconds if the player stands in it
