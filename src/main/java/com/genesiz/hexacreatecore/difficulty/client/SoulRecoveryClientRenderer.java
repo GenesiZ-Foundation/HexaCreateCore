@@ -243,11 +243,14 @@ public final class SoulRecoveryClientRenderer {
 
     float boxW = font.width(boldAlert) + 28.0f;
     float boxH = font.lineHeight + 16.0f;
-    float centerY = 38.0f;
+    float centerY = 68.0f;
 
     PoseStack poseStack = event.getGuiGraphics().pose();
     MultiBufferSource.BufferSource bufferSource = mc.renderBuffers().bufferSource();
     int accent = showWallPenalty ? 0xFFFF1E56 : DifficultyClientState.activeTier.accentColor;
+
+    poseStack.pushPose();
+    poseStack.translate(0.0f, 0.0f, 350.0f);
 
     RenderSystem.enableBlend();
     RenderSystem.defaultBlendFunc();
@@ -274,5 +277,7 @@ public final class SoulRecoveryClientRenderer {
     int fillX = barX0 + Math.round((barX1 - barX0) * pct);
     event.getGuiGraphics().fill(barX0, barY, barX1, barY + 2, 0xFF1A1429);
     event.getGuiGraphics().fill(barX0, barY, fillX, barY + 2, accent);
+
+    poseStack.popPose();
   }
 }

@@ -76,19 +76,51 @@ public final class DragonCombatExecutor {
 
     switch (action) {
       case DOUBLE_CLAW -> {
-        if (tick == 11 || tick == 23) {
-          double sideSign = (tick == 11) ? -1.0D : 1.0D;
-          dragon.setDeltaMovement(forward.scale(0.75D));
-          Vec3 hitCenter = dragon.position().add(forward.scale(4.8D)).add(right.scale(sideSign * 2.5D));
-          damagePlayersInBox(level, dragon, hitCenter, 4.2D, 13.0f, forward.scale(0.95D));
+        // double_wing_hit (3.25s = 65t): right wing slam 0.75s..1.25s (t 15..25), left wing slam 2.04s..2.58s (t 41..52)
+        boolean firstSwing = (tick >= 15 && 25 >= tick);
+        boolean secondSwing = (tick >= 41 && 52 >= tick);
+        if (tick == 15 || tick == 41) {
+          level.playSound(null, dragon.blockPosition(), SoundEvents.ENDER_DRAGON_FLAP, SoundSource.HOSTILE, 2.6f, 0.82f);
+        }
+        if (firstSwing || secondSwing) {
+          Vec3 pushDir = forward.scale(1.15D).add(0.0D, 0.38D, 0.0D);
+
+          for (Player p : level.players()) {
+            if (!p.isAlive() || p.isCreative() || p.isSpectator()) continue;
+
+            double dy = p.getY() - dragon.getY();
+            if (dy > 5.5D || -2.0D > dy) continue;
+
+            double dx = p.getX() - dragon.getX();
+            double dz = p.getZ() - dragon.getZ();
+            double horizDist = Math.hypot(dx, dz);
+
+            // Full wing + wingtip slam reach in front of the dragon (1.8m to 11.5m forward, 140-deg front arc)
+            if (horizDist >= 1.8D && 11.5D >= horizDist) {
+              Vec3 dirToPlayer = new Vec3(dx / horizDist, 0.0D, dz / horizDist);
+              if (dirToPlayer.dot(forward) >= 0.32D) {
+                if (p.hurt(level.damageSources().mobAttack(dragon), 24.8f)) {
+                  p.push(pushDir.x, pushDir.y, pushDir.z);
+                  p.hurtMarked = true;
+                }
+              }
+            }
+          }
         }
       }
-      case FORWARD_STOMP -> {
-        if (tick == 19) {
-          level.playSound(null, dragon.blockPosition(), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 2.2f, 0.75f);
-          Vec3 slamPos = dragon.position().add(forward.scale(4.5D));
-          level.sendParticles(ParticleTypes.EXPLOSION, slamPos.x, slamPos.y + 0.5D, slamPos.z, 4, 1.5D, 0.3D, 1.5D, 0.0D);
-          damagePlayersInBox(level, dragon, slamPos, 5.5D, 18.0f, forward.scale(1.1D).add(0.0D, 0.55D, 0.0D));
+
+      case SHIELD_STOMP_CLUSTER, SHIELD_STOMP_SPREAD -> {
+        // shield_stomp (3.75s = 75t): form at 0.50s (t 10), launch at 1.75s (t 35), damage active at 1.85s (t 37)
+        if (tick == 10) {
+          if (action == DragonAction.SHIELD_STOMP_CLUSTER) {
+            DragonHexShieldManager.spawnClusterShield(level, dragon);
+          } else {
+            DragonHexShieldManager.spawnSpreadShields(level, dragon);
+          }
+        } else if (tick == 35) {
+          DragonHexShieldManager.launchShields(level, dragon, action == DragonAction.SHIELD_STOMP_SPREAD);
+        } else if (tick == 37) {
+          DragonHexShieldManager.activateShieldDamage(dragon);
         }
       }
       case WING_FLAP_FORWARD, WING_FLAP_LEFT, WING_FLAP_RIGHT -> {
@@ -192,6 +224,8 @@ public final class DragonCombatExecutor {
         }
       }
       case NOVA_PRE_CHARGE -> {
+        dragon.setXRot(0.0f);
+        dragon.xRotO = 0.0f;
         // Every 1.0s (tick 1, 21): zombie_villager.converted @ pitch 0.5, 200-block range
         if (tick % 20 == 1) {
           level.playSound(null, dragon.getX(), dragon.getY(), dragon.getZ(),
@@ -205,6 +239,8 @@ public final class DragonCombatExecutor {
         }
       }
       case NOVA_CHARGE -> {
+        dragon.setXRot(0.0f);
+        dragon.xRotO = 0.0f;
         // Every 1.0s (tick 1, 21, ...): zombie_villager.converted @ pitch 0.5, 200-block range
         if (tick % 20 == 1) {
           level.playSound(null, dragon.getX(), dragon.getY(), dragon.getZ(),
@@ -218,6 +254,8 @@ public final class DragonCombatExecutor {
         }
       }
       case NOVA_END_CHARGE -> {
+        dragon.setXRot(0.0f);
+        dragon.xRotO = 0.0f;
         if (80 > tick) {
           // Every 1.0s (tick 1 = 4s left, 21 = 3s left, 41 = 2s left, 61 = 1s left)
           if (tick % 20 == 1) {
@@ -287,9 +325,9 @@ public final class DragonCombatExecutor {
         }
       }
       case SAFI_ROAR -> {
-        // end_roar (6.0s = 120 ticks) with 2x louder layered roar audio & front knockback
-        if (tick == 5) {
-          // 0.25s: Push players away if in front melee circle + flap + warden sonic_charge buffer
+        // end_roar at 0.80x speed (7.5s = 150 ticks)
+        if (tick == 6) {
+          // 0.25s / 0.80 = 0.31s
           for (Player p : level.players()) {
             if (!p.isAlive() || p.isCreative() || p.isSpectator()) continue;
             Vec3 toP = p.position().subtract(dragon.position());
@@ -307,18 +345,18 @@ public final class DragonCombatExecutor {
             SoundEvents.ENDER_DRAGON_FLAP, SoundSource.MASTER, 4.0f, 1.2f);
           level.playSound(null, dragon.getX(), dragon.getY(), dragon.getZ(),
             SoundEvents.WARDEN_SONIC_CHARGE, SoundSource.MASTER, 2.0f, 1.0f);
-        } else if (tick == 10) {
-          // 0.50s
+        } else if (tick == 13) {
+          // 0.50s / 0.80 = 0.625s
           level.playSound(null, dragon.getX(), dragon.getY(), dragon.getZ(),
             SoundEvents.ENDER_DRAGON_GROWL, SoundSource.MASTER, 4.0f, 1.0f);
-        } else if (tick == 17) {
-          // 0.83s
+        } else if (tick == 21) {
+          // 0.83s / 0.80 = 1.04s
           level.playSound(null, dragon.getX(), dragon.getY(), dragon.getZ(),
             net.minecraft.sounds.SoundEvent.createVariableRangeEvent(
               net.minecraft.resources.ResourceLocation.withDefaultNamespace("item.brush.brushing.sand.complete")
             ), SoundSource.MASTER, 2.0f, 0.1f);
-        } else if (tick == 40) {
-          // 2.00s: Massive layered roar + particle shockwave
+        } else if (tick == 50) {
+          // 2.00s / 0.80 = 2.50s
           level.playSound(null, dragon.getX(), dragon.getY(), dragon.getZ(),
             SoundEvents.ENDER_DRAGON_GROWL, SoundSource.MASTER, 4.0f, 0.5f);
           level.playSound(null, dragon.getX(), dragon.getY(), dragon.getZ(),
@@ -336,8 +374,8 @@ public final class DragonCombatExecutor {
           level.sendParticles(ParticleTypes.END_ROD, dx, dy, dz, 250, 1.0D, 1.0D, 1.0D, 2.0D);
           level.sendParticles(ParticleTypes.DRAGON_BREATH, dx, dy, dz, 250, 1.0D, 1.0D, 1.0D, 1.0D);
           level.sendParticles(ParticleTypes.WITCH, dx, dy, dz, 500, 8.0D, 1.0D, 8.0D, 1.0D);
-        } else if (tick == 82) {
-          // 4.08s
+        } else if (tick == 102) {
+          // 4.08s / 0.80 = 5.10s
           level.playSound(null, dragon.getX(), dragon.getY(), dragon.getZ(),
             SoundEvents.ENDER_DRAGON_FLAP, SoundSource.MASTER, 4.0f, 1.2f);
           level.playSound(null, dragon.getX(), dragon.getY(), dragon.getZ(),
@@ -345,14 +383,14 @@ public final class DragonCombatExecutor {
         }
       }
       case TURN_LEFT_90, TURN_RIGHT_90, CLAW_LEFT, CLAW_RIGHT -> {
-        // Active bite/sweep hitbox on head & neck between 0.25s (tick 5) and 0.79s (tick 16)
-        if (tick == 6) {
+        // Active bite/sweep hitbox centered at 0.50s of the animation (ticks 11..16 at 0.80x speed)
+        if (tick == 11) {
           level.playSound(null, dragon.getX(), dragon.getY(), dragon.getZ(),
             SoundEvents.ENDER_DRAGON_FLAP, SoundSource.MASTER, 1.4f, 1.15f);
           level.playSound(null, dragon.getX(), dragon.getY(), dragon.getZ(),
             SoundEvents.ENDER_DRAGON_GROWL, SoundSource.MASTER, 1.2f, 1.35f);
         }
-        if (tick >= 5 && 16 >= tick) {
+        if (tick >= 11 && 16 >= tick) {
           DragonMultipartCollider.PartRig rig = DragonMultipartCollider.getOrCreateRig(dragon);
           net.minecraft.world.phys.AABB headBox = rig.head.getBoundingBox().inflate(1.15D, 1.25D, 1.15D);
           net.minecraft.world.phys.AABB neckBox = rig.neckSpan.getBoundingBox().inflate(0.95D, 1.10D, 0.95D);

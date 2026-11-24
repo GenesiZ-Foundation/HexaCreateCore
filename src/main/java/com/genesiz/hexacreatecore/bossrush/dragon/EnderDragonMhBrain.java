@@ -46,8 +46,9 @@ public final class EnderDragonMhBrain {
     boolean novaIsFinalTransition = false;
     boolean isLandingToGround = false;
     boolean roarAfterLanding = false;
-  }
 
+    DragonPatternResolver.PatternNode activePatternNode = null;
+  }
 
   private static final Map<UUID, BrainMemory> MEMORIES = new HashMap<>();
 
@@ -60,7 +61,7 @@ public final class EnderDragonMhBrain {
   public static void tickServer(ServerLevel level, EnderDragon dragon, IMhEnderDragon mh) {
     if (!dragon.isAlive()) {
       MEMORIES.remove(dragon.getUUID());
-      ArenaState state = DragonArenaController.getAllArenas().get(net.minecraft.core.BlockPos.containing(mh.hexacreatecore$getArenaOrigin()));
+      ArenaState state = DragonArenaController.getArena(mh.hexacreatecore$getArenaOrigin());
       if (state != null) {
         state.blackholeActive = false;
       }
@@ -69,6 +70,11 @@ public final class EnderDragonMhBrain {
 
     Vec3 origin = mh.hexacreatecore$getArenaOrigin();
     BrainMemory mem = MEMORIES.computeIfAbsent(dragon.getUUID(), id -> {
+      ArenaState existingState = DragonArenaController.getArena(origin);
+      if (existingState != null) {
+        existingState.blackholeActive = false;
+      }
+
       BrainMemory created = new BrainMemory();
       int savedPhase = Math.max(1, mh.hexacreatecore$getFightPhase());
       DragonAction curAct = mh.hexacreatecore$getActiveAction();
@@ -112,9 +118,10 @@ public final class EnderDragonMhBrain {
 
       if (nextTick >= dur) {
         mh.hexacreatecore$triggerAction(DragonAction.NONE, 0);
-        mem.decisionCooldown = 14;
+        mem.decisionCooldown = 4;
         onActionFinished(level, dragon, mh, mem, active);
       }
+
       return;
     }
 
@@ -163,8 +170,9 @@ public final class EnderDragonMhBrain {
     }
   }
 
+
   private static void tickPhase1(ServerLevel level, EnderDragon dragon, IMhEnderDragon mh, BrainMemory mem, Vec3 origin) {
-    List<EndCrystal> crystals = level.getEntitiesOfClass(EndCrystal.class, AABB.ofSize(origin, 110.0D, 80.0D, 110.0D));
+    var crystals = level.getEntitiesOfClass(EndCrystal.class, AABB.ofSize(origin, 110.0D, 80.0D, 110.0D));
     int count = crystals.size();
     mh.hexacreatecore$setBarrierShield(count > 0);
 
@@ -174,6 +182,7 @@ public final class EnderDragonMhBrain {
       if (triggerMidNova) mem.phase1MidNovaDone = true;
       if (triggerEndNova) mem.phase1EndNovaDone = true;
       mem.novaIsFinalTransition = triggerEndNova;
+      mem.activePatternNode = null;
 
       for (EndCrystal c : crystals) c.setInvulnerable(true);
 
@@ -184,9 +193,9 @@ public final class EnderDragonMhBrain {
       return;
     }
 
-    // If all crystals are down and the end-of-Phase-1 Nova was already triggered/completed across a chunk reload, enter Phase 2 landing
     if (count == 0 && mem.phase1EndNovaDone && mem.pillarLatchStage != 4) {
       mem.novaIsFinalTransition = false;
+      mem.activePatternNode = null;
       mem.phase = 2;
       mem.isAirborne = false;
       mem.pillarLatchStage = 0;
@@ -201,12 +210,10 @@ public final class EnderDragonMhBrain {
       Vec3 centerTarget = (mem.chargeTarget != null) ? mem.chargeTarget : new Vec3(origin.x, origin.y + 20.0D, origin.z);
 
       if (5 >= mem.latchTimer) {
-        // 0.0s - 0.25s: Mid-air brake
         dragon.setDeltaMovement(Vec3.ZERO);
         mh.hexacreatecore$setPoseMode(DragonPoseMode.FLY_HOVER);
         mh.hexacreatecore$setActionTick(mem.latchTimer);
       } else if (30 >= mem.latchTimer) {
-        // 0.25s - 1.50s: Turn yaw & pitch toward center of arena
         dragon.setDeltaMovement(Vec3.ZERO);
         mh.hexacreatecore$setPoseMode(DragonPoseMode.FLY_HOVER);
         mh.hexacreatecore$setActionTick(mem.latchTimer);
@@ -220,7 +227,6 @@ public final class EnderDragonMhBrain {
           dragon.yBodyRot = dragon.getYRot();
         }
       } else if (45 >= mem.latchTimer) {
-        // 1.50s - 2.25s (15 ticks): Cover the exact remaining distance to centerTarget
         mh.hexacreatecore$setActionTick(mem.latchTimer);
         mh.hexacreatecore$setPoseMode(DragonPoseMode.FLY_GLIDE);
 
@@ -229,7 +235,7 @@ public final class EnderDragonMhBrain {
           level.playSound(null, dragon.blockPosition(), SoundEvents.ENDER_DRAGON_FLAP, SoundSource.HOSTILE, 3.0f, 0.72f);
         }
 
-        int ticksLeft = 46 - mem.latchTimer; // 15 down to 1
+        int ticksLeft = 46 - mem.latchTimer;
         Vec3 remaining = centerTarget.subtract(dragon.position());
         double requiredSpeed = remaining.length() / Math.max(1, ticksLeft);
 
@@ -239,10 +245,10 @@ public final class EnderDragonMhBrain {
           steerToward(dragon, centerTarget, requiredSpeed);
         }
       } else {
-        // Reached 2.25s -> Snap cleanly to center, level out, and start pre_charging_nova_1 (2.0s = 40t)
         dragon.setPos(centerTarget.x, centerTarget.y, centerTarget.z);
         dragon.setDeltaMovement(Vec3.ZERO);
         dragon.setXRot(0.0f);
+        dragon.xRotO = 0.0f;
         mem.pillarLatchStage = 0;
         mh.hexacreatecore$setPoseMode(DragonPoseMode.FLY_HOVER);
         mh.hexacreatecore$triggerAction(DragonAction.NOVA_PRE_CHARGE, 40);
@@ -376,6 +382,7 @@ public final class EnderDragonMhBrain {
       }
       return;
     }
+
     // Default Phase 1: High 32-block radius circular orbit at least 12 blocks above the tallest crystal
     double highestCrystalY = origin.y + 38.0D;
     for (EndCrystal c : crystals) {
@@ -393,15 +400,32 @@ public final class EnderDragonMhBrain {
     mh.hexacreatecore$setPoseMode(DragonPoseMode.FLY_GLIDE);
     if (--mem.decisionCooldown <= 0 && !crystals.isEmpty()) {
       Player target = findNearestPlayer(level, dragon, 80.0D);
-      if (target != null && dragon.getRandom().nextFloat() < 0.40f) {
+      DragonAction chosenPhase1 = null;
+      if (target != null) {
+        SpatialContext ctx = DragonSpatialSelector.analyzeTarget(dragon, target);
+        DragonPatternResolver.PatternNode opener = DragonPatternResolver.selectOpener(1, ctx, dragon.getRandom());
+        if (opener != null) {
+          mem.activePatternNode = opener;
+          chosenPhase1 = opener.action();
+        }
+      }
+      if (chosenPhase1 == null) {
+        mem.activePatternNode = null;
+        chosenPhase1 = (target != null && dragon.getRandom().nextFloat() < 0.40f)
+        ? DragonAction.AIR_DASH
+        : DragonAction.FIREBALL_SHORT;
+      }
+      if (chosenPhase1 == DragonAction.AIR_DASH && target != null) {
         mem.pillarLatchStage = 3;
         mem.latchTimer = 0;
         mem.chargeTarget = target.position().add(0.0D, 1.0D, 0.0D);
         mh.hexacreatecore$triggerAction(DragonAction.AIR_DASH, 65);
-      } else {
+      } else if (chosenPhase1 == DragonAction.FIREBALL_SHORT) {
         mem.latchedCrystal = crystals.get(dragon.getRandom().nextInt(crystals.size()));
         mem.pillarLatchStage = 1;
         mem.latchTimer = 0;
+      } else {
+        mh.hexacreatecore$triggerAction(chosenPhase1, chosenPhase1.defaultDurationTicks);
       }
     }
   }
@@ -410,8 +434,10 @@ public final class EnderDragonMhBrain {
     Vec3 origin = mh.hexacreatecore$getArenaOrigin();
     if (finished == DragonAction.NOVA_PRE_CHARGE) {
       mh.hexacreatecore$triggerAction(DragonAction.NOVA_CHARGE, 280);
+      return;
     } else if (finished == DragonAction.NOVA_CHARGE) {
       mh.hexacreatecore$triggerAction(DragonAction.NOVA_END_CHARGE, 125);
+      return;
     } else if (finished == DragonAction.NOVA_END_CHARGE) {
       int remainingCrystals = level.getEntitiesOfClass(EndCrystal.class, AABB.ofSize(origin, 110.0D, 80.0D, 110.0D)).size();
       if (mem.novaIsFinalTransition || remainingCrystals == 0) {
@@ -427,12 +453,14 @@ public final class EnderDragonMhBrain {
         mh.hexacreatecore$setPoseMode(DragonPoseMode.FLY_GLIDE);
         mem.decisionCooldown = 90;
       }
+      return;
     } else if (finished == DragonAction.LANDING) {
       double groundY = findGroundSurfaceY(level, dragon, dragon.getX(), dragon.getZ(), dragon.getY() + 2.0D);
       dragon.setPos(dragon.getX(), groundY, dragon.getZ());
       dragon.setDeltaMovement(Vec3.ZERO);
       mh.hexacreatecore$setPoseMode(DragonPoseMode.GROUND_IDLE);
       mem.decisionCooldown = 14;
+      return;
     } else if (finished == DragonAction.TURN_LEFT_90 || finished == DragonAction.CLAW_LEFT) {
       dragon.setYRot(Mth.wrapDegrees(dragon.getYRot() - 90.0f));
       dragon.yBodyRot = dragon.getYRot();
@@ -452,6 +480,7 @@ public final class EnderDragonMhBrain {
     } else if (finished == DragonAction.FIREBALL_SHORT) {
       if (mem.phase == 1 || mem.pillarLatchStage == 2) {
         mh.hexacreatecore$triggerAction(DragonAction.LIFT_OFF_GROUND, 20);
+        return;
       } else {
         mem.pillarLatchStage = 0;
         mem.decisionCooldown = 140 + dragon.getRandom().nextInt(100);
@@ -461,6 +490,39 @@ public final class EnderDragonMhBrain {
       mem.isAirborne = true;
       mh.hexacreatecore$setPoseMode(DragonPoseMode.FLY_GLIDE);
       mem.decisionCooldown = 140 + dragon.getRandom().nextInt(100);
+    }
+
+    // Continue active JSON pattern chain across Phase 1, Phase 2, or Phase 3 if player matches next branch
+    if (mem.activePatternNode != null && mem.phase >= 1 && !mem.isLandingToGround && mem.pillarLatchStage == 0) {
+      Player target = findNearestPlayer(level, dragon, 96.0D);
+      if (target != null) {
+        SpatialContext ctx = DragonSpatialSelector.analyzeTarget(dragon, target);
+        DragonPatternResolver.PatternNode nextStep = DragonPatternResolver.resolveNextStep(mem.activePatternNode, ctx);
+        if (nextStep != null) {
+          mem.activePatternNode = nextStep;
+          mem.decisionCooldown = 0;
+          if (mem.phase == 1 && nextStep.action() == DragonAction.AIR_DASH) {
+            mem.pillarLatchStage = 3;
+            mem.latchTimer = 0;
+            mem.chargeTarget = target.position().add(0.0D, 1.0D, 0.0D);
+            mh.hexacreatecore$triggerAction(DragonAction.AIR_DASH, 65);
+          } else if (mem.phase == 1 && nextStep.action() == DragonAction.FIREBALL_SHORT) {
+            var crystals = level.getEntitiesOfClass(EndCrystal.class, AABB.ofSize(origin, 110.0D, 80.0D, 110.0D));
+            if (!crystals.isEmpty()) {
+              mem.latchedCrystal = crystals.get(dragon.getRandom().nextInt(crystals.size()));
+              mem.pillarLatchStage = 1;
+              mem.latchTimer = 0;
+            }
+          } else {
+            nextStep.triggerOn(mh);
+          }
+          return;
+        }
+      }
+      if (mem.activePatternNode.endCooldownTicks() >= 0) {
+        mem.decisionCooldown = mem.activePatternNode.endCooldownTicks();
+      }
+      mem.activePatternNode = null;
     }
   }
 
@@ -482,7 +544,6 @@ public final class EnderDragonMhBrain {
         Vec3 toTarget = landTarget.subtract(dragon.position());
         if (toTarget.lengthSqr() > 0.01D) {
           float desiredYaw = (float) (Mth.atan2(toTarget.z, toTarget.x) * (180.0D / Math.PI)) - 90.0f;
-          // Gentle entity pitch since pre_charge_flight already animates the -95 deg dive on body
           float desiredPitch = Mth.clamp((float) (Mth.atan2(toTarget.y, Math.hypot(toTarget.x, toTarget.z)) * (180.0D / Math.PI)) * 0.25f, -20.0f, 15.0f);
           dragon.setYRot(Mth.rotLerp(0.24f, dragon.getYRot(), desiredYaw));
           dragon.setXRot(Mth.rotLerp(0.24f, dragon.getXRot(), desiredPitch));
@@ -562,15 +623,19 @@ public final class EnderDragonMhBrain {
       return;
     }
 
-    DragonAction chosen = DragonSpatialSelector.selectPhase2GroundMove(ctx, mem.consecutiveTurns, dragon.getRandom());
-    if (chosen == DragonAction.NONE || chosen == DragonAction.CLAW_LEFT || chosen == DragonAction.CLAW_RIGHT) {
-      mem.consecutiveTurns++;
-      DragonAction turnAct = ctx.isLeftHalf() ? DragonAction.TURN_LEFT_90 : DragonAction.TURN_RIGHT_90;
-      mh.hexacreatecore$triggerAction(turnAct, 24);
-    } else {
+    DragonPatternResolver.PatternNode opener = DragonPatternResolver.selectOpener(2, ctx, dragon.getRandom());
+    if (opener != null) {
+      mem.activePatternNode = opener;
       mem.consecutiveTurns = 0;
-      mh.hexacreatecore$triggerAction(chosen, chosen.defaultDurationTicks);
+      opener.triggerOn(mh);
+      return;
     }
+
+    // No JSON pattern matched this ring/cone: stay in ground_idle and re-check shortly
+     mem.activePatternNode = null;
+    mem.decisionCooldown = 2;
+    mh.hexacreatecore$setPoseMode(DragonPoseMode.GROUND_IDLE);
+    dragon.setDeltaMovement(Vec3.ZERO);
   }
 
   private static double findGroundSurfaceY(ServerLevel level, EnderDragon dragon, double x, double z, double startY) {
@@ -623,6 +688,7 @@ public final class EnderDragonMhBrain {
 
     if (0.20f >= hpRatio && !mem.phase3Nova20Done) {
       mem.phase3Nova20Done = true;
+      mem.activePatternNode = null;
       mem.isAirborne = true;
       DragonArenaController.igniteNextSkyIsland(level, origin);
       mh.hexacreatecore$triggerAction(DragonAction.BREATH_SWIPE_90, 100);
@@ -630,6 +696,7 @@ public final class EnderDragonMhBrain {
     }
     if (0.15f >= hpRatio && !mem.phase3Ground15Done) {
       mem.phase3Ground15Done = true;
+      mem.activePatternNode = null;
       mem.isAirborne = false;
       Vec3 safeIsland = DragonArenaController.getUnburnedIslandTop(origin);
       dragon.setPos(safeIsland.x, safeIsland.y + 1.0D, safeIsland.z);
@@ -639,6 +706,7 @@ public final class EnderDragonMhBrain {
     }
     if (0.07f >= hpRatio && !mem.phase3Nova7Done) {
       mem.phase3Nova7Done = true;
+      mem.activePatternNode = null;
       mem.isAirborne = true;
       DragonArenaController.igniteNextSkyIsland(level, origin);
       mh.hexacreatecore$triggerAction(DragonAction.BREATH_SWIPE_90, 100);
@@ -655,11 +723,22 @@ public final class EnderDragonMhBrain {
 
     if (--mem.decisionCooldown <= 0) {
       Player target = findNearestPlayer(level, dragon, 96.0D);
+      if (target != null) {
+        SpatialContext ctx = DragonSpatialSelector.analyzeTarget(dragon, target);
+        DragonPatternResolver.PatternNode opener = DragonPatternResolver.selectOpener(3, ctx, dragon.getRandom());
+        if (opener != null) {
+          mem.activePatternNode = opener;
+          mh.hexacreatecore$triggerAction(opener.action(), opener.action().defaultDurationTicks);
+          return;
+        }
+      }
+      mem.activePatternNode = null;
       boolean nearEdge = target != null && DragonArenaController.isPlayerNearIslandEdge(origin, target.position());
       DragonAction next = DragonSpatialSelector.selectPhase3FlightMove(nearEdge, dragon.getRandom());
       mh.hexacreatecore$triggerAction(next, next.defaultDurationTicks);
     }
   }
+
 
   private static void tickDesperation(ServerLevel level, EnderDragon dragon, IMhEnderDragon mh, BrainMemory mem, Vec3 origin) {
     Vec3 skyCenter = origin.add(0.0D, 108.0D, 0.0D);

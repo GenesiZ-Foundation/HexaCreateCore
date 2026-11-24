@@ -245,6 +245,12 @@ public final class DialogueNetworking {
         com.genesiz.hexacreatecore.create.wonderum.WonderumKineticImpulsePayload.STREAM_CODEC,
         com.genesiz.hexacreatecore.create.wonderum.WonderumKineticImpulsePayload::handleServer
       );
+
+      registrar.playToClient(
+        com.genesiz.hexacreatecore.bossrush.dragon.EndermanAfterImagePayload.TYPE,
+        com.genesiz.hexacreatecore.bossrush.dragon.EndermanAfterImagePayload.STREAM_CODEC.cast(),
+        com.genesiz.hexacreatecore.bossrush.dragon.EndermanAfterImagePayload::handleClient
+      );
     }
   }
 }

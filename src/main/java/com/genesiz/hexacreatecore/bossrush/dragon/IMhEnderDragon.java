@@ -8,6 +8,10 @@ import software.bernie.geckolib.animatable.GeoEntity;
 
 public interface IMhEnderDragon extends GeoEntity {
 
+  default String hexacreatecore$getCustomClip() { return ""; }
+  default void hexacreatecore$triggerCustomClip(String clipName, int durationTicks) {}
+
+
   boolean hexacreatecore$isMhDragon();
   void hexacreatecore$setMhDragon(boolean enabled, Vec3 arenaOrigin);
   Vec3 hexacreatecore$getArenaOrigin();

@@ -1,0 +1,16 @@
+{
+  "pillar_fireball": "FIREBALL_SHORT",
+  "double_wing_hit": "DOUBLE_CLAW",
+  "shield_stomp_cluster": "SHIELD_STOMP_CLUSTER",
+  "shield_stomp_spread": "SHIELD_STOMP_SPREAD",
+  "turn_left_90": "TURN_LEFT_90",
+  "turn_right_90": "TURN_RIGHT_90",
+  "laser_triple": "LASER_TRIPLE",
+  "multidir_laser": "MULTIDIR_LASER",
+  "laser_swipe": "LASER_SWIPE",
+  "air_dash": "AIR_DASH",
+  "bite_lunge": "BITE_LUNGE",
+  "fireball_carpet": "FIREBALL_CARPET",
+  "wing_push": "WING_FLAP_FORWARD"
+}
+

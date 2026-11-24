@@ -69,14 +69,16 @@ public final class DragonSpatialSelector {
           pool.add(DragonAction.CLAW_LEFT);
           pool.add(DragonAction.CLAW_RIGHT);
           pool.add(DragonAction.WING_FLAP_FORWARD);
-          pool.add(DragonAction.FORWARD_STOMP);
+          pool.add(DragonAction.SHIELD_STOMP_CLUSTER);
         } else if (ctx.ring() == RangeRing.MEDIUM) {
           pool.add(DragonAction.DOUBLE_CLAW);
-          pool.add(DragonAction.FORWARD_STOMP);
+          pool.add(DragonAction.SHIELD_STOMP_CLUSTER);
+          pool.add(DragonAction.SHIELD_STOMP_SPREAD);
           pool.add(DragonAction.BITE_LUNGE);
           pool.add(DragonAction.FIREBALL_SHORT);
           pool.add(DragonAction.BREATH_SWIPE_90);
         } else {
+          pool.add(DragonAction.SHIELD_STOMP_SPREAD);
           pool.add(DragonAction.FIREBALL_CARPET);
           pool.add(DragonAction.FLYING_BREATH_45);
           pool.add(DragonAction.FIREBALL_SHORT);

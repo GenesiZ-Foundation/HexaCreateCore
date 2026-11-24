@@ -19,6 +19,13 @@ public final class PortalShaderHook {
   private boolean flushAfterRender = false;
   private float centerZ = 0.0f;
   private float halfDepth = 0.0f;
+  private boolean circular = false;
+
+
+  public PortalShaderHook circular(boolean circular) {
+    this.circular = circular;
+    return this;
+  }
 
   public PortalShaderHook at(float centerX, float centerY, float centerZ) {
     this.centerX = centerX;
@@ -70,7 +77,7 @@ public final class PortalShaderHook {
       poseStack.last().pose(),
       centerX, centerY, halfWidth, halfHeight,
       timeSeconds, angularSegments, radialRings,
-      dictionary
+      circular, dictionary
     );
     if (flushAfterRender && bufferSource instanceof MultiBufferSource.BufferSource buffered) {
       buffered.endBatch(RawGeometry.DIALOGUE_SOLID);

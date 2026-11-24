@@ -14,6 +14,9 @@ public final class ModEffects {
 
   public static final Holder<MobEffect> SOUL_FRACTURE =
     MOB_EFFECTS.register("soul_fracture", SoulFractureEffect::new);
+  public static final Holder<MobEffect> ENDER_DECAY =
+  MOB_EFFECTS.register("ender_decay", com.genesiz.hexacreatecore.difficulty.effect.EnderDecayEffect::new);
+
 
   private ModEffects() {}
 

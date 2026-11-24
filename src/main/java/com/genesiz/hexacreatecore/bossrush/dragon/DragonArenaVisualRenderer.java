@@ -9,9 +9,11 @@ import com.genesiz.hexacreatecore.threedified.volumetrics.dictionaries.BlackHole
 import com.genesiz.hexacreatecore.threedified.volumetrics.hooks.VolumetricHook;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.boss.enderdragon.EndCrystal;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
@@ -26,6 +28,8 @@ import net.neoforged.neoforge.client.event.ViewportEvent.ComputeCameraAngles;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+
+import org.joml.Matrix4f;
 
 @EventBusSubscriber(modid = "hexacreatecore", value = Dist.CLIENT)
 public final class DragonArenaVisualRenderer {
@@ -187,6 +191,19 @@ public final class DragonArenaVisualRenderer {
         renderCubicBlackHole(ps, buf, cam, islandCenter, 42.5f, timeSec, 64, 14);
       }
     }
+
+    // 5. Phase 2 Hexagonal Stomp Shields & Ground Dragon Plasma Patches
+    DragonHexShieldManager.renderAll(ps, buf, cam, partialTick, timeSec);
+    DragonPlasmaManager.renderAll(ps, buf, mc.level, cam, partialTick, timeSec);
+
+    // 6. F3+B Debug Overlay: DragonSpatialSelector 3 Range Rings & 4 Direction Cones
+    if (mc.getEntityRenderDispatcher().shouldRenderHitBoxes()) {
+      for (EnderDragon dragon : dragons) {
+        if (!dragon.isAlive() || !(dragon instanceof IMhEnderDragon)) continue;
+        renderSpatialDebugZones(ps, buf, cam, mc.player, dragon, partialTick);
+      }
+      buf.endBatch(RenderType.lines());
+    }
   }
 
   private static void renderNovaSiftCrowns(
@@ -300,7 +317,7 @@ public final class DragonArenaVisualRenderer {
       if (!dragon.isAlive() || !(dragon instanceof IMhEnderDragon mh)) continue;
       if (mh.hexacreatecore$getActiveAction() != DragonAnimState.DragonAction.SAFI_ROAR) continue;
 
-      float elapsedSec = (mh.hexacreatecore$getActionTick() + partialTick) / 20.0f;
+      float elapsedSec = ((mh.hexacreatecore$getActionTick() + partialTick) / 20.0f)*0.8f;
       if (elapsedSec >= 2.0f && 4.85f >= elapsedSec) {
         double dist = mc.player.distanceTo(dragon);
         float distFalloff = Mth.clamp(1.0f - (float) (dist / 64.0D), 0.0f, 1.0f);
@@ -317,6 +334,104 @@ public final class DragonArenaVisualRenderer {
       event.setYaw(event.getYaw() + (Mth.sin(t * 1.3f) * amp));
       event.setPitch(event.getPitch() + (Mth.cos(t * 1.7f) * amp * 0.85f));
       event.setRoll(event.getRoll() + (Mth.sin(t * 2.1f) * amp * 1.15f));
+    }
+  }
+
+  private static void renderSpatialDebugZones(
+    PoseStack ps,
+    MultiBufferSource.BufferSource buf,
+    Vec3 cam,
+    net.minecraft.world.entity.player.Player player,
+    EnderDragon dragon,
+    float partialTick
+  ) {
+    Vec3 dPos = dragon.getPosition(partialTick);
+    float bodyYaw = Mth.rotLerp(partialTick, dragon.yBodyRotO, dragon.yBodyRot);
+    double y = dPos.y + 0.15D;
+
+    // 3 Range Rings from DragonSpatialSelector: CLOSE (7.5m), MEDIUM (17.0m), LONG outer guide (28.0m)
+    double[] ringRadii = { 7.5D, 17.0D, 28.0D };
+    int[] ringR = { 255, 255, 90  };
+    int[] ringG = { 85,  200, 185 };
+    int[] ringB = { 85,  60,  255 };
+
+    VertexConsumer lines = buf.getBuffer(RenderType.lines());
+    org.joml.Matrix4f mat = ps.last().pose();
+    int segments = 72;
+
+    // Evaluate player's live ring & cone so their active sector lights up bright green
+    double dx = player.getX() - dPos.x;
+    double dz = player.getZ() - dPos.z;
+    double playerDist = Math.hypot(dx, dz);
+    float worldYaw = (float) (Mth.atan2(dz, dx) * (180.0D / Math.PI)) - 90.0f;
+    float relYaw = Mth.wrapDegrees(worldYaw - bodyYaw);
+    float absYaw = Math.abs(relYaw);
+
+    int activeRing = (7.5D >= playerDist) ? 0 : (17.0D >= playerDist) ? 1 : 2;
+    float coneMinDeg = (45.0f >= absYaw) ? -45.0f
+      : (135.0f >= absYaw) ? ((0.0f > relYaw) ? -135.0f : 45.0f)
+      : 135.0f;
+    float coneMaxDeg = (45.0f >= absYaw) ? 45.0f
+      : (135.0f >= absYaw) ? ((0.0f > relYaw) ? -45.0f : 135.0f)
+      : 225.0f;
+
+    // 1. Draw the 3 concentric range circles
+    for (int rIdx = 0; ringRadii.length > rIdx; rIdx++) {
+      double radius = ringRadii[rIdx];
+      int r = (rIdx == activeRing) ? 80  : ringR[rIdx];
+      int g = (rIdx == activeRing) ? 255 : ringG[rIdx];
+      int b = (rIdx == activeRing) ? 140 : ringB[rIdx];
+      int a = (rIdx == activeRing) ? 245 : 165;
+
+      for (int i = 0; segments > i; i++) {
+        double a0 = (Math.PI * 2.0D * i) / segments;
+        double a1 = (Math.PI * 2.0D * (i + 1)) / segments;
+        float x0 = (float) (dPos.x + Math.cos(a0) * radius - cam.x);
+        float z0 = (float) (dPos.z + Math.sin(a0) * radius - cam.z);
+        float x1 = (float) (dPos.x + Math.cos(a1) * radius - cam.x);
+        float z1 = (float) (dPos.z + Math.sin(a1) * radius - cam.z);
+        float ly = (float) (y - cam.y);
+
+        lines.addVertex(mat, x0, ly, z0).setColor(r, g, b, a).setNormal(0.0f, 1.0f, 0.0f);
+        lines.addVertex(mat, x1, ly, z1).setColor(r, g, b, a).setNormal(0.0f, 1.0f, 0.0f);
+      }
+    }
+
+    // 2. Draw the 4 cone boundary rays (-45°, +45°, -135°, +135° relative to dragon yaw)
+    float[] coneBoundaries = { -45.0f, 45.0f, -135.0f, 135.0f };
+    for (float offsetDeg : coneBoundaries) {
+      Vec3 dir = Vec3.directionFromRotation(0.0f, bodyYaw + offsetDeg).normalize();
+      float sx = (float) (dPos.x + dir.x * 1.5D - cam.x);
+      float sz = (float) (dPos.z + dir.z * 1.5D - cam.z);
+      float ex = (float) (dPos.x + dir.x * 28.0D - cam.x);
+      float ez = (float) (dPos.z + dir.z * 28.0D - cam.z);
+      float ly = (float) (y - cam.y);
+
+      lines.addVertex(mat, sx, ly, sz).setColor(224, 102, 255, 220).setNormal(0.0f, 1.0f, 0.0f);
+      lines.addVertex(mat, ex, ly, ez).setColor(224, 102, 255, 220).setNormal(0.0f, 1.0f, 0.0f);
+    }
+
+    // 3. Center-forward indicator ray (0°) in white
+    Vec3 fwd = Vec3.directionFromRotation(0.0f, bodyYaw).normalize();
+    lines.addVertex(mat, (float) (dPos.x + fwd.x * 1.5D - cam.x), (float) (y - cam.y), (float) (dPos.z + fwd.z * 1.5D - cam.z))
+      .setColor(255, 255, 255, 210).setNormal(0.0f, 1.0f, 0.0f);
+    lines.addVertex(mat, (float) (dPos.x + fwd.x * 28.0D - cam.x), (float) (y - cam.y), (float) (dPos.z + fwd.z * 28.0D - cam.z))
+      .setColor(255, 255, 255, 210).setNormal(0.0f, 1.0f, 0.0f);
+
+    // 4. Highlight the active cone wedge arc at the player's current ring boundary in bright green
+    double highlightRadius = ringRadii[activeRing];
+    int arcSteps = 18;
+    for (int i = 0; arcSteps > i; i++) {
+      float deg0 = Mth.lerp((float) i / arcSteps, coneMinDeg, coneMaxDeg);
+      float deg1 = Mth.lerp((float) (i + 1) / arcSteps, coneMinDeg, coneMaxDeg);
+      Vec3 d0 = Vec3.directionFromRotation(0.0f, bodyYaw + deg0).normalize();
+      Vec3 d1 = Vec3.directionFromRotation(0.0f, bodyYaw + deg1).normalize();
+      float ly = (float) (y + 0.05D - cam.y);
+
+      lines.addVertex(mat, (float) (dPos.x + d0.x * highlightRadius - cam.x), ly, (float) (dPos.z + d0.z * highlightRadius - cam.z))
+        .setColor(80, 255, 140, 255).setNormal(0.0f, 1.0f, 0.0f);
+      lines.addVertex(mat, (float) (dPos.x + d1.x * highlightRadius - cam.x), ly, (float) (dPos.z + d1.z * highlightRadius - cam.z))
+        .setColor(80, 255, 140, 255).setNormal(0.0f, 1.0f, 0.0f);
     }
   }
 }

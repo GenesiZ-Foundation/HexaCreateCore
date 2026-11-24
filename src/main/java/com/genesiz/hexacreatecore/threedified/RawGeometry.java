@@ -25,7 +25,7 @@ public class RawGeometry {
     "dialogue_solid",
     DefaultVertexFormat.POSITION_COLOR,
     VertexFormat.Mode.QUADS,
-    256,
+    65536,
     false,
     true,
     RenderType.CompositeState.builder()
@@ -34,7 +34,6 @@ public class RawGeometry {
     .setCullState(RenderStateShard.NO_CULL)
     .createCompositeState(false)
   );
-
 
   public static void drawRectangle(VertexConsumer consumer, Matrix4f matrix, float width, float height, int hexColor) {
     float halfW = width / 2.0f;

@@ -16,6 +16,8 @@ public final class VolumetricHook {
   private float coreHalfD = 0.14f;
   private float horizonThickness = 0.11f;
   private int shellCount = 4;
+  private boolean autoFlush = true;
+  private boolean spherical = false;
 
   private VolumetricHook(VolumetricDictionary dictionary) {
     this.dictionary = dictionary;
@@ -45,13 +47,42 @@ public final class VolumetricHook {
     return this;
   }
 
+  public VolumetricHook autoFlush(boolean autoFlush) {
+    this.autoFlush = autoFlush;
+    return this;
+  }
+
+  public VolumetricHook spherical(boolean spherical) {
+    this.spherical = spherical;
+    return this;
+  }
+
   public void render(PoseStack poseStack, MultiBufferSource bufferSource, float timeSeconds) {
     UnifiedVolumetricEngine.renderBoxVolume(
       poseStack, bufferSource,
       centerX, centerY, centerZ,
       coreHalfW, coreHalfH, coreHalfD,
       horizonThickness, shellCount,
-      timeSeconds, dictionary
+      timeSeconds, dictionary, spherical
+    );
+  }
+
+  public void renderCoreOnly(PoseStack poseStack, MultiBufferSource bufferSource, float timeSeconds) {
+    UnifiedVolumetricEngine.renderBoxCoreOnly(
+      poseStack, bufferSource,
+      centerX, centerY, centerZ,
+      coreHalfW, coreHalfH, coreHalfD,
+      timeSeconds, dictionary, spherical
+    );
+  }
+
+  public void renderHorizonOnly(PoseStack poseStack, MultiBufferSource bufferSource, float timeSeconds) {
+    UnifiedVolumetricEngine.renderBoxHorizonOnly(
+      poseStack, bufferSource,
+      centerX, centerY, centerZ,
+      coreHalfW, coreHalfH, coreHalfD,
+      horizonThickness, shellCount,
+      timeSeconds, dictionary, spherical
     );
   }
 
@@ -64,9 +95,20 @@ public final class VolumetricHook {
       centerX, centerY, centerZ,
       coreHalfW, coreHalfH,
       wallThickness, crownDepth, slices,
-      timeSeconds, dictionary
+      timeSeconds, dictionary, autoFlush
     );
   }
 
+  public void renderOilFire(
+    PoseStack poseStack, MultiBufferSource bufferSource,
+    float radius, float flameHeight, int radialRings, float timeSeconds
+  ) {
+    UnifiedVolumetricEngine.renderOilFireVolume(
+      poseStack, bufferSource,
+      centerX, centerY, centerZ,
+      radius, flameHeight, radialRings,
+      timeSeconds, dictionary, autoFlush
+    );
+  }
 }
 

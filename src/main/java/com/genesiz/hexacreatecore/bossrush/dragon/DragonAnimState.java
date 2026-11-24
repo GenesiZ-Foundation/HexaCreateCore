@@ -24,11 +24,11 @@ public final class DragonAnimState {
 
   public enum DragonAction {
     NONE(0, 0),
-    SAFI_ROAR(1, 120),
-    CLAW_LEFT(2, 24),
-    CLAW_RIGHT(3, 24),
-    DOUBLE_CLAW(4, 36),
-    FORWARD_STOMP(5, 30),
+    SAFI_ROAR(1, 150),
+    CLAW_LEFT(2, 30),
+    CLAW_RIGHT(3, 30),
+    DOUBLE_CLAW(4, 65),
+    SHIELD_STOMP_CLUSTER(5, 75),
     WING_FLAP_FORWARD(6, 20),
     WING_FLAP_LEFT(7, 20),
     WING_FLAP_RIGHT(8, 20),
@@ -57,9 +57,10 @@ public final class DragonAnimState {
     NOVA_PRE_CHARGE(31, 40),
     NOVA_END_CHARGE(32, 125),
     LANDING(33, 20),
-    TURN_LEFT_90(34, 24),
-    TURN_RIGHT_90(35, 24);
-
+    TURN_LEFT_90(34, 30),
+    TURN_RIGHT_90(35, 30),
+    SHIELD_STOMP_SPREAD(36, 75),
+    CUSTOM_CLIP(37, 40);
 
     public final int id;
     public final int defaultDurationTicks;

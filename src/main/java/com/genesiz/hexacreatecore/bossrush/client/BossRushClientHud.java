@@ -614,11 +614,6 @@ public final class BossRushClientHud {
   public static void onPreRenderGuiLayer(RenderGuiLayerEvent.Pre event) {
     if (!hasActiveCustomBossBar()) return;
 
-    Minecraft mc = Minecraft.getInstance();
-    if (mc.player != null && mc.player.tickCount % 60 == 0) {
-      HexaCreateCore.LOGGER.info("[BossBarLayerProbe] Active GuiLayer: {}", event.getName());
-    }
-
     ResourceLocation layerName = event.getName();
     String ns = layerName.getNamespace().toLowerCase();
     String path = layerName.getPath().toLowerCase();

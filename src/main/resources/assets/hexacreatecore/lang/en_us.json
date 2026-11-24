@@ -7,6 +7,10 @@
   "effect.hexacreatecore.soul_fracture": "Soul Fracture",
   "effect.hexacreatecore.soul_fracture.description": "Your severed soul has weakened your vessel, reducing Maximum Health by 33% per stack. Uncurable.",
 
+  "effect.hexacreatecore.ender_decay": "Ender Decay",
+  "effect.hexacreatecore.ender_decay.description": "Your corporal form decays under vastly concentrated ender",
+
+
   "item.hexacreatecore.debugger": "Debugger",
   "item.hexacreatecore.cursed_blacksmith_spawn_egg": "Cursed Blacksmith Spawn Egg",
   "item.hexacreatecore.everbook": "The Everbook",

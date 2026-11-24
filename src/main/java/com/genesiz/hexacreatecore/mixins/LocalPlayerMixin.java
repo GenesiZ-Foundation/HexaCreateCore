@@ -38,4 +38,18 @@ public abstract class LocalPlayerMixin {
       hexacreate$frozenPitch = 0.0f;
     }
   }
+
+  @Inject(
+    method = "hurtTo",
+    at = @org.spongepowered.asm.mixin.injection.At("TAIL")
+  )
+  private void hexacreatecore$suppressEnderDecayCameraTilt(float health, org.spongepowered.asm.mixin.injection.callback.CallbackInfo ci) {
+    net.minecraft.client.player.LocalPlayer self = (net.minecraft.client.player.LocalPlayer) (Object) this;
+    if (self.hasEffect(com.genesiz.hexacreatecore.registry.ModEffects.ENDER_DECAY)) {
+      if (self.tickCount - self.getLastHurtByMobTimestamp() > 2) {
+        self.hurtTime = 0;
+        self.hurtDuration = 0;
+      }
+    }
+  }
 }

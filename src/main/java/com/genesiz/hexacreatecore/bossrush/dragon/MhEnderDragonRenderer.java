@@ -18,6 +18,7 @@ public final class MhEnderDragonRenderer<T extends EnderDragon & IMhEnderDragon>
 
   private static final String[] TRACKED_BONES = {
     "body", "head", "neck", "neck5",
+    "wing", "wing1", "wingtip", "wingtip1",
     "rearleg", "rearleg1", "frontleg", "frontleg1",
     "rearfoot", "rearfoot1", "frontfoot", "frontfoot1",
     "tail", "tail6", "tail12"
@@ -73,7 +74,7 @@ public final class MhEnderDragonRenderer<T extends EnderDragon & IMhEnderDragon>
 
     // 3x Purple Translucent After-Image during end_roar (1.0s -> 6.0s)
     if (entity.hexacreatecore$getActiveAction() == DragonAnimState.DragonAction.SAFI_ROAR && baked != null) {
-      float elapsedSec = (entity.hexacreatecore$getActionTick() + partialTick) / 20.0f;
+      float elapsedSec = ((entity.hexacreatecore$getActionTick() + partialTick) / 20.0f)*0.8f;
       if (elapsedSec >= 1.0f && 6.0f >= elapsedSec) {
         float ghostScale;
         float opacity;

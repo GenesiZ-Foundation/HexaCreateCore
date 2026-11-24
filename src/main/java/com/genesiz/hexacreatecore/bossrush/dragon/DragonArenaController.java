@@ -195,10 +195,32 @@ public final class DragonArenaController {
 
   @SubscribeEvent
   public static void onServerTick(ServerTickEvent.Post event) {
-    for (ServerLevel level : event.getServer().getAllLevels()) {
-      for (ArenaState state : ARENAS.values()) {
-        DragonArenaHazards.tickHazards(level, state);
+    if (ARENAS.isEmpty()) return;
+
+    var it = ARENAS.entrySet().iterator();
+    while (it.hasNext()) {
+      ArenaState state = it.next().getValue();
+      ServerLevel dragonLevel = null;
+
+      for (ServerLevel level : event.getServer().getAllLevels()) {
+        boolean hasLiveDragon = !level.getEntitiesOfClass(
+          net.minecraft.world.entity.boss.enderdragon.EnderDragon.class,
+          net.minecraft.world.phys.AABB.ofSize(state.origin, 300.0D, 300.0D, 300.0D),
+          net.minecraft.world.entity.boss.enderdragon.EnderDragon::isAlive
+        ).isEmpty();
+        if (hasLiveDragon) {
+          dragonLevel = level;
+          break;
+        }
       }
+
+      if (dragonLevel == null) {
+        state.blackholeActive = false;
+        it.remove();
+        continue;
+      }
+
+      DragonArenaHazards.tickHazards(dragonLevel, state);
     }
   }
 }

@@ -73,6 +73,11 @@ public final class DragonProceduralAnimator {
     if (isFullKeyframeAnim(poseMode, action)) {
       GeoBone root = getBone(model, dragon, "root");
       if (root != null) {
+        if (isNovaAnim(action)) {
+          root.setRotX(0.0f);
+          root.setRotY(0.0f);
+          root.setRotZ(0.0f);
+        }
         if (poseMode == DragonPoseMode.GROUND_IDLE || poseMode == DragonPoseMode.GROUND_WALK) {
           root.setPosY(root.getPosY() + 29.5f);
         }
@@ -183,7 +188,7 @@ public final class DragonProceduralAnimator {
         bodyYaw += (first - second) * 26.0f * DEG_TO_RAD;
         rootZ -= (first + second) * 6.0f;
       }
-      case FORWARD_STOMP -> {
+      case SHIELD_STOMP_CLUSTER, SHIELD_STOMP_SPREAD -> {
         if (prog >= 0.55f) {
           float slam = Mth.sin(((prog - 0.55f) / 0.45f) * Mth.PI);
           rootY -= slam * 4.5f;
@@ -219,6 +224,7 @@ public final class DragonProceduralAnimator {
     body.setRotY(body.getRotY() + bodyYaw);
     body.setRotZ(body.getRotZ() + bodyRoll);
   }
+
 
   private static void applyNeckAndHeadIk(
     MhEnderDragonModel<?> model, EnderDragon dragon, ClientAnimData anim,
@@ -684,6 +690,7 @@ public final class DragonProceduralAnimator {
     }
   }
 
+
   private static void resetBoneToBind(GeoBone bone) {
     if (bone == null) return;
     var snap = bone.getInitialSnapshot();
@@ -705,11 +712,15 @@ public final class DragonProceduralAnimator {
   private static boolean isFullKeyframeAnim(DragonPoseMode mode, DragonAction action) {
     if (isNovaAnim(action)) return true;
     if (action == DragonAction.LANDING
+      || action == DragonAction.CUSTOM_CLIP
       || action == DragonAction.SAFI_ROAR
       || action == DragonAction.TURN_LEFT_90
       || action == DragonAction.TURN_RIGHT_90
       || action == DragonAction.CLAW_LEFT
-      || action == DragonAction.CLAW_RIGHT) {
+      || action == DragonAction.CLAW_RIGHT
+      || action == DragonAction.DOUBLE_CLAW
+      || action == DragonAction.SHIELD_STOMP_CLUSTER
+      || action == DragonAction.SHIELD_STOMP_SPREAD) {
       return true;
     }
     return action == DragonAction.NONE

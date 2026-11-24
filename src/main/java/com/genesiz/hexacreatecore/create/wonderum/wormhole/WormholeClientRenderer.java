@@ -45,6 +45,7 @@ public final class WormholeClientRenderer {
   public static boolean hasPendingAnchor() {
     return pendingNode != null;
   }
+  private record VisibleWormhole(BlockPos pos, Direction face, float discSize, float crownDepth, float scale) {}
 
   @SubscribeEvent
   public static void onRenderWorld(RenderLevelStageEvent event) {
@@ -64,22 +65,103 @@ public final class WormholeClientRenderer {
 
     long nowMs = System.currentTimeMillis();
     java.util.Set<String> visibleKeys = new java.util.HashSet<>();
+    List<VisibleWormhole> batch = new ArrayList<>(activeNodes.size() + 1);
 
     for (WormholeSyncPayload.SyncNode node : activeNodes) {
       String key = "active_" + node.pos().asLong() + "_" + node.face().getName();
       visibleKeys.add(key);
       float scale = computeRubberBandScale(key, nowMs);
-      renderFaceWormhole(ps, buf, cam, node.pos(), node.face(), 1.05f, 0.36f, timeSec, scale);
+      if (scale > 0.001f && isWithinRange(cam, node.pos(), node.face())) {
+        batch.add(new VisibleWormhole(node.pos(), node.face(), 1.05f, 0.36f, scale));
+      }
     }
 
     if (pendingNode != null) {
       String key = "pending_" + pendingNode.pos().asLong() + "_" + pendingNode.face().getName();
       visibleKeys.add(key);
       float scale = computeRubberBandScale(key, nowMs);
-      renderFaceWormhole(ps, buf, cam, pendingNode.pos(), pendingNode.face(), 0.72f, 0.22f, timeSec, scale);
+      if (scale > 0.001f && isWithinRange(cam, pendingNode.pos(), pendingNode.face())) {
+        batch.add(new VisibleWormhole(pendingNode.pos(), pendingNode.face(), 0.72f, 0.22f, scale));
+      }
     }
 
     SPAWN_TIMES.keySet().removeIf(k -> !visibleKeys.contains(k));
+    if (batch.isEmpty()) return;
+
+    // Pass 1: All accretion disks in 1 batched draw call
+    RenderSystem.enableDepthTest();
+    RenderSystem.enableBlend();
+    RenderSystem.defaultBlendFunc();
+    RenderSystem.disableCull();
+    RenderSystem.depthMask(false);
+    for (VisibleWormhole wh : batch) {
+      pushWormholePose(ps, cam, wh);
+      ps.translate(0.0f, 0.0f, 0.05f);
+      PortalShaderHook.bind(BlackHoleDictionary.SILVER_SINGULARITY)
+        .size(wh.discSize() * 0.88f, wh.discSize() * 0.88f)
+        .resolution(32, 7)
+        .render(ps, buf, timeSec);
+      ps.popPose();
+    }
+    buf.endBatch(RawGeometry.DIALOGUE_SOLID);
+
+    // Pass 2: All pitch-black 3D singularity cores in 1 batched draw call
+    RenderSystem.disableBlend();
+    RenderSystem.enableCull();
+    RenderSystem.depthMask(true);
+    for (VisibleWormhole wh : batch) {
+      pushWormholePose(ps, cam, wh);
+      float coreHalf = wh.discSize() * 0.59f;
+      VolumetricHook.bind(BlackHoleVolumetricDictionary.SILVER_SINGULARITY)
+        .at(0.0f, 0.0f, 0.04f)
+        .coreSize(coreHalf, coreHalf, 0.11f)
+        .renderCoreOnly(ps, buf, timeSec);
+      ps.popPose();
+    }
+    buf.endBatch(RawGeometry.DIALOGUE_SOLID);
+
+    // Pass 3: All translucent photon horizons + Sift-Rift crowns in 1 batched draw call
+    RenderSystem.enableBlend();
+    RenderSystem.defaultBlendFunc();
+    RenderSystem.depthMask(false);
+    for (VisibleWormhole wh : batch) {
+      pushWormholePose(ps, cam, wh);
+      float coreHalf = wh.discSize() * 0.59f;
+      VolumetricHook.bind(BlackHoleVolumetricDictionary.SILVER_SINGULARITY)
+        .at(0.0f, 0.0f, 0.04f)
+        .coreSize(coreHalf, coreHalf, 0.11f)
+        .eventHorizon(0.095f, 4)
+        .renderHorizonOnly(ps, buf, timeSec);
+
+      RenderSystem.disableCull();
+      VolumetricHook.bind(SiftRiftVolumetricDictionary.WHITE_RIFT)
+        .at(0.0f, 0.0f, 0.045f)
+        .coreSize(coreHalf * 0.84f, coreHalf * 0.84f, 0.0f)
+        .autoFlush(false)
+        .renderCrown(ps, buf, 0.072f, -wh.crownDepth(), 5, timeSec);
+      ps.popPose();
+    }
+    buf.endBatch(RawGeometry.DIALOGUE_SOLID);
+
+    RenderSystem.depthMask(true);
+    RenderSystem.enableCull();
+  }
+
+  private static boolean isWithinRange(Vec3 cam, BlockPos pos, Direction face) {
+    double fx = pos.getX() + 0.5D + face.getStepX() * 0.506D;
+    double fy = pos.getY() + 0.5D + face.getStepY() * 0.506D;
+    double fz = pos.getZ() + 0.5D + face.getStepZ() * 0.506D;
+    return 96.0D * 96.0D >= cam.distanceToSqr(fx, fy, fz);
+  }
+
+  private static void pushWormholePose(PoseStack ps, Vec3 cam, VisibleWormhole wh) {
+    double fx = wh.pos().getX() + 0.5D + wh.face().getStepX() * 0.506D;
+    double fy = wh.pos().getY() + 0.5D + wh.face().getStepY() * 0.506D;
+    double fz = wh.pos().getZ() + 0.5D + wh.face().getStepZ() * 0.506D;
+    ps.pushPose();
+    ps.translate(fx - cam.x, fy - cam.y, fz - cam.z);
+    orientToFace(ps, wh.face());
+    ps.scale(wh.scale(), wh.scale(), wh.scale());
   }
 
   private static float computeRubberBandScale(String key, long nowMs) {

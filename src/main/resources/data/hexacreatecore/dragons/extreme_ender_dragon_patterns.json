@@ -1,0 +1,310 @@
+{
+    "phase_1": {
+    "close": [
+      {
+        "weight": 65,
+        "parts": {
+          "name": "pillar_fireball",
+          "next": {
+            "close": {},
+            "mid": "air_dash",
+            "far": {}
+          }
+        }
+      },
+      {
+        "weight": 35,
+        "parts": {
+          "name": "air_dash",
+          "next": {}
+        }
+      }
+    ],
+    "mid": [
+      {
+        "weight": 60,
+        "parts": {
+          "name": "pillar_fireball",
+          "next": {
+            "close": {},
+            "mid": {},
+            "far": "air_dash"
+          }
+        }
+      },
+      {
+        "weight": 40,
+        "parts": {
+          "name": "air_dash",
+          "next": {
+            "close": "pillar_fireball",
+            "mid": {},
+            "far": {}
+          }
+        }
+      }
+    ],
+    "far": [
+      {
+        "weight": 55,
+        "parts": {
+          "name": "pillar_fireball",
+          "next": {}
+        }
+      },
+      {
+        "weight": 45,
+        "parts": {
+          "name": "air_dash",
+          "next": {
+            "close": {},
+            "mid": "pillar_fireball",
+            "far": {}
+          }
+        }
+      }
+    ]
+  },
+
+
+
+
+
+
+
+
+
+
+
+
+
+  "phase_2": {
+
+
+    "close": [
+      {
+        "weight": 60,
+        "parts": {
+          "name": "double_wing_hit",
+          "position": "forward",
+          "next": {
+            "close": {
+              "name": "shield_stomp_cluster",
+              "position": "forward",
+              "next": {
+                "close":{
+                  "name": "double_wing_hit",
+                  "position":"forward",
+                  "next":{}
+                },
+                "mid":{},
+                "far":{}
+              }
+            },
+            "mid": {
+              "name": "shield_stomp_spread",
+              "position": "forward",
+              "next": {}
+            },
+            "far": {}
+          }
+        }
+      },
+      {
+        "weight": 40,
+        "parts": {
+          "name": "shield_stomp_cluster",
+          "position": "forward",
+          "next": {
+            "close": "double_wing_hit",
+            "mid": {},
+            "far": {}
+          }
+        }
+      },
+      {
+        "weight": 100,
+        "parts": {
+          "name": "turn_left_90",
+          "position": "left",
+          "next": {
+            "close": "double_wing_hit",
+            "mid": {},
+            "far": {}
+          }
+        }
+      },
+      {
+        "weight": 100,
+        "parts": {
+          "name": "turn_right_90",
+          "position": "right",
+          "next": {
+            "close": "double_wing_hit",
+            "mid": {},
+            "far": {}
+          }
+        }
+      },
+      {
+        "weight": 100,
+        "parts": {
+          "name": "turn_right_90",
+          "position": "backward",
+          "next": {}
+        }
+      },
+      {
+        "weight": 100,
+        "parts": {
+          "name": "turn_right_90",
+          "position": "backward",
+          "next": {}
+        }
+      }
+
+
+    ],
+
+
+
+    "mid": [
+      {
+        "weight": 55,
+        "parts": {
+          "name": "shield_stomp_cluster",
+          "position": "forward",
+          "next": {
+            "close": {
+              "name": "double_wing_hit",
+              "position": "forward",
+              "next": {}
+            },
+            "mid": "shield_stomp_spread",
+            "far": {}
+          }
+        }
+      },
+      {
+        "weight": 45,
+        "parts": {
+          "name": "shield_stomp_spread",
+          "position": "forward",
+          "next": {}
+        }
+      }
+    ],
+
+
+
+    "far": [
+      {
+        "weight": 100,
+        "parts": {
+          "name": "shield_stomp_spread",
+          "position": "forward",
+          "next": {
+            "close": {},
+            "mid": "shield_stomp_cluster",
+            "far": {}
+          }
+        }
+      }
+    ]
+  },
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  "phase_3": {
+    "close": [
+      {
+        "weight": 50,
+        "parts": {
+          "name": "bite_lunge",
+          "position": "forward",
+          "next": {
+            "close": "wing_push",
+            "mid": "laser_triple",
+            "far": {}
+          }
+        }
+      },
+      {
+        "weight": 50,
+        "parts": {
+          "name": "wing_push",
+          "position": "forward",
+          "next": {
+            "close": {},
+            "mid": "laser_triple",
+            "far": "air_dash"
+          }
+        }
+      }
+    ],
+    "mid": [
+      {
+        "weight": 50,
+        "parts": {
+          "name": "laser_triple",
+          "position": "forward",
+          "next": {
+            "close": "bite_lunge",
+            "mid": "laser_swipe",
+            "far": "air_dash"
+          }
+        }
+      },
+      {
+        "weight": 50,
+        "parts": {
+          "name": "multidir_laser",
+          "next": {
+            "close": {},
+            "mid": "fireball_carpet",
+            "far": {}
+          }
+        }
+      }
+    ],
+    "far": [
+      {
+        "weight": 60,
+        "parts": {
+          "name": "air_dash",
+          "position": "forward",
+          "next": {
+            "close": "wing_push",
+            "mid": "laser_triple",
+            "far": {}
+          }
+        }
+      },
+      {
+        "weight": 40,
+        "parts": {
+          "name": "fireball_carpet",
+          "next": {
+            "close": {},
+            "mid": "laser_swipe",
+            "far": "laser_triple"
+          }
+        }
+      }
+    ]
+  }
+}

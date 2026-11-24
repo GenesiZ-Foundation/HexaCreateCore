@@ -21,12 +21,14 @@ public final class DragonMultipartCollider {
 
   public static final class BonePart extends PartEntity<EnderDragon> {
     public final String partName;
+    public final boolean solidCollision;
     private EntityDimensions dims;
     private Vec3 lastCenter;
 
-    public BonePart(EnderDragon parent, String partName, float width, float height) {
+    public BonePart(EnderDragon parent, String partName, float width, float height, boolean solidCollision) {
       super(parent);
       this.partName = partName;
+      this.solidCollision = solidCollision;
       this.dims = EntityDimensions.scalable(width, height);
       this.noPhysics = true;
       this.refreshDimensions();
@@ -85,11 +87,12 @@ public final class DragonMultipartCollider {
 
     @Override
     public boolean canBeCollidedWith() {
-      return true;
+      return this.solidCollision;
     }
 
     @Override
     public boolean canCollideWith(Entity other) {
+      if (!this.solidCollision) return false;
       if (other == this.getParent()) return false;
       if (other instanceof BonePart bp && bp.getParent() == this.getParent()) return false;
       return super.canCollideWith(other);
@@ -102,7 +105,8 @@ public final class DragonMultipartCollider {
       float mult = switch (this.partName) {
         case "head" -> 1.25f;
         case "neck_span", "tail_base", "tail_tip" -> 1.00f;
-        case "frontleg_span_r", "frontleg_span_l", "frontfoot", "frontfoot1" -> 0.95f;
+        case "frontleg_span_r", "frontleg_span_l", "frontfoot", "frontfoot1",
+        "wing_r", "wing_l", "wingtip_r", "wingtip_l" -> 0.95f;
         case "body" -> 0.90f;
         case "rearleg_span_r", "rearleg_span_l", "rearfoot", "rearfoot1" -> 0.85f;
         default -> 1.00f;
@@ -142,41 +146,55 @@ public final class DragonMultipartCollider {
     public final BonePart frontLegSpanL;
     public final BonePart tailBase;
     public final BonePart tailTip;
+    public final BonePart wingR;
+    public final BonePart wingL;
+    public final BonePart wingTipR;
+    public final BonePart wingTipL;
     public final BonePart[] all;
 
     public Vec3 bodyOffset, headOffset, neckOffset, neck5Offset;
+    public Vec3 wingROffset, wingLOffset, wingTipROffset, wingTipLOffset;
     public Vec3 rearFootROffset, rearFootLOffset, frontFootROffset, frontFootLOffset;
     public Vec3 rearLegROffset, rearLegLOffset, frontLegROffset, frontLegLOffset;
     public Vec3 tailOffset, tail6Offset, tail12Offset;
     public boolean hasClientPivots = false;
 
     public PartRig(EnderDragon dragon) {
-      this.body          = new BonePart(dragon, "body",            1.50f,  1.50f);
-      this.head          = new BonePart(dragon, "head",            1.00f,  1.00f);
-      this.neckSpan      = new BonePart(dragon, "neck_span",       0.625f, 0.625f);
-      this.rearFootR     = new BonePart(dragon, "rearfoot",        1.125f, 0.375f);
-      this.rearFootL     = new BonePart(dragon, "rearfoot1",       1.125f, 0.375f);
-      this.frontFootR    = new BonePart(dragon, "frontfoot",       0.50f,  0.25f);
-      this.frontFootL    = new BonePart(dragon, "frontfoot1",      0.50f,  0.25f);
-      this.rearLegSpanR  = new BonePart(dragon, "rearleg_span_r",  1.00f,  1.00f);
-      this.rearLegSpanL  = new BonePart(dragon, "rearleg_span_l",  1.00f,  1.00f);
-      this.frontLegSpanR = new BonePart(dragon, "frontleg_span_r", 0.50f,  0.50f);
-      this.frontLegSpanL = new BonePart(dragon, "frontleg_span_l", 0.50f,  0.50f);
-      this.tailBase      = new BonePart(dragon, "tail_base",       0.625f, 0.625f);
-      this.tailTip       = new BonePart(dragon, "tail_tip",        0.625f, 0.625f);
+      // Solid (Sable / physical entity collision)
+      this.body          = new BonePart(dragon, "body",            1.50f,  1.50f, true);
+      this.neckSpan      = new BonePart(dragon, "neck_span",       0.625f, 0.625f, true);
+      this.tailBase      = new BonePart(dragon, "tail_base",       0.625f, 0.625f, true);
+      this.rearFootR     = new BonePart(dragon, "rearfoot",        1.125f, 0.375f, true);
+      this.rearFootL     = new BonePart(dragon, "rearfoot1",       1.125f, 0.375f, true);
+      this.frontFootR    = new BonePart(dragon, "frontfoot",       0.50f,  0.25f,  true);
+      this.frontFootL    = new BonePart(dragon, "frontfoot1",      0.50f,  0.25f,  true);
+      this.rearLegSpanR  = new BonePart(dragon, "rearleg_span_r",  1.00f,  1.00f, true);
+      this.rearLegSpanL  = new BonePart(dragon, "rearleg_span_l",  1.00f,  1.00f, true);
+      this.frontLegSpanR = new BonePart(dragon, "frontleg_span_r", 0.50f,  0.50f, true);
+      this.frontLegSpanL = new BonePart(dragon, "frontleg_span_l", 0.50f,  0.50f, true);
+
+      // Pass-through (vanilla EnderDragonPart behavior: hittable via isPickable(), walkable through)
+      this.head          = new BonePart(dragon, "head",            1.00f,  1.00f, false);
+      this.tailTip       = new BonePart(dragon, "tail_tip",        0.625f, 0.625f, false);
+      this.wingR         = new BonePart(dragon, "wing_r",          3.50f,  0.65f, false);
+      this.wingL         = new BonePart(dragon, "wing_l",          3.50f,  0.65f, false);
+      this.wingTipR      = new BonePart(dragon, "wingtip_r",       3.50f,  0.55f, false);
+      this.wingTipL      = new BonePart(dragon, "wingtip_l",       3.50f,  0.55f, false);
 
       this.all = new BonePart[]{
         this.body, this.head, this.neckSpan,
+        this.wingR, this.wingL, this.wingTipR, this.wingTipL,
         this.rearFootR, this.rearFootL, this.frontFootR, this.frontFootL,
         this.rearLegSpanR, this.rearLegSpanL, this.frontLegSpanR, this.frontLegSpanL,
         this.tailBase, this.tailTip
-      };
+    };
+
     }
   }
 
   private static final Map<UUID, PartRig> CLIENT_RIGS = new ConcurrentHashMap<>();
   private static final Map<UUID, PartRig> SERVER_RIGS = new ConcurrentHashMap<>();
-  
+
   private static final ThreadLocal<Boolean> IN_PART_HURT = ThreadLocal.withInitial(() -> false);
 
   public static boolean isInPartHurt() {
@@ -213,6 +231,11 @@ public final class DragonMultipartCollider {
     Vec3 n0  = boneRelWorld(baked, "neck", origin);
     Vec3 n5  = boneRelWorld(baked, "neck5", origin);
 
+    Vec3 wR  = boneRelWorld(baked, "wing", origin);
+    Vec3 wL  = boneRelWorld(baked, "wing1", origin);
+    Vec3 wtR = boneRelWorld(baked, "wingtip", origin);
+    Vec3 wtL = boneRelWorld(baked, "wingtip1", origin);
+
     Vec3 rlU = boneRelWorld(baked, "rearleg", origin);
     Vec3 llU = boneRelWorld(baked, "rearleg1", origin);
     Vec3 flU = boneRelWorld(baked, "frontleg", origin);
@@ -229,7 +252,6 @@ public final class DragonMultipartCollider {
 
     if (b != null && h != null && n0 != null && n5 != null && t0 != null && t6 != null && t12 != null) {
       // Shift from each bone's pivot to the center of its drawn geo.json mesh along the live bone axes
-      // body pivot is at [0, 20, 8] while torso center is [0, 8, 24] -> 16 units (1.0 block) backward toward the tail
       // body pivot is at [0, 20, 8] while torso center is [0, 8, 24] -> 1.0 block backward (-bodyDir) & 0.75 blocks down (-bodyUp)
       Vec3 bodyFwd = n0.subtract(t0);
       Vec3 bodyDir = (bodyFwd.lengthSqr() > 0.001D) ? bodyFwd.normalize() : Vec3.ZERO;
@@ -241,6 +263,20 @@ public final class DragonMultipartCollider {
         }
       }
       rig.bodyOffset = b.add(bodyDir.scale(-1.00D)).add(bodyUp.scale(-0.75D));
+
+      Vec3 tailWard = bodyDir.scale(-1.0D);
+      if (wR != null && wtR != null) {
+        Vec3 spanDirR = wtR.subtract(wR);
+        Vec3 outR = (spanDirR.lengthSqr() > 0.001D) ? spanDirR.normalize() : Vec3.ZERO;
+        rig.wingROffset    = wR.add(outR.scale(1.75D)).add(tailWard.scale(1.625D));
+        rig.wingTipROffset = wtR.add(outR.scale(1.75D)).add(tailWard.scale(1.75D));
+      }
+      if (wL != null && wtL != null) {
+        Vec3 spanDirL = wtL.subtract(wL);
+        Vec3 outL = (spanDirL.lengthSqr() > 0.001D) ? spanDirL.normalize() : Vec3.ZERO;
+        rig.wingLOffset    = wL.add(outL.scale(1.75D)).add(tailWard.scale(1.625D));
+        rig.wingTipLOffset = wtL.add(outL.scale(1.75D)).add(tailWard.scale(1.75D));
+      }
 
       Vec3 headFwd = h.subtract(n5);
       Vec3 headDir = (headFwd.lengthSqr() > 0.001D) ? headFwd.normalize() : bodyDir;
@@ -289,26 +325,31 @@ public final class DragonMultipartCollider {
     float bodyYaw = dragon.yBodyRot;
 
     Vec3 bodyWorld, headWorld, n0World, n5World;
+    Vec3 wingRWorld, wingLWorld, wingTipRWorld, wingTipLWorld;
     Vec3 rrWorld, rlWorld, frWorld, flWorld;
     Vec3 rLegRWorld, rLegLWorld, fLegRWorld, fLegLWorld;
     Vec3 t0World, t6World, t12World;
 
     if (dragon.level().isClientSide() && rig.hasClientPivots) {
-      bodyWorld  = origin.add(rig.bodyOffset);
-      headWorld  = origin.add(rig.headOffset);
-      n0World    = origin.add(rig.neckOffset);
-      n5World    = origin.add(rig.neck5Offset);
-      rrWorld    = (rig.rearFootROffset != null) ? origin.add(rig.rearFootROffset) : origin;
-      rlWorld    = (rig.rearFootLOffset != null) ? origin.add(rig.rearFootLOffset) : origin;
-      frWorld    = (rig.frontFootROffset != null) ? origin.add(rig.frontFootROffset) : origin;
-      flWorld    = (rig.frontFootLOffset != null) ? origin.add(rig.frontFootLOffset) : origin;
-      rLegRWorld = (rig.rearLegROffset != null) ? origin.add(rig.rearLegROffset) : null;
-      rLegLWorld = (rig.rearLegLOffset != null) ? origin.add(rig.rearLegLOffset) : null;
-      fLegRWorld = (rig.frontLegROffset != null) ? origin.add(rig.frontLegROffset) : null;
-      fLegLWorld = (rig.frontLegLOffset != null) ? origin.add(rig.frontLegLOffset) : null;
-      t0World    = origin.add(rig.tailOffset);
-      t6World    = origin.add(rig.tail6Offset);
-      t12World   = origin.add(rig.tail12Offset);
+      bodyWorld     = origin.add(rig.bodyOffset);
+      headWorld     = origin.add(rig.headOffset);
+      n0World       = origin.add(rig.neckOffset);
+      n5World       = origin.add(rig.neck5Offset);
+      wingRWorld    = (rig.wingROffset != null) ? origin.add(rig.wingROffset) : origin;
+      wingLWorld    = (rig.wingLOffset != null) ? origin.add(rig.wingLOffset) : origin;
+      wingTipRWorld = (rig.wingTipROffset != null) ? origin.add(rig.wingTipROffset) : origin;
+      wingTipLWorld = (rig.wingTipLOffset != null) ? origin.add(rig.wingTipLOffset) : origin;
+      rrWorld       = (rig.rearFootROffset != null) ? origin.add(rig.rearFootROffset) : origin;
+      rlWorld       = (rig.rearFootLOffset != null) ? origin.add(rig.rearFootLOffset) : origin;
+      frWorld       = (rig.frontFootROffset != null) ? origin.add(rig.frontFootROffset) : origin;
+      flWorld       = (rig.frontFootLOffset != null) ? origin.add(rig.frontFootLOffset) : origin;
+      rLegRWorld    = (rig.rearLegROffset != null) ? origin.add(rig.rearLegROffset) : null;
+      rLegLWorld    = (rig.rearLegLOffset != null) ? origin.add(rig.rearLegLOffset) : null;
+      fLegRWorld    = (rig.frontLegROffset != null) ? origin.add(rig.frontLegROffset) : null;
+      fLegLWorld    = (rig.frontLegLOffset != null) ? origin.add(rig.frontLegLOffset) : null;
+      t0World       = origin.add(rig.tailOffset);
+      t6World       = origin.add(rig.tail6Offset);
+      t12World      = origin.add(rig.tail12Offset);
     } else {
       DragonAnimState.DragonPoseMode mode = mh.hexacreatecore$getPoseMode();
       DragonAnimState.DragonAction action = mh.hexacreatecore$getActiveAction();
@@ -320,8 +361,32 @@ public final class DragonMultipartCollider {
       double liftY = onGround ? 1.84D : (isPerching ? 0.84D : 0.0D);
       double shiftZ = isPerching ? 1.50D : 0.0D;
 
-      bodyWorld  = modelOffsetToWorld(origin, new Vec3(0.0D, liftY + 0.50D, shiftZ + 1.50D), bodyYaw);
-      n0World    = modelOffsetToWorld(origin, new Vec3(0.0D, liftY + 0.44D, shiftZ - 0.50D), bodyYaw);
+      bodyWorld     = modelOffsetToWorld(origin, new Vec3(0.0D, liftY + 0.50D, shiftZ + 1.50D), bodyYaw);
+      n0World       = modelOffsetToWorld(origin, new Vec3(0.0D, liftY + 0.44D, shiftZ - 0.50D), bodyYaw);
+      wingRWorld    = modelOffsetToWorld(origin, new Vec3(-2.50D, liftY + 1.19D, shiftZ + 1.75D), bodyYaw);
+      wingLWorld    = modelOffsetToWorld(origin, new Vec3( 2.50D, liftY + 1.19D, shiftZ + 1.75D), bodyYaw);
+      wingTipRWorld = modelOffsetToWorld(origin, new Vec3(-6.00D, liftY + 1.19D, shiftZ + 1.875D), bodyYaw);
+      wingTipLWorld = modelOffsetToWorld(origin, new Vec3( 6.00D, liftY + 1.19D, shiftZ + 1.875D), bodyYaw);
+
+      if (action == DragonAnimState.DragonAction.DOUBLE_CLAW) {
+        if (actionTick >= 15 && 25 >= actionTick) {
+          float t = Mth.clamp((actionTick - 15.0f) / 10.0f, 0.0f, 1.0f);
+          double xWing = Mth.lerp(t, -2.6D,  1.2D);
+          double zWing = Mth.lerp(t, -2.5D, -4.5D);
+          double xTip  = Mth.lerp(t, -4.5D,  2.2D);
+          double zTip  = Mth.lerp(t, -4.5D, -8.2D);
+          wingRWorld    = modelOffsetToWorld(origin, new Vec3(xWing, liftY + 0.85D, zWing), bodyYaw);
+          wingTipRWorld = modelOffsetToWorld(origin, new Vec3(xTip,  liftY + 0.45D, zTip), bodyYaw);
+        } else if (actionTick >= 41 && 52 >= actionTick) {
+          float t = Mth.clamp((actionTick - 41.0f) / 11.0f, 0.0f, 1.0f);
+          double xWing = Mth.lerp(t,  2.6D, -1.2D);
+          double zWing = Mth.lerp(t, -2.5D, -4.5D);
+          double xTip  = Mth.lerp(t,  4.5D, -2.2D);
+          double zTip  = Mth.lerp(t, -4.5D, -8.2D);
+          wingLWorld    = modelOffsetToWorld(origin, new Vec3(xWing, liftY + 0.85D, zWing), bodyYaw);
+          wingTipLWorld = modelOffsetToWorld(origin, new Vec3(xTip,  liftY + 0.45D, zTip), bodyYaw);
+        }
+      }
 
       // Rotate neck & head along the side-bite arc during turn_left_90 / turn_right_90
       float headSweepYaw = bodyYaw;
@@ -330,9 +395,9 @@ public final class DragonMultipartCollider {
       || action == DragonAnimState.DragonAction.TURN_RIGHT_90 || action == DragonAnimState.DragonAction.CLAW_RIGHT) {
         boolean isLeft = (action == DragonAnimState.DragonAction.TURN_LEFT_90 || action == DragonAnimState.DragonAction.CLAW_LEFT);
         float sign = isLeft ? -1.0f : 1.0f;
-        float sweepProg = Mth.clamp((actionTick - 5.0f) / 11.0f, 0.0f, 1.0f);
-        // Sweeps from 85 deg on the flank across to -15 deg in front between 0.25s and 0.79s
-        float relAngleDeg = sign * Mth.lerp(sweepProg, 85.0f, -15.0f);
+        float sweepProg = Mth.clamp((actionTick - 10.0f) / 6.0f, 0.0f, 1.0f);
+        // Sweeps across the flank bite arc right through 0.50s of the animation (ticks 11..16)
+        float relAngleDeg = sign * Mth.lerp(sweepProg, 75.0f, -15.0f);
         headSweepYaw = bodyYaw + relAngleDeg;
         neckYOffset = liftY + 0.15D;
       }
@@ -356,8 +421,12 @@ public final class DragonMultipartCollider {
       t12World   = modelOffsetToWorld(origin, new Vec3(0.0D, liftY + 0.875D, shiftZ + 11.00D), bodyYaw);
     }
 
-    syncOrientedBox(rig.body, bodyWorld, 1.50f, 1.50f, 4.00f, bodyYaw);
-    syncOrientedBox(rig.head, headWorld, 1.00f, 1.00f, 1.875f, bodyYaw);
+    syncOrientedBox(rig.body,     bodyWorld,     1.50f, 1.50f, 4.00f, bodyYaw);
+    syncOrientedBox(rig.head,     headWorld,     1.00f, 1.00f, 1.875f, bodyYaw);
+    syncOrientedBox(rig.wingR,    wingRWorld,    3.50f, 0.65f, 3.75f, bodyYaw);
+    syncOrientedBox(rig.wingL,    wingLWorld,    3.50f, 0.65f, 3.75f, bodyYaw);
+    syncOrientedBox(rig.wingTipR, wingTipRWorld, 3.50f, 0.55f, 3.75f, bodyYaw);
+    syncOrientedBox(rig.wingTipL, wingTipLWorld, 3.50f, 0.55f, 3.75f, bodyYaw);
 
     syncOrientedBox(rig.rearFootR,  rrWorld, 1.125f, 0.375f, 1.50f, bodyYaw);
     syncOrientedBox(rig.rearFootL,  rlWorld, 1.125f, 0.375f, 1.50f, bodyYaw);
@@ -382,6 +451,7 @@ public final class DragonMultipartCollider {
     syncSpanBox(rig.tailBase, t0World, t6World, 0.625f);
     syncSpanBox(rig.tailTip,  t6World, t12World, 0.625f);
   }
+
 
 
   private static Vec3 boneModelPos(MhEnderDragonModel<?> model, String boneName) {

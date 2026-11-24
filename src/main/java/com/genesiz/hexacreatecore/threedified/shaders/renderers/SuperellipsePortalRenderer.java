@@ -15,44 +15,76 @@ public final class SuperellipsePortalRenderer {
     float timeSeconds, int angularSegments, int radialRings,
     ShaderDictionary dictionary
   ) {
-    int segs = Math.max(36, angularSegments);
-    int rings = Math.max(6, radialRings);
+    render(
+      vertexConsumer, poseMatrix, centerX, centerY, halfWidth, halfHeight,
+      timeSeconds, angularSegments, radialRings, false, dictionary
+    );
+  }
 
-    for (int segment = 0; segs > segment; segment++) {
-      double angle0 = (Math.PI * 2.0D * segment) / segs;
-      double angle1 = (Math.PI * 2.0D * (segment + 1)) / segs;
+  public static void render(
+    VertexConsumer vertexConsumer, Matrix4f poseMatrix,
+    float centerX, float centerY, float halfWidth, float halfHeight,
+    float timeSeconds, int angularSegments, int radialRings,
+    boolean circular, ShaderDictionary dictionary
+  ) {
+    int segs = Math.max(28, angularSegments);
+    int rings = Math.max(5, radialRings);
+    int ringStride = rings + 1;
 
-      float tear0 = 1.11f + 0.032f * (float) Math.sin((angle0 * 9.0D) - (timeSeconds * 3.8f));
-      float tear1 = 1.11f + 0.032f * (float) Math.sin((angle1 * 9.0D) - (timeSeconds * 3.8f));
+    float[] gridX = new float[(segs + 1) * ringStride];
+    float[] gridY = new float[(segs + 1) * ringStride];
+    int[] gridCol = new int[(segs + 1) * ringStride];
 
-      for (int ring = 0; rings > ring; ring++) {
-        float tInner = (float) ring / rings;
-        float tOuter = (float) (ring + 1) / rings;
+    for (int s = 0; segs >= s; s++) {
+      double angle = (Math.PI * 2.0D * s) / segs;
+      float tear = circular ? 1.0f : (1.11f + 0.032f * (float) Math.sin((angle * 9.0D) - (timeSeconds * 3.8f)));
+      float wobble = circular ? 1.0f : (
+        1.0f
+        + (float) Math.sin((angle * 4.0D) + (timeSeconds * 1.9f)) * 0.038f
+        + (float) Math.cos((angle * 7.0D) - (timeSeconds * 2.5f)) * 0.022f
+        + (float) Math.sin((angle * 11.0D) + (timeSeconds * 3.2f)) * 0.012f
+      );
 
-        float[] p00 = evalSuperellipse(centerX, centerY, halfWidth, halfHeight, angle0, tInner * tear0, timeSeconds);
-        float[] p10 = evalSuperellipse(centerX, centerY, halfWidth, halfHeight, angle1, tInner * tear1, timeSeconds);
-        float[] p11 = evalSuperellipse(centerX, centerY, halfWidth, halfHeight, angle1, tOuter * tear1, timeSeconds);
-        float[] p01 = evalSuperellipse(centerX, centerY, halfWidth, halfHeight, angle0, tOuter * tear0, timeSeconds);
+      double cos = Math.cos(angle);
+      double sin = Math.sin(angle);
+      double norm = 1.0D;
+      if (!circular) {
+        double ac = Math.abs(cos);
+        double as = Math.abs(sin);
+        double ac2 = ac * ac;
+        double as2 = as * as;
+        norm = Math.pow((ac2 * ac2 * Math.sqrt(ac)) + (as2 * as2 * Math.sqrt(as)), 0.22222222D);
+      }
 
-        RawGeometry.vertex(vertexConsumer, poseMatrix, p00[0], p00[1], 0.0f, dictionary.sampleArgb(p00[0], p00[1], angle0, tInner, timeSeconds));
-        RawGeometry.vertex(vertexConsumer, poseMatrix, p10[0], p10[1], 0.0f, dictionary.sampleArgb(p10[0], p10[1], angle1, tInner, timeSeconds));
-        RawGeometry.vertex(vertexConsumer, poseMatrix, p11[0], p11[1], 0.0f, dictionary.sampleArgb(p11[0], p11[1], angle1, tOuter, timeSeconds));
-        RawGeometry.vertex(vertexConsumer, poseMatrix, p01[0], p01[1], 0.0f, dictionary.sampleArgb(p01[0], p01[1], angle0, tOuter, timeSeconds));
+      float rayX = (float) ((cos / norm) * halfWidth * wobble * tear);
+      float rayY = (float) ((sin / norm) * halfHeight * wobble * tear);
+
+      int rowBase = s * ringStride;
+      for (int r = 0; rings >= r; r++) {
+        float t = (float) r / rings;
+        float vx = centerX + rayX * t;
+        float vy = centerY + rayY * t;
+        int idx = rowBase + r;
+        gridX[idx] = vx;
+        gridY[idx] = vy;
+        gridCol[idx] = dictionary.sampleArgb(vx, vy, angle, t, timeSeconds);
+      }
+    }
+
+    for (int s = 0; segs > s; s++) {
+      int r0 = s * ringStride;
+      int r1 = (s + 1) * ringStride;
+      for (int r = 0; rings > r; r++) {
+        int i00 = r0 + r;
+        int i10 = r1 + r;
+        int i11 = i10 + 1;
+        int i01 = i00 + 1;
+
+        RawGeometry.vertex(vertexConsumer, poseMatrix, gridX[i00], gridY[i00], 0.0f, gridCol[i00]);
+        RawGeometry.vertex(vertexConsumer, poseMatrix, gridX[i10], gridY[i10], 0.0f, gridCol[i10]);
+        RawGeometry.vertex(vertexConsumer, poseMatrix, gridX[i11], gridY[i11], 0.0f, gridCol[i11]);
+        RawGeometry.vertex(vertexConsumer, poseMatrix, gridX[i01], gridY[i01], 0.0f, gridCol[i01]);
       }
     }
   }
-
-  private static float[] evalSuperellipse(float cx, float cy, float halfW, float halfH, double angle, float scaleMult, float timeSec) {
-    float wobble = 1.0f
-    + (float) Math.sin((angle * 4.0D) + (timeSec * 1.9f)) * 0.038f
-    + (float) Math.cos((angle * 7.0D) - (timeSec * 2.5f)) * 0.022f
-    + (float) Math.sin((angle * 11.0D) + (timeSec * 3.2f)) * 0.012f;
-    double cos = Math.cos(angle), sin = Math.sin(angle);
-    double norm = Math.pow(Math.pow(Math.abs(cos), 4.5D) + Math.pow(Math.abs(sin), 4.5D), 1.0D / 4.5D);
-    return new float[]{
-      cx + (float) ((cos / norm) * halfW * wobble * scaleMult),
-      cy + (float) ((sin / norm) * halfH * wobble * scaleMult)
-    };
-  }
 }
-
