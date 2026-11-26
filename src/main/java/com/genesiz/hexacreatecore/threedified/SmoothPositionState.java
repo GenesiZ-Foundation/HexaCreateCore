@@ -5,14 +5,23 @@ package com.genesiz.hexacreatecore.threedified;
 
 import net.minecraft.sounds.SoundEvent;
 
+/* FULL BREAKDOWN:
+ *
+ * -> Stateful position/yaw smoother and basic typewriter reveal tracker (legacy/standalone helper)
+ *
+ * [.onTicksSynced()] resets revealedChars when newTicks advances
+ * [.resetTypewriter()] is self explanatory
+ * [.update()] advances typewriter text/blips and exponentially smooths currentX/Y/Z and currentYaw
+ *
+ * */
 public class SmoothPositionState {
-  public double currentX, currentY, currentZ;
-  public float currentYaw;
-  private boolean initialized = false;
+  public   double   currentX, currentY, currentZ;
+  public   float    currentYaw;
+  private  boolean  initialized = false;
 
-  public float revealedChars = 0.0f;
-  private String lastText = "";
-  private int lastTicks = 0;
+  public   float    revealedChars = 0.0f;
+  private  String   lastText = "";
+  private  int      lastTicks = 0;
 
   public void onTicksSynced(int newTicks) {
     if (newTicks > this.lastTicks) {

@@ -1,3 +1,6 @@
+/*
+ * THIS PART OF THE CODE IS MEANT FOR DEVELOPERS
+ * */
 package com.genesiz.hexacreatecore.threedified.tooltip;
 
 import com.genesiz.hexacreatecore.HexaCreateCore;
@@ -19,12 +22,27 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.AddReloadListenerEvent;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+/* FULL BREAKDOWN:
+ *
+ * -> Data-driven reload listener for data/<mod>/tooltip_styles/*.json item/tag/wildcard styles
+ *
+ * [.onAddReloadListeners()] is self explanatory
+ * [.apply()] parses JSON tooltip entries (exact item IDs, *contains* wildcards, and #tags)
+ * [.getForStack()] resolves the ItemTooltipConfig for an ItemStack (or falls back to TooltipCategoryClassifier)
+ * [.getByKey()] is self explanatory
+ * [.getConfiguredKeys()] is self explanatory
+ * [.parseStyleElement()] parses a string spec or full JSON object into a TextEffectStyle
+ * [.parseStyleSpec()] parses shorthand specs like "spectrum", "genesis", or "aurora:#21B7D1"
+ *
+ * */
 @EventBusSubscriber(modid = HexaCreateCore.MODID)
 public final class TooltipStyleRegistry extends SimpleJsonResourceReloadListener {
 
@@ -40,9 +58,10 @@ public final class TooltipStyleRegistry extends SimpleJsonResourceReloadListener
     }
   }
 
-  private static final Map<ResourceLocation, ItemTooltipConfig> ITEM_CONFIGS = new ConcurrentHashMap<>();
-  private static final Map<TagKey<Item>, ItemTooltipConfig> TAG_CONFIGS = new LinkedHashMap<>();
-  private static final Map<String, ItemTooltipConfig> CONTAINS_CONFIGS = new LinkedHashMap<>();
+  private static final  Map<ResourceLocation, ItemTooltipConfig>  ITEM_CONFIGS = new ConcurrentHashMap<>();
+  private static final  Map<TagKey<Item>, ItemTooltipConfig>      TAG_CONFIGS = new LinkedHashMap<>();
+  private static final  Map<String, ItemTooltipConfig>            CONTAINS_CONFIGS = new LinkedHashMap<>();
+  private static final  Map<String, ItemTooltipConfig>            RAW_CONFIGS = new LinkedHashMap<>();
 
   public TooltipStyleRegistry() {
     super(new Gson(), "tooltip_styles");
@@ -58,6 +77,7 @@ public final class TooltipStyleRegistry extends SimpleJsonResourceReloadListener
     ITEM_CONFIGS.clear();
     TAG_CONFIGS.clear();
     CONTAINS_CONFIGS.clear();
+    RAW_CONFIGS.clear();
 
     for (var entry : objects.entrySet()) {
       if (!entry.getValue().isJsonObject()) continue;
@@ -80,6 +100,7 @@ public final class TooltipStyleRegistry extends SimpleJsonResourceReloadListener
         ItemTooltipConfig config = new ItemTooltipConfig(titleStyle, loreStyle, borderCol, bgCol, shapeVariant);
 
         String key = itemEntry.getKey();
+        RAW_CONFIGS.put(key, config);
         if (key.startsWith("*") && key.endsWith("*") && key.length() > 2) {
           CONTAINS_CONFIGS.put(key.substring(1, key.length() - 1).toLowerCase(Locale.ROOT), config);
         } else if (key.startsWith("#")) {
@@ -109,6 +130,23 @@ public final class TooltipStyleRegistry extends SimpleJsonResourceReloadListener
       if (stack.is(tagEntry.getKey())) return tagEntry.getValue();
     }
     return TooltipCategoryClassifier.classify(stack);
+  }
+
+  public static ItemTooltipConfig getByKey(String key) {
+    if (key == null || key.isEmpty()) return null;
+    ItemTooltipConfig direct = RAW_CONFIGS.get(key);
+    if (direct != null) return direct;
+    String lower = key.toLowerCase(Locale.ROOT);
+    for (var entry : RAW_CONFIGS.entrySet()) {
+      if (entry.getKey().toLowerCase(Locale.ROOT).equals(lower)) {
+        return entry.getValue();
+      }
+    }
+    return null;
+  }
+
+  public static Set<String> getConfiguredKeys() {
+    return Collections.unmodifiableSet(RAW_CONFIGS.keySet());
   }
 
   public static TextEffectStyle parseStyleElement(JsonElement el) {

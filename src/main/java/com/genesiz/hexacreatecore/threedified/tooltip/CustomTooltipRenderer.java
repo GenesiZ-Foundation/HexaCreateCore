@@ -1,3 +1,6 @@
+/*
+ * THIS PART OF THE CODE IS MEANT FOR DEVELOPERS
+ * */
 package com.genesiz.hexacreatecore.threedified.tooltip;
 
 import com.genesiz.hexacreatecore.HexaCreateCore;
@@ -29,10 +32,18 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/* FULL BREAKDOWN:
+ *
+ * -> Intercepts RenderTooltipEvent.Pre to draw 3D-styled tooltips, inline [style] tags, and attached 3D shapes
+ *
+ * [.onRenderTooltipPre()] resolves TooltipStyleRegistry / inline [style] tags, cancels vanilla tooltip,
+ *   and draws the RawGeometry frame, ThreeDiShapeHooks attachments, and ThreeDifiedTextRenderer text
+ *
+ * */
 @EventBusSubscriber(modid = HexaCreateCore.MODID, value = Dist.CLIENT)
 public final class CustomTooltipRenderer {
 
-  private static final Pattern INLINE_TAG = Pattern.compile("^\\[([a-zA-Z0-9_#:-]+)](.*)\\[/[a-zA-Z0-9_#:-]+]$");
+  private static final  Pattern  INLINE_TAG = Pattern.compile("^\\[([a-zA-Z0-9_#:-]+)](.*)\\[/[a-zA-Z0-9_#:-]+]$");
 
   private record StyledLine(
     String plainText,

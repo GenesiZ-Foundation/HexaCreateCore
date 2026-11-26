@@ -1,3 +1,6 @@
+/*
+ * THIS PART OF THE CODE IS MEANT FOR DEVELOPERS
+ * */
 package com.genesiz.hexacreatecore.threedified.threedishapes_hooks;
 
 import com.genesiz.hexacreatecore.threedified.threedishapes_factory.ShapeAnchor;
@@ -12,9 +15,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+/* FULL BREAKDOWN:
+ *
+ * -> Registry binding ShapeBlueprint lists to UiShapeTarget surfaces and optional variant keys
+ *
+ * [.attach()] binds a list of ShapeBlueprints to a UiShapeTarget (with optional variant string)
+ * [.renderAttachedShapes()] looks up and renders all shapes attached to target/variant around a box
+ *
+ * */
 public final class ThreeDiShapeHooks {
 
-  private static final Map<String, List<ShapeBlueprint>> ATTACHMENTS = new ConcurrentHashMap<>();
+  private static final  Map<String, List<ShapeBlueprint>>  ATTACHMENTS = new ConcurrentHashMap<>();
 
   static {
     attach(UiShapeTarget.BOSS_RUSH_TITLE, List.of(

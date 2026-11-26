@@ -7,6 +7,15 @@ import com.genesiz.hexacreatecore.decorators.annotations.Overload;
 
 import net.minecraft.world.entity.Entity;
 
+/* FULL BREAKDOWN:
+ *
+ * -> Helper record computing interpolated entity coordinates, orbit-offset targets, and camera-relative render coords
+ *
+ * [.entPosX()/.entPosY()/.entPosZ()] interpolated entity position for partialTick
+ * [.targetX()/.targetY()/.targetZ()] target UI anchor above the entity, pushed toward facing by orbit
+ * [.renderX()/.renderY()/.renderZ()] camera-relative position (smoothed via SmoothPositionState if provided)
+ *
+ * */
 public record ThreeDifiedVec3<T extends Entity &ThreeDified>(float partialTick, T entity, double orbit , net.minecraft.world.phys.Vec3 facing, net.minecraft.world.phys.Vec3 camera, SmoothPositionState state) {
 
   @Overload

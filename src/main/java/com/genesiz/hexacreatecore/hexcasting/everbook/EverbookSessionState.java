@@ -106,11 +106,12 @@ public final class EverbookSessionState {
     scrollRowOffset = 0.0f;
     hasEvalResult = false;
     updateRiftFollowCamera();
+    syncToServer("OPEN");
   }
 
   public static void deactivate() {
     if (active) {
-      syncToServer("SAVE");
+      syncToServer("CLOSE");
     }
     active = false;
     riftLocked = false;

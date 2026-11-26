@@ -19,9 +19,22 @@ import java.util.List;
 
 import org.joml.Matrix4f;
 
+/* FULL BREAKDOWN:
+ *
+ * -> Core low-level geometry & UI box rendering primitives (quads, 3D prisms, bordered panels, progress bars)
+ *
+ * [.drawRectangle()] is self explanatory
+ * [.drawPrism()] draws a 6-sided 3D box centered at the origin
+ * [.drawBorderedPanel()] draws a background rectangle framed by 4 extruded 3D border prisms
+ * [.drawDialogueNode()] draws a bordered panel plus optional centered/left-aligned lines or DialoguePlaybackState
+ * [.drawProgressBar()] is self explanatory
+ * [.drawArcaneNodePrism()] draws a flat-colored 3D cube marker using RenderType.gui()
+ * [.vertex()] pushes a single colored vertex to a VertexConsumer
+ *
+ * */
 public class RawGeometry {
   private RawGeometry() {} // Prevent instantiation
-  public static final RenderType DIALOGUE_SOLID = RenderType.create(
+  public static final  RenderType  DIALOGUE_SOLID = RenderType.create(
     "dialogue_solid",
     DefaultVertexFormat.POSITION_COLOR,
     VertexFormat.Mode.QUADS,

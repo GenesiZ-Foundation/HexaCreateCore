@@ -1,8 +1,20 @@
+/*
+ * THIS PART OF THE CODE IS MEANT FOR DEVELOPERS
+ * */
 package com.genesiz.hexacreatecore.threedified.shaders.dictionaries;
 
 import net.minecraft.util.FastColor;
 import net.minecraft.util.Mth;
 
+/* FULL BREAKDOWN:
+ *
+ * -> Functional color-sampling interface driving PortalShaderHook and PolyhedronFaceShaderHook
+ *
+ * [.sampleArgb()] computes the ARGB color at local UV, angle, radial depth, and timeSeconds
+ * [.then()] chains an overlay ShaderDictionary on top via CompositeDictionary
+ * [.lerpArgb()] is self explanatory
+ *
+ * */
 @FunctionalInterface
 public interface ShaderDictionary {
   int sampleArgb(float localX, float localY, double angleRad, float radialT, float timeSeconds);

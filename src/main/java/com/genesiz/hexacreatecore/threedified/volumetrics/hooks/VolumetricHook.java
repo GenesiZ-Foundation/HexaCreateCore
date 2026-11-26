@@ -1,3 +1,6 @@
+/*
+ * THIS PART OF THE CODE IS MEANT FOR DEVELOPERS
+ * */
 package com.genesiz.hexacreatecore.threedified.volumetrics.hooks;
 
 import com.genesiz.hexacreatecore.threedified.volumetrics.dictionaries.VolumetricDictionary;
@@ -5,19 +8,30 @@ import com.genesiz.hexacreatecore.threedified.volumetrics.renderers.UnifiedVolum
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.renderer.MultiBufferSource;
 
+/* FULL BREAKDOWN:
+ *
+ * -> Fluent builder hook for rendering multi-shell 3D volumetric envelopes via UnifiedVolumetricEngine
+ *
+ * [.bind()] is self explanatory
+ * [.at()/.coreSize()/.eventHorizon()/.autoFlush()/.spherical()] fluent configuration setters
+ * [.render()/.renderCoreOnly()/.renderHorizonOnly()] renders box or spherical volumetric shells
+ * [.renderCrown()] renders a rift crown volumetric envelope
+ * [.renderOilFire()] renders a layered oil-fire flame volume
+ *
+ * */
 public final class VolumetricHook {
 
-  private final VolumetricDictionary dictionary;
-  private float centerX = 0.0f;
-  private float centerY = 0.0f;
-  private float centerZ = 0.0f;
-  private float coreHalfW = 0.32f;
-  private float coreHalfH = 0.32f;
-  private float coreHalfD = 0.14f;
-  private float horizonThickness = 0.11f;
-  private int shellCount = 4;
-  private boolean autoFlush = true;
-  private boolean spherical = false;
+  private final  VolumetricDictionary  dictionary;
+  private        float                 centerX = 0.0f;
+  private        float                 centerY = 0.0f;
+  private        float                 centerZ = 0.0f;
+  private        float                 coreHalfW = 0.32f;
+  private        float                 coreHalfH = 0.32f;
+  private        float                 coreHalfD = 0.14f;
+  private        float                 horizonThickness = 0.11f;
+  private        int                   shellCount = 4;
+  private        boolean               autoFlush = true;
+  private        boolean               spherical = false;
 
   private VolumetricHook(VolumetricDictionary dictionary) {
     this.dictionary = dictionary;

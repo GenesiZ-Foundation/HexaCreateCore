@@ -1,3 +1,6 @@
+/*
+- THIS PART OF THE CODE IS MEANT FOR DEVELOPERS
+- */
 package com.genesiz.hexacreatecore.threedified.text;
 
 import net.minecraft.util.FastColor;
@@ -5,6 +8,17 @@ import net.minecraft.util.Mth;
 
 import java.util.List;
 
+/* FULL BREAKDOWN:
+ *
+- -> Immutable configuration record for animated 2D/3D text gradients, waves, strokes, and backdrops
+ *
+- [.prismaticOutline()/.outline()/.glitch()/.aurora()/.starly()/.spectrum()] preset style factory methods
+- [.parseHex()] parses #RRGGBB, #AARRGGBB, or 0x... hex strings into packed ARGB ints
+- [.sampleColor()] samples the scrolling/angled gradient color at UV coordinates and timeSec
+- [.lerpArgb()] is self explanatory
+- [.sampleSpectrum()] samples the full-cycle rainbow gradient at phase [0..1]
+ *
+- */
 public record TextEffectStyle(
   List<Integer> colors,
   List<Float> stops,
@@ -19,6 +33,10 @@ public record TextEffectStyle(
   boolean hasPrismaticOutline,
   float gradientAngleDeg
 ) {
+  private static final int[] SPECTRUM_STOPS = {
+    0xFFFF2A54, 0xFFFFA500, 0xFFFACC15, 0xFF4ADE80, 0xFF00F5FF, 0xFFC084FC, 0xFFFF2A54
+  };
+
   public TextEffectStyle(
     List<Integer> colors, List<Float> stops, float scrollSpeed,
     float waveAmplitude, float waveFrequency, BackdropMode backdropMode,
@@ -51,6 +69,33 @@ public record TextEffectStyle(
     SPECTRUM_STROKE
   }
 
+  private static final class AngleTrig {
+    final float cos;
+    final float sin;
+
+    AngleTrig(float deg) {
+      double rad = Math.toRadians(deg);
+      this.cos = (float) Math.cos(rad);
+      this.sin = (float) Math.sin(rad);
+    }
+  }
+
+  private static final class CachedTrig {
+    private static volatile float lastDeg = Float.NaN;
+    private static volatile AngleTrig lastTrig;
+
+    static AngleTrig get(float deg) {
+      AngleTrig trig = lastTrig;
+      if (trig != null && Float.compare(lastDeg, deg) == 0) {
+        return trig;
+      }
+      AngleTrig computed = new AngleTrig(deg);
+      lastDeg = deg;
+      lastTrig = computed;
+      return computed;
+    }
+  }
+
   public static TextEffectStyle prismaticOutline() {
     return new TextEffectStyle(
       List.of(0xFF0E081C, 0xFF28124D, 0xFF0E081C),
@@ -72,8 +117,10 @@ public record TextEffectStyle(
       BackdropMode.PRISMATIC_OUTLINE, base, brightEdge, false
     );
   }
-  public static TextEffectStyle outline(String hex) { return outline(parseHex(hex)); }
 
+  public static TextEffectStyle outline(String hex) {
+    return outline(parseHex(hex));
+  }
 
   /** Iridescent chromatic-aberration glitch shader (default rainbow palette) */
   public static TextEffectStyle glitch() {
@@ -128,9 +175,17 @@ public record TextEffectStyle(
     );
   }
 
-  public static TextEffectStyle glitch(String hex) { return glitch(parseHex(hex)); }
-  public static TextEffectStyle aurora(String hex) { return aurora(parseHex(hex)); }
-  public static TextEffectStyle starly(String hex) { return starly(parseHex(hex)); }
+  public static TextEffectStyle glitch(String hex) {
+    return glitch(parseHex(hex));
+  }
+
+  public static TextEffectStyle aurora(String hex) {
+    return aurora(parseHex(hex));
+  }
+
+  public static TextEffectStyle starly(String hex) {
+    return starly(parseHex(hex));
+  }
 
   public static int parseHex(String hex) {
     if (hex == null || hex.isEmpty()) return 0xFFFFFFFF;
@@ -146,7 +201,12 @@ public record TextEffectStyle(
   }
 
   private static int withAlpha(int argb, int alpha) {
-    return FastColor.ARGB32.color(alpha & 0xFF, FastColor.ARGB32.red(argb), FastColor.ARGB32.green(argb), FastColor.ARGB32.blue(argb));
+    return FastColor.ARGB32.color(
+      alpha & 0xFF,
+      FastColor.ARGB32.red(argb),
+      FastColor.ARGB32.green(argb),
+      FastColor.ARGB32.blue(argb)
+    );
   }
 
   private static int shade(int argb, float factor) {
@@ -169,29 +229,29 @@ public record TextEffectStyle(
 
   public int sampleColor(float u, float v, float timeSec) {
     if (colors == null || colors.isEmpty()) return 0xFFFFFFFF;
-    if (colors.size() == 1) return colors.get(0);
+    int count = colors.size();
+    if (count == 1) return colors.get(0);
 
     float coord = u;
     if (Math.abs(gradientAngleDeg) > 0.01f) {
-      double rad = Math.toRadians(gradientAngleDeg);
-      coord = (float) ((u * Math.cos(rad)) + (v * Math.sin(rad)));
+      AngleTrig trig = CachedTrig.get(gradientAngleDeg);
+      coord = (u * trig.cos) + (v * trig.sin);
     }
 
     float shifted = (coord - (timeSec * scrollSpeed * 0.25f)) % 1.0f;
-    if (0.0f > shifted) shifted += 1.0f;
+    if (shifted < 0.0f) shifted += 1.0f;
 
-    int count = colors.size();
-    for (int i = 0; (count - 1) > i; i++) {
-      float s0 = (stops != null && stops.size() > i) ? stops.get(i) : (i / (float) (count - 1));
-      float s1 = (stops != null && stops.size() > (i + 1)) ? stops.get(i + 1) : ((i + 1) / (float) (count - 1));
-      if (shifted >= s0 && s1 >= shifted) {
+    boolean hasStops = stops != null && stops.size() >= count;
+    for (int i = 0; i < count - 1; i++) {
+      float s0 = hasStops ? stops.get(i) : (i / (float) (count - 1));
+      float s1 = hasStops ? stops.get(i + 1) : ((i + 1) / (float) (count - 1));
+      if (shifted >= s0 && shifted <= s1) {
         float localT = (s1 > s0) ? ((shifted - s0) / (s1 - s0)) : 0.0f;
         return lerpArgb(colors.get(i), colors.get(i + 1), localT);
       }
     }
     return colors.get(count - 1);
   }
-
 
   public static int lerpArgb(int c0, int c1, float t) {
     t = Mth.clamp(t, 0.0f, 1.0f);
@@ -240,11 +300,9 @@ public record TextEffectStyle(
 
   public static int sampleSpectrum(float phase) {
     float p = phase % 1.0f;
-    if (0.0f > p) p += 1.0f;
-    int[] stops = { 0xFFFF2A54, 0xFFFFA500, 0xFFFACC15, 0xFF4ADE80, 0xFF00F5FF, 0xFFC084FC, 0xFFFF2A54 };
-    float scaled = p * (stops.length - 1);
-    int idx = Math.min(stops.length - 2, (int) scaled);
-    return lerpArgb(stops[idx], stops[idx + 1], scaled - idx);
+    if (p < 0.0f) p += 1.0f;
+    float scaled = p * (SPECTRUM_STOPS.length - 1);
+    int idx = Math.min(SPECTRUM_STOPS.length - 2, (int) scaled);
+    return lerpArgb(SPECTRUM_STOPS[idx], SPECTRUM_STOPS[idx + 1], scaled - idx);
   }
-
 }

@@ -15,10 +15,18 @@ import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 
 import java.util.List;
 
+/* FULL BREAKDOWN:
+ *
+ * -> Default world-space renderer for any Entity implementing ThreeDified (unless hasCustomRenderer() is true)
+ *
+ * [.onRenderLevelStage()] iterates visible ThreeDified entities, updates transform/playback,
+ *   draws the main dialogue box, and raycasts/draws interactive option buttons
+ *
+ * */
 // DEFAULT RENDERER
 @EventBusSubscriber(modid = HexaCreateCore.MODID, value = Dist.CLIENT)
 public class ThreeDifiedRenderer {
-  private static List<FormattedCharSequence> lines = null;
+  private static  List<FormattedCharSequence>  lines = null;
 
   @SubscribeEvent
   public static void onRenderLevelStage(RenderLevelStageEvent event) {

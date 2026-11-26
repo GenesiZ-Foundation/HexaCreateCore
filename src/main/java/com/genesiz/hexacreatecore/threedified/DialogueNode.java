@@ -25,16 +25,16 @@ import java.util.List;
  * 
  * */
 public class DialogueNode {
-  public float baseWidth;
-  public float baseHeight;
-  public float width;
-  public float height;
-  public int bgColor;
-  public int borderColor;
-  public int hoverBorderColor;
-  public List<FormattedCharSequence> lines = Collections.emptyList();
-  public DialogueClickAction onLeftClick;
-  public DialogueClickAction onRightClick;
+  public  float                         baseWidth;
+  public  float                         baseHeight;
+  public  float                         width;
+  public  float                         height;
+  public  int                           bgColor;
+  public  int                           borderColor;
+  public  int                           hoverBorderColor;
+  public  List<FormattedCharSequence>   lines = Collections.emptyList();
+  public  DialogueClickAction           onLeftClick;
+  public  DialogueClickAction           onRightClick;
 
   public void setText(Font font, String text, int maxWidth) {
     this.lines = font.split(Component.literal(text), maxWidth);

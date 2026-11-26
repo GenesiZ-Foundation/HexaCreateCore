@@ -1,5 +1,13 @@
+/*
+ * THIS PART OF THE CODE IS MEANT FOR DEVELOPERS
+ * */
 package com.genesiz.hexacreatecore.threedified.threedishapes_factory;
 
+/* FULL BREAKDOWN:
+ *
+ * -> Anchor enum defining normalized box attachment points (normX, normY) for ShapeBlueprint
+ *
+ * */
 public enum ShapeAnchor {
   CENTER(0.0f, 0.0f),
   TOP_CENTER(0.0f, -0.5f),
@@ -13,8 +21,8 @@ public enum ShapeAnchor {
   ALL_CORNERS(0.0f, 0.0f),
   LEFT_AND_RIGHT(0.0f, 0.0f);
 
-  public final float normX;
-  public final float normY;
+  public final  float  normX;
+  public final  float  normY;
 
   ShapeAnchor(float normX, float normY) {
     this.normX = normX;

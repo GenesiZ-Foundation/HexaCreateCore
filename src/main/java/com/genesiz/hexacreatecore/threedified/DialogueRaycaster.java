@@ -1,19 +1,30 @@
+/*
+ * THIS PART OF THE CODE IS MEANT FOR DEVELOPERS
+ * */
 package com.genesiz.hexacreatecore.threedified;
 
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
+/* FULL BREAKDOWN:
+ *
+ * -> Zero-allocation ray-to-panel intersection utility for hovering 3D UI buttons/nodes
+ *
+ * [.isLookingAtNode()] tests whether the player's eye look ray intersects a local 3D quad
+ *   within maxReach blocks (2 overloads: camera-origin matrix or explicit eye-origin ray)
+ *
+ * */
 public final class DialogueRaycaster {
   // Reusable scratch objects (zero per-frame heap allocations)
-  private static final Matrix4f INV_MATRIX = new Matrix4f();
-  private static final Vector4f LOCAL_ORIGIN = new Vector4f();
-  private static final Vector4f LOCAL_DIR = new Vector4f();
+  private static final  Matrix4f  INV_MATRIX = new Matrix4f();
+  private static final  Vector4f  LOCAL_ORIGIN = new Vector4f();
+  private static final  Vector4f  LOCAL_DIR = new Vector4f();
 
-  private static final Vector3f SCRATCH_CENTER = new Vector3f();
-  private static final Vector3f SCRATCH_NORMAL = new Vector3f();
-  private static final Vector3f SCRATCH_HIT = new Vector3f();
-  private static final Matrix4f SCRATCH_INV = new Matrix4f();
+  private static final  Vector3f  SCRATCH_CENTER = new Vector3f();
+  private static final  Vector3f  SCRATCH_NORMAL = new Vector3f();
+  private static final  Vector3f  SCRATCH_HIT = new Vector3f();
+  private static final  Matrix4f  SCRATCH_INV = new Matrix4f();
 
   private DialogueRaycaster() {}
 

@@ -1,17 +1,99 @@
 package com.genesiz.hexacreatecore.item.custom;
 
+import com.genesiz.hexacreatecore.HexaCreateCore;
 import com.genesiz.hexacreatecore.hexcasting.everbook.EverbookData;
+import com.genesiz.hexacreatecore.hexcasting.everbook.EverbookItemRenderer;
 import com.genesiz.hexacreatecore.hexcasting.everbook.EverbookSyncPayload;
-
+import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.loading.FMLEnvironment;
+import net.neoforged.neoforge.client.event.InputEvent;
+import net.neoforged.neoforge.network.PacketDistributor;
+import software.bernie.geckolib.animatable.GeoItem;
+import software.bernie.geckolib.animatable.SingletonGeoAnimatable;
+import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.animation.AnimatableManager;
+import software.bernie.geckolib.animation.AnimationController;
+import software.bernie.geckolib.animation.RawAnimation;
+import software.bernie.geckolib.util.GeckoLibUtil;
 
+import java.util.ArrayList;
 import java.util.List;
 
-public class EverbookItem extends Item {
+public class EverbookItem extends Item implements GeoItem {
+
+  private static final RawAnimation ANIM_CLOSED_IDLE = RawAnimation.begin().thenLoop("closed_idle");
+  private static final RawAnimation ANIM_OPEN = RawAnimation.begin().thenPlay("open");
+  private static final RawAnimation ANIM_OPEN_IDLE = RawAnimation.begin().thenLoop("open_idle");
+  private static final RawAnimation ANIM_CLOSE = RawAnimation.begin().thenPlay("close");
+
+  private static long openAnimStartNanos = 0L;
+  private static long closeAnimStartNanos = 0L;
+
+  private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
+
+  public EverbookItem(Properties properties) {
+    super(properties.stacksTo(1).fireResistant());
+    SingletonGeoAnimatable.registerSyncedAnimatable(this);
+  }
+
+  @Override
+  public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
+    controllers.add(new AnimationController<>(this, "book_controller", 2, state -> {
+      net.minecraft.world.item.ItemDisplayContext perspective =
+        state.getData(software.bernie.geckolib.constant.DataTickets.ITEM_RENDER_PERSPECTIVE);
+      boolean inHand = perspective == net.minecraft.world.item.ItemDisplayContext.FIRST_PERSON_RIGHT_HAND
+        || perspective == net.minecraft.world.item.ItemDisplayContext.FIRST_PERSON_LEFT_HAND
+        || perspective == net.minecraft.world.item.ItemDisplayContext.THIRD_PERSON_RIGHT_HAND
+        || perspective == net.minecraft.world.item.ItemDisplayContext.THIRD_PERSON_LEFT_HAND;
+
+      boolean wantOpen = inHand && com.genesiz.hexacreatecore.hexcasting.everbook.EverbookSessionState.isActive();
+      var ctrl = state.getController();
+      long now = System.nanoTime();
+
+      if (wantOpen) {
+        if (!EverbookItemRenderer.wasHeldOpen()) {
+          EverbookItemRenderer.markWasHeldOpen(true);
+          openAnimStartNanos = now;
+          ctrl.forceAnimationReset();
+          return state.setAndContinue(ANIM_OPEN);
+        }
+        if (500_000_000L > (now - openAnimStartNanos)) {
+          return state.setAndContinue(ANIM_OPEN);
+        }
+        return state.setAndContinue(ANIM_OPEN_IDLE);
+      } else {
+        if (inHand && EverbookItemRenderer.consumeWasHeldOpen()) {
+          closeAnimStartNanos = now;
+          ctrl.forceAnimationReset();
+          return state.setAndContinue(ANIM_CLOSE);
+        }
+        if (inHand && closeAnimStartNanos != 0L && 334_000_000L > (now - closeAnimStartNanos)) {
+          return state.setAndContinue(ANIM_CLOSE);
+        }
+        if (inHand) {
+          closeAnimStartNanos = 0L;
+        }
+        return state.setAndContinue(ANIM_CLOSED_IDLE);
+      }
+    }));
+  }
+
+  @Override
+  public AnimatableInstanceCache getAnimatableInstanceCache() {
+    return this.cache;
+  }
 
   private static String toRoman(int num) {
     if (1 > num || num > 9999) return String.valueOf(num);
@@ -28,14 +110,10 @@ public class EverbookItem extends Item {
     return sb.toString();
   }
 
-  public EverbookItem(Properties properties) {
-    super(properties.stacksTo(1).fireResistant());
-  }
-
   @Override
   public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
-    if (net.neoforged.fml.loading.FMLEnvironment.dist.isClient()) {
-      if (!(net.minecraft.client.Minecraft.getInstance().screen instanceof net.minecraft.client.gui.screens.inventory.CreativeModeInventoryScreen)) {
+    if (FMLEnvironment.dist.isClient()) {
+      if (!(Minecraft.getInstance().screen instanceof CreativeModeInventoryScreen)) {
         tooltipComponents.add(Component.literal("HexaCreate"));
       }
     }
@@ -48,15 +126,15 @@ public class EverbookItem extends Item {
     tooltipComponents.add(Component.empty());
     tooltipComponents.add(
       Component.literal("One of the concepts of the world, myths said that it could weave imagination itself, on the back of the book is written \"The Creator's favorite\"")
-        .withStyle(net.minecraft.ChatFormatting.DARK_PURPLE, net.minecraft.ChatFormatting.ITALIC)
+        .withStyle(ChatFormatting.DARK_PURPLE, ChatFormatting.ITALIC)
     );
   }
 
-  @EventBusSubscriber(modid = com.genesiz.hexacreatecore.HexaCreateCore.MODID, value = net.neoforged.api.distmarker.Dist.CLIENT)
+  @EventBusSubscriber(modid = HexaCreateCore.MODID, value = Dist.CLIENT)
   public static final class ClientChapterScroll {
-    @net.neoforged.bus.api.SubscribeEvent(priority = net.neoforged.bus.api.EventPriority.HIGHEST)
-    public static void onSneakScrollChapter(net.neoforged.neoforge.client.event.InputEvent.MouseScrollingEvent event) {
-      net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    public static void onSneakScrollChapter(InputEvent.MouseScrollingEvent event) {
+      Minecraft mc = Minecraft.getInstance();
       if (mc.level == null || mc.player == null || mc.screen != null) return;
       if (!mc.player.isShiftKeyDown()) return;
 
@@ -68,26 +146,24 @@ public class EverbookItem extends Item {
       ItemStack bookStack = isOffhand ? mc.player.getOffhandItem() : mc.player.getMainHandItem();
       EverbookData.BookState state = EverbookData.read(bookStack);
 
-      java.util.List<EverbookData.BookPage> pages = new java.util.ArrayList<>(state.pages());
+      List<EverbookData.BookPage> pages = new ArrayList<>(state.pages());
       if (pages.isEmpty()) {
-        pages.add(new EverbookData.BookPage("Chapter I", new java.util.ArrayList<>()));
+        pages.add(new EverbookData.BookPage("Chapter I", new ArrayList<>()));
       }
 
       int current = Math.max(0, Math.min(state.activePage(), pages.size() - 1));
       int nextIdx = current;
 
       if (event.getScrollDeltaY() > 0.0D) {
-        // Scroll Up -> Previous Chapter
         if (current > 0) {
           nextIdx = current - 1;
         }
       } else if (0.0D > event.getScrollDeltaY()) {
-        // Scroll Down -> Next Chapter (auto-creates a new chapter if scrolling past the last non-empty chapter)
         if (pages.size() - 1 > current) {
           nextIdx = current + 1;
         } else if (!pages.get(current).entries().isEmpty() || pages.size() == 1) {
           String nextTitle = "Chapter " + toRoman(pages.size() + 1);
-          pages.add(new EverbookData.BookPage(nextTitle, new java.util.ArrayList<>()));
+          pages.add(new EverbookData.BookPage(nextTitle, new ArrayList<>()));
           nextIdx = pages.size() - 1;
         }
       }
@@ -95,12 +171,12 @@ public class EverbookItem extends Item {
       if (nextIdx != current || pages.size() != state.pages().size()) {
         EverbookData.BookState updated = new EverbookData.BookState(nextIdx, pages);
         EverbookData.write(bookStack, updated);
-        net.neoforged.neoforge.network.PacketDistributor.sendToServer(
+        PacketDistributor.sendToServer(
           new EverbookSyncPayload(isOffhand, "SWITCH_CHAPTER", updated.toNbt())
         );
 
         EverbookData.BookPage activePage = updated.currentPage();
-        mc.player.playNotifySound(net.minecraft.sounds.SoundEvents.BOOK_PAGE_TURN, net.minecraft.sounds.SoundSource.PLAYERS, 0.85f, 1.1f);
+        mc.player.playNotifySound(SoundEvents.BOOK_PAGE_TURN, SoundSource.PLAYERS, 0.85f, 1.1f);
         com.genesiz.hexacreatecore.threedified.ThreeDifiedNotificationHud.show(
           "§d[Everbook] §f" + activePage.title() + " §8(" + (nextIdx + 1) + "/" + pages.size() + " • " + activePage.entries().size() + " Iotas)"
         );

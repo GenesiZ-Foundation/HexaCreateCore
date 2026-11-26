@@ -1,3 +1,6 @@
+/*
+ * THIS PART OF THE CODE IS MEANT FOR DEVELOPERS
+ * */
 package com.genesiz.hexacreatecore.threedified.shaders.hooks;
 
 import com.genesiz.hexacreatecore.threedified.RawGeometry;
@@ -11,11 +14,20 @@ import org.joml.Matrix4f;
 
 import java.util.List;
 
+/* FULL BREAKDOWN:
+ *
+ * -> Fluent builder hook that shades subdivided 3D polyhedron faces using a ShaderDictionary
+ *
+ * [.bind()] is self explanatory
+ * [.opacity()/.rings()] fluent setters for alpha multiplier and radial subdivisions
+ * [.renderFaces()] subdivides and renders each polygon face into RawGeometry.DIALOGUE_SOLID
+ *
+ * */
 public final class PolyhedronFaceShaderHook {
 
-  private final ShaderDictionary dictionary;
-  private float alphaMultiplier = 0.36f;
-  private int subdivisions = 4;
+  private final  ShaderDictionary  dictionary;
+  private        float             alphaMultiplier = 0.36f;
+  private        int               subdivisions = 4;
 
   private PolyhedronFaceShaderHook(ShaderDictionary dictionary) {
     this.dictionary = dictionary;

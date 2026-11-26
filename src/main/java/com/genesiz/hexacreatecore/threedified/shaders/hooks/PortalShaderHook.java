@@ -1,3 +1,6 @@
+/*
+ * THIS PART OF THE CODE IS MEANT FOR DEVELOPERS
+ * */
 package com.genesiz.hexacreatecore.threedified.shaders.hooks;
 
 import com.genesiz.hexacreatecore.threedified.RawGeometry;
@@ -7,19 +10,29 @@ import com.genesiz.hexacreatecore.threedified.shaders.renderers.SuperellipsePort
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.renderer.MultiBufferSource;
 
+/* FULL BREAKDOWN:
+ *
+ * -> Fluent builder hook for rendering animated 2D superellipse portals or 3D volumetric singularities
+ *
+ * [.bind()] creates a hook bound to one or more ShaderDictionaries (composited automatically)
+ * [.at()/.size()/.depth()/.resolution()/.circular()/.flushBatch()] fluent configuration setters
+ * [.render()] renders a flat 2D superellipse portal
+ * [.render3D()] renders an extruded 3D volumetric singularity
+ *
+ * */
 public final class PortalShaderHook {
 
-  private final ShaderDictionary dictionary;
-  private float centerX = 0.0f;
-  private float centerY = 0.0f;
-  private float halfWidth = 1.0f;
-  private float halfHeight = 0.65f;
-  private int angularSegments = 64;
-  private int radialRings = 12;
-  private boolean flushAfterRender = false;
-  private float centerZ = 0.0f;
-  private float halfDepth = 0.0f;
-  private boolean circular = false;
+  private final  ShaderDictionary  dictionary;
+  private        float             centerX = 0.0f;
+  private        float             centerY = 0.0f;
+  private        float             halfWidth = 1.0f;
+  private        float             halfHeight = 0.65f;
+  private        int               angularSegments = 64;
+  private        int               radialRings = 12;
+  private        boolean           flushAfterRender = false;
+  private        float             centerZ = 0.0f;
+  private        float             halfDepth = 0.0f;
+  private        boolean           circular = false;
 
 
   public PortalShaderHook circular(boolean circular) {

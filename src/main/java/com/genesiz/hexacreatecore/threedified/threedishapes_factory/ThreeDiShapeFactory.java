@@ -1,5 +1,22 @@
+/*
+ * THIS PART OF THE CODE IS MEANT FOR DEVELOPERS
+ * */
 package com.genesiz.hexacreatecore.threedified.threedishapes_factory;
 
+/* FULL BREAKDOWN:
+ *
+ * -> Factory builders for preconfigured ShapeBlueprint presets attached via ThreeDiShapeHooks
+ *
+ * [.cornerBrackets()] is self explanatory
+ * [.floatingCrystal()] is self explanatory
+ * [.arcaneRing()] is self explanatory
+ * [.sideWings()] is self explanatory
+ * [.kingdomCrown()] is self explanatory
+ * [.interlacedChains()] is self explanatory
+ * [.seraphEye()] is self explanatory
+ * [.seraphWings()] is self explanatory
+ *
+ * */
 public final class ThreeDiShapeFactory {
 
   private ThreeDiShapeFactory() {}

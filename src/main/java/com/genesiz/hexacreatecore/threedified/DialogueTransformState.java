@@ -1,16 +1,27 @@
+/*
+ * THIS PART OF THE CODE IS MEANT FOR DEVELOPERS
+ * */
 package com.genesiz.hexacreatecore.threedified;
 
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 
+/* FULL BREAKDOWN:
+ *
+ * -> Smoothly tracks and interpolates an entity's 3D dialogue anchor position & facing yaw
+ *
+ * [.update()] computes target position with orbit offset toward the viewer, exponentially smooths
+ *   currentX/Y/Z and currentYaw, and writes camera-relative coords into renderX/Y/Z
+ *
+ * */
 public class DialogueTransformState {
-  public double currentX, currentY, currentZ;
-  public float currentYaw;
-  private boolean initialized = false;
+  public   double   currentX, currentY, currentZ;
+  public   float    currentYaw;
+  private  boolean  initialized = false;
 
   // Reusable output fields (avoids returning new Vec3 or record allocations)
-  public double renderX, renderY, renderZ;
+  public   double   renderX, renderY, renderZ;
 
   public void update(Entity entity, float partialTick, double orbit, Vec3 facing, Vec3 camera, float targetYaw, float deltaSeconds) {
     double entX = Mth.lerp(partialTick, entity.xo, entity.getX());

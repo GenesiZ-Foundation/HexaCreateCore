@@ -251,6 +251,13 @@ public final class DialogueNetworking {
         com.genesiz.hexacreatecore.bossrush.dragon.EndermanAfterImagePayload.STREAM_CODEC.cast(),
         com.genesiz.hexacreatecore.bossrush.dragon.EndermanAfterImagePayload::handleClient
       );
+
+      registrar.playToClient(
+        com.genesiz.hexacreatecore.hexcasting.everbook.EverbookStatePayload.TYPE,
+        com.genesiz.hexacreatecore.hexcasting.everbook.EverbookStatePayload.STREAM_CODEC.cast(),
+        com.genesiz.hexacreatecore.hexcasting.everbook.EverbookStatePayload::handleClient
+      );
+
     }
   }
 }

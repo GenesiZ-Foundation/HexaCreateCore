@@ -1,3 +1,6 @@
+/*
+ * THIS PART OF THE CODE IS MEANT FOR DEVELOPERS
+ * */
 package com.genesiz.hexacreatecore.threedified.tooltip;
 
 import com.genesiz.hexacreatecore.threedified.text.TextEffectStyle;
@@ -14,98 +17,105 @@ import net.neoforged.neoforge.common.Tags;
 import java.util.List;
 import java.util.Locale;
 
+/* FULL BREAKDOWN:
+ *
+ * -> Automatic fallback tooltip style classifier when no explicit JSON rule matches in TooltipStyleRegistry
+ *
+ * [.classify()] inspects an ItemStack's item class, tags, and ID to pick a category ItemTooltipConfig
+ *
+ * */
 public final class TooltipCategoryClassifier {
 
-  private static final int DEFAULT_BG = 0xEE0D0A14;
+  private static final  int              DEFAULT_BG = 0xEE0D0A14;
 
   // 1. WOOD
-  private static final ItemTooltipConfig WOOD_CFG = new ItemTooltipConfig(
+  private static final  ItemTooltipConfig  WOOD_CFG = new ItemTooltipConfig(
     new TextEffectStyle(List.of(0xFF4A3219, 0xFF7D5A32, 0xFFB8945E), List.of(0.0f, 0.5f, 1.0f),
       0.0f, 0.15f, 0.25f, TextEffectStyle.BackdropMode.NONE, 0, 0, false),
     null, 0xFF5A4020, DEFAULT_BG
   );
 
   // 2. STONE (excluding netherrack/end_stone)
-  private static final ItemTooltipConfig STONE_CFG = new ItemTooltipConfig(
+  private static final  ItemTooltipConfig  STONE_CFG = new ItemTooltipConfig(
     new TextEffectStyle(List.of(0xFF9A9A9A, 0xFF6B6B70, 0xFF3E3E44), List.of(0.0f, 0.5f, 1.0f),
       0.0f, 0.0f, 0.0f, TextEffectStyle.BackdropMode.NONE, 0, 0, false),
     null, 0xFF64646E, DEFAULT_BG
   );
 
   // 3. GENERIC INGREDIENTS
-  private static final ItemTooltipConfig INGREDIENT_CFG = new ItemTooltipConfig(
+  private static final  ItemTooltipConfig  INGREDIENT_CFG = new ItemTooltipConfig(
     new TextEffectStyle(List.of(0xFFFFFFFF, 0xFFD4D4D8, 0xFFA1A1AA), List.of(0.0f, 0.5f, 1.0f),
       0.0f, 0.0f, 0.0f, TextEffectStyle.BackdropMode.NONE, 0, 0, false),
     null, 0xFFB8B8C2, DEFAULT_BG
   );
 
   // 4. INGOTS
-  private static final ItemTooltipConfig INGOT_CFG = new ItemTooltipConfig(
+  private static final  ItemTooltipConfig  INGOT_CFG = new ItemTooltipConfig(
     new TextEffectStyle(List.of(0xFFF4F4F5, 0xFFD8D8DC, 0xFFC87544, 0xFFE39464, 0xFFF4F4F5), List.of(0.0f, 0.25f, 0.5f, 0.75f, 1.0f),
       0.75f, 0.0f, 0.0f, TextEffectStyle.BackdropMode.NONE, 0, 0, true),
     null, 0xFF9A6B14, DEFAULT_BG
   );
 
   // 5. GEMS
-  private static final ItemTooltipConfig GEM_CFG = new ItemTooltipConfig(
+  private static final  ItemTooltipConfig  GEM_CFG = new ItemTooltipConfig(
     new TextEffectStyle(List.of(0xFF5CE6E6, 0xFF28B8D8, 0xFF1E48A8, 0xFF5CE6E6), List.of(0.0f, 0.35f, 0.75f, 1.0f),
       1.1f, 0.22f, 0.28f, TextEffectStyle.BackdropMode.NONE, 0, 0, true),
     null, 0xFF1B7A88, DEFAULT_BG
   );
 
   // 6. AMETHYST & HEXCASTING STAFFS
-  private static final ItemTooltipConfig AMETHYST_CFG = new ItemTooltipConfig(
+  private static final  ItemTooltipConfig  AMETHYST_CFG = new ItemTooltipConfig(
     new TextEffectStyle(List.of(0xFFFFFFFF, 0xFFE9D5FF, 0xFFA855F7, 0xFFFFFFFF), List.of(0.0f, 0.35f, 0.7f, 1.0f),
       1.6f, 0.25f, 0.28f, TextEffectStyle.BackdropMode.PRISMATIC_OUTLINE, 0xFFFF66CC, 0xFF9333EA, true),
     null, 0xFF9333EA, 0xEE180A26, "amethyst"
   );
 
   // 7. FUNCTIONAL BLOCKS
-  private static final ItemTooltipConfig FUNCTIONAL_CFG = new ItemTooltipConfig(
+  private static final  ItemTooltipConfig  FUNCTIONAL_CFG = new ItemTooltipConfig(
     new TextEffectStyle(List.of(0xFFFFFFFF, 0xFFD1D5DB, 0xFF8E929B, 0xFFFFFFFF), List.of(0.0f, 0.35f, 0.7f, 1.0f),
       1.2f, 0.16f, 0.26f, TextEffectStyle.BackdropMode.NONE, 0, 0, false),
     null, 0xFF8C8C94, 0xEE1C120A
   );
 
   // 8. REDSTONE (30deg angled gradient)
-  private static final ItemTooltipConfig REDSTONE_CFG = new ItemTooltipConfig(
+  private static final  ItemTooltipConfig  REDSTONE_CFG = new ItemTooltipConfig(
     new TextEffectStyle(List.of(0xFFFF1E1E, 0xFFFF5533, 0xFF8F6638, 0xFF6B4A24, 0xFFFF1E1E), List.of(0.0f, 0.30f, 0.55f, 0.80f, 1.0f),
       2.6f, 0.45f, 0.34f, TextEffectStyle.BackdropMode.NONE, 0, 0, false, false, false, 30.0f),
     null, 0xFFDC2626, 0xEE1C0606
   );
 
   // 9. WEAPONS
-  private static final ItemTooltipConfig WEAPON_CFG = new ItemTooltipConfig(
+  private static final  ItemTooltipConfig  WEAPON_CFG = new ItemTooltipConfig(
     new TextEffectStyle(List.of(0xFFF4F4F5, 0xFFA8A29E, 0xFF574B47, 0xFF3B3230, 0xFFF4F4F5), List.of(0.0f, 0.30f, 0.60f, 0.82f, 1.0f),
       0.85f, 0.32f, 0.22f, TextEffectStyle.BackdropMode.PRISMATIC_OUTLINE, 0xFFE4E4E7, 0xFF786862, true),
     null, 0xFF7A6860, 0xF2060608, "weapon"
   );
 
   // 10. ARMOR
-  private static final ItemTooltipConfig ARMOR_CFG = new ItemTooltipConfig(
+  private static final  ItemTooltipConfig  ARMOR_CFG = new ItemTooltipConfig(
     new TextEffectStyle(List.of(0xFF8C5332, 0xFFA86B44, 0xFF38BDF8, 0xFF67E8F9, 0xFF8C5332), List.of(0.0f, 0.28f, 0.58f, 0.80f, 1.0f),
       0.90f, 0.0f, 0.0f, TextEffectStyle.BackdropMode.GLOW_BLOOM, 0x6638BDF8, 0x448C5332, false),
     null, 0xFF8C5332, DEFAULT_BG
   );
 
   // 11. TOOLS
-  private static final ItemTooltipConfig TOOL_CFG = new ItemTooltipConfig(
+  private static final  ItemTooltipConfig  TOOL_CFG = new ItemTooltipConfig(
     new TextEffectStyle(List.of(0xFF9CA3AF, 0xFF6B7280, 0xFF4B423F, 0xFF362F2D, 0xFF9CA3AF), List.of(0.0f, 0.30f, 0.60f, 0.82f, 1.0f),
       0.65f, 0.0f, 0.0f, TextEffectStyle.BackdropMode.GLOW_BLOOM, 0x559CA3AF, 0x336B7280, true),
     null, 0xFF85858D, DEFAULT_BG
   );
 
   // 12. SPAWNERS & SPAWN EGGS
-  private static final ItemTooltipConfig SPAWNER_CFG = new ItemTooltipConfig(
+  private static final  ItemTooltipConfig  SPAWNER_CFG = new ItemTooltipConfig(
     new TextEffectStyle(List.of(0xFFFF7A1A, 0xFFFFB347, 0xFF2563EB, 0xFF38BDF8, 0xFFFF7A1A), List.of(0.0f, 0.28f, 0.55f, 0.80f, 1.0f),
       2.8f, 0.25f, 0.30f, TextEffectStyle.BackdropMode.PRISMATIC_OUTLINE, 0xFFFFFFFF, 0xFF38BDF8, false),
     null, 0xFF2563EB, 0xEE060F24, "spawner"
   );
 
 
-  private static final TagKey<Item> TAG_INGOTS = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath("c", "ingots"));
-  private static final TagKey<Item> TAG_GEMS = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath("c", "gems"));
-  private static final TagKey<Item> TAG_REDSTONE = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath("c", "dusts/redstone"));
+  private static final  TagKey<Item>       TAG_INGOTS = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath("c", "ingots"));
+  private static final  TagKey<Item>       TAG_GEMS = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath("c", "gems"));
+  private static final  TagKey<Item>       TAG_REDSTONE = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath("c", "dusts/redstone"));
 
   private TooltipCategoryClassifier() {}
 

@@ -1,5 +1,15 @@
+/*
+ * THIS PART OF THE CODE IS MEANT FOR DEVELOPERS
+ * */
 package com.genesiz.hexacreatecore.threedified.threedishapes_factory;
 
+/* FULL BREAKDOWN:
+ *
+ * -> Immutable blueprint record describing a 3D decorative UI shape (rendererId, anchor, transform, colors)
+ *
+ * [.withColors()] returns a copy with updated primaryColor and secondaryColor
+ *
+ * */
 public record ShapeBlueprint(
   String rendererId,
   ShapeAnchor anchor,

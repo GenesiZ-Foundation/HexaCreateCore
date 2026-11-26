@@ -1,3 +1,6 @@
+/*
+ * THIS PART OF THE CODE IS MEANT FOR DEVELOPERS
+ * */
 package com.genesiz.hexacreatecore.threedified;
 
 import com.genesiz.hexacreatecore.HexaCreateCore;
@@ -20,20 +23,29 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.List;
 
+/* FULL BREAKDOWN:
+ *
+ * -> Slide-in HUD toast renderer positioned above the XP bar for ThreeDified notifications
+ *
+ * [.show()] triggers or refreshes a client-side toast (with inferred or explicit borderColor & durationTicks)
+ * [.sendTo()] sends a ThreeDifiedNotifyPayload from the server to display the toast on a specific player's client
+ * [.onRenderGui()] animates slide-in/slide-out and draws the toast via RawGeometry.drawDialogueNode
+ *
+ * */
 @EventBusSubscriber(modid = HexaCreateCore.MODID, value = Dist.CLIENT)
 public final class ThreeDifiedNotificationHud {
 
-  private static final long SLIDE_MS = 260L;
+  private static final  long                         SLIDE_MS = 260L;
 
-  private static String activeMessage = "";
-  private static int activeBorderColor = 0xFF00FFAA;
-  private static long startMs = 0L;
-  private static long durationMs = 2500L;
+  private static        String                       activeMessage = "";
+  private static        int                          activeBorderColor = 0xFF00FFAA;
+  private static        long                         startMs = 0L;
+  private static        long                         durationMs = 2500L;
 
-  private static String cachedText = "";
-  private static List<FormattedCharSequence> cachedLines = List.of();
-  private static float cachedWidth = 0.0f;
-  private static float cachedHeight = 0.0f;
+  private static        String                       cachedText = "";
+  private static        List<FormattedCharSequence>  cachedLines = List.of();
+  private static        float                        cachedWidth = 0.0f;
+  private static        float                        cachedHeight = 0.0f;
 
   private ThreeDifiedNotificationHud() {}
 

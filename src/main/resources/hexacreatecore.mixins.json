@@ -15,7 +15,8 @@
     "SoundEngineMixin",
     "BossHealthOverlayMixin",
     "ClientLevelMixin",
-    "ItemPropertiesMixin"
+    "ItemPropertiesMixin",
+    "HumanoidModelMixin"
   ],
   "injectors": {
     "defaultRequire": 1

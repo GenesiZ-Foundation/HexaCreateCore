@@ -11,6 +11,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
+import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 public record EverbookSyncPayload(
@@ -44,7 +45,17 @@ public record EverbookSyncPayload(
 
       EverbookData.BookState state = EverbookData.BookState.fromNbt(payload.bookNbt());
       EverbookData.write(bookStack, state);
-      if ("INSCRIBE_OFFHAND".equals(payload.action())) {
+
+      if ("OPEN".equals(payload.action()) || "CLOSE".equals(payload.action())) {
+        boolean open = "OPEN".equals(payload.action());
+        if (bookStack.getItem() instanceof EverbookItem everbook) {
+          long animId = software.bernie.geckolib.animatable.GeoItem.getOrAssignId(bookStack, sp.serverLevel());
+          everbook.triggerAnim(sp, animId, "book_controller", open ? "open" : "close");
+        }
+        PacketDistributor.sendToPlayersTrackingEntityAndSelf(
+          sp, new EverbookStatePayload(sp.getUUID(), open)
+        );
+      } else if ("INSCRIBE_OFFHAND".equals(payload.action())) {
         InteractionHand targetHand = (hand == InteractionHand.MAIN_HAND) ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND;
         EverbookHexWriter.inscribeToHexItem(sp, sp.getItemInHand(targetHand), state.currentPage().entries());
       }

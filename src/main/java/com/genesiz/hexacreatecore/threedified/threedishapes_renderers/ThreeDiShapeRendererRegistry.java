@@ -1,3 +1,6 @@
+/*
+ * THIS PART OF THE CODE IS MEANT FOR DEVELOPERS
+ * */
 package com.genesiz.hexacreatecore.threedified.threedishapes_renderers;
 
 import com.genesiz.hexacreatecore.threedified.RawGeometry;
@@ -12,11 +15,19 @@ import org.joml.Matrix4f;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+/* FULL BREAKDOWN:
+ *
+ * -> Registry mapping ShapeBlueprint rendererId strings to IShapeRenderer implementations
+ *
+ * [.register()] is self explanatory
+ * [.renderBlueprint()] dispatches a ShapeBlueprint to its matching IShapeRenderer
+ *
+ * */
 public final class ThreeDiShapeRendererRegistry {
-  private static int[][] cachedSolarWingPixels = null;
-  private static boolean triedLoadingSolarWing = false;
+  private static        int[][]                     cachedSolarWingPixels = null;
+  private static        boolean                     triedLoadingSolarWing = false;
 
-  private static final Map<String, IShapeRenderer> RENDERERS = new ConcurrentHashMap<>();
+  private static final  Map<String, IShapeRenderer>  RENDERERS = new ConcurrentHashMap<>();
 
   static {
     register("corner_brackets", ThreeDiShapeRendererRegistry::renderCornerBrackets);

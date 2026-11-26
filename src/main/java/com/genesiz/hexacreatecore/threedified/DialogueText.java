@@ -8,6 +8,14 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
 import java.util.List;
 
+/* FULL BREAKDOWN:
+ *
+ * -> Immutable snapshot holding typewriter-sliced text lines and fitted box dimensions
+ *
+ * [.calculate()] wraps fullText to maxPixelWidth, measures boxWidth/boxHeight,
+ *   and slices visibleChars for typewriter reveal
+ *
+ * */
 public record DialogueText(List<FormattedCharSequence> lines, float boxWidth, float boxHeight) {
 
   public static DialogueText calculate(Font font, String fullText, int maxPixelWidth, int visibleChars) {

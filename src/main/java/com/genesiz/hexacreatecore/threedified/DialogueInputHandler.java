@@ -12,11 +12,21 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 
+/* FULL BREAKDOWN:
+ *
+ * -> Client input router for 3D dialogue option clicks (left = inspect, right = select/advance)
+ *
+ * [.onClientTick()] handles right-click edge detection so vanilla entity interaction can be suppressed
+ * [.onInteractionKey()] dispatches left/right clicks to the hovered DialogueNode on ThreeDified entities
+ * [.onEntityInteract()] cancels vanilla entity interaction while hovering a dialogue option
+ * [.onEntityInteractSpecific()] cancels specific entity interaction while hovering any dialogue option
+ *
+ * */
 // LEFT/RIGHT CLICK HANDLER
 @EventBusSubscriber(modid = "hexacreatecore", value = Dist.CLIENT)
 public final class DialogueInputHandler {
-  private static boolean wasUseDown = false;
-  private static boolean consumedUseThisTick = false;
+  private static  boolean  wasUseDown = false;
+  private static  boolean  consumedUseThisTick = false;
 
   @SubscribeEvent
   public static void onClientTick(ClientTickEvent.Pre event) {

@@ -1,5 +1,15 @@
+/*
+ * THIS PART OF THE CODE IS MEANT FOR DEVELOPERS
+ * */
 package com.genesiz.hexacreatecore.threedified.volumetrics.dictionaries;
 
+/* FULL BREAKDOWN:
+ *
+ * -> Functional color-sampling interface driving VolumetricHook volumetric shell layers
+ *
+ * [.sampleShellArgb()] samples the ARGB color at normalized [-1..1] coordinates, shellT [0..1], and timeSeconds
+ *
+ * */
 @FunctionalInterface
 public interface VolumetricDictionary {
   /**
