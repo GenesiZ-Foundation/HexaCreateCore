@@ -250,6 +250,9 @@ public class EverbookItemRenderer extends GeoItemRenderer<EverbookItem> {
           PoseStack poseStack, LocalPlayer player, HumanoidArm arm,
           ItemStack itemInHand, float partialTick, float equipProcess, float swingProcess
         ) {
+          if (PunchyEverbookCompat.isPunchyControllingBook()) {
+            return false;
+          }
           float openProg = EverbookPlayerAnimController.getLocalOpenProgress(partialTick);
           if (0.001f >= openProg) {
             return false;

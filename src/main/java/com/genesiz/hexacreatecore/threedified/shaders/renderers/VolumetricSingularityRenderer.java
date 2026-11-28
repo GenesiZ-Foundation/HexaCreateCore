@@ -5,7 +5,6 @@ import com.genesiz.hexacreatecore.threedified.shaders.dictionaries.ShaderDiction
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
-import net.minecraft.util.Mth;
 import org.joml.Matrix4f;
 
 public final class VolumetricSingularityRenderer {
@@ -26,8 +25,12 @@ public final class VolumetricSingularityRenderer {
     int radialRings,
     ShaderDictionary dictionary
   ) {
-    int segs = Math.max(16, angularSegments);
-    int rings = Math.max(6, radialRings);
+    float radius = Math.max(halfWidth, Math.max(halfHeight, halfDepth));
+    float lod = com.genesiz.hexacreatecore.threedified.ThreedifiedLod.computeScreenLod(ps.last().pose(), centerX, centerY, centerZ, radius);
+    if (lod <= 0.0f) return;
+
+    int segs = com.genesiz.hexacreatecore.threedified.ThreedifiedLod.scaleSegments(Math.max(10, angularSegments), 8, lod);
+    int rings = com.genesiz.hexacreatecore.threedified.ThreedifiedLod.scaleSegments(Math.max(3, radialRings), 3, lod);
 
     // 1. Suspended 3D Dark Singularity Core Cube (Pixel Gun 3D inspired rotating dark-matter core)
     float coreSize = Math.min(halfWidth, Math.min(halfHeight, halfDepth)) * 0.68f;

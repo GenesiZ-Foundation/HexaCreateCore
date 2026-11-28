@@ -29,8 +29,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import org.joml.Matrix4f;
-
 @EventBusSubscriber(modid = "hexacreatecore", value = Dist.CLIENT)
 public final class DragonArenaVisualRenderer {
 
@@ -195,6 +193,7 @@ public final class DragonArenaVisualRenderer {
     // 5. Phase 2 Hexagonal Stomp Shields & Ground Dragon Plasma Patches
     DragonHexShieldManager.renderAll(ps, buf, cam, partialTick, timeSec);
     DragonPlasmaManager.renderAll(ps, buf, mc.level, cam, partialTick, timeSec);
+    DragonGeyserManager.renderAll(ps, buf, mc.level, cam, partialTick, timeSec);
 
     // 6. F3+B Debug Overlay: DragonSpatialSelector 3 Range Rings & 4 Direction Cones
     if (mc.getEntityRenderDispatcher().shouldRenderHitBoxes()) {

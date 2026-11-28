@@ -74,6 +74,7 @@ public abstract class EnderDragonMixin extends Mob implements IMhEnderDragon {
   private Vec3 hexacreatecore$arenaOrigin = new Vec3(0.0D, 64.0D, 0.0D);
   @Unique
   private boolean hexacreatecore$originInitialized = false;
+  @Unique private int hexacreatecore$lastActionTick = 0;
 
   @Unique
   private static final RawAnimation POSE_NEUTRAL_GROUND = RawAnimation.begin().thenPlayAndHold("neutral_ground");
@@ -167,7 +168,7 @@ public abstract class EnderDragonMixin extends Mob implements IMhEnderDragon {
     controllers.add(
       new AnimationController<>(this, "wings_overlay", 5, this::hexacreatecore$wingsPredicate),
       new AnimationController<>(this, "mouth_overlay", 3, this::hexacreatecore$mouthPredicate),
-      new AnimationController<>(this, "stance", 0, this::hexacreatecore$stancePredicate)
+      new AnimationController<>(this, "stance", 3, this::hexacreatecore$stancePredicate)
     );
   }
 
@@ -177,13 +178,14 @@ public abstract class EnderDragonMixin extends Mob implements IMhEnderDragon {
     DragonAction action = hexacreatecore$getActiveAction();
     state.getController().setAnimationSpeed(1.0D);
 
-    if (action != hexacreatecore$lastStanceAction) {
-      boolean seamlessRoarBlend = (hexacreatecore$lastStanceAction == DragonAction.LANDING && action == DragonAction.SAFI_ROAR);
+    int actionTick = hexacreatecore$getActionTick();
+    if (action != hexacreatecore$lastStanceAction || (action != DragonAction.NONE && actionTick <= 1 && hexacreatecore$lastActionTick > 2)) {
       hexacreatecore$lastStanceAction = action;
-      if (!seamlessRoarBlend) {
+      if (action == hexacreatecore$lastStanceAction && action != DragonAction.NONE && actionTick <= 1 && hexacreatecore$lastActionTick > 2) {
         state.getController().forceAnimationReset();
       }
     }
+    hexacreatecore$lastActionTick = actionTick;
 
     if (action == DragonAction.CUSTOM_CLIP) {
       String clip = hexacreatecore$getCustomClip();

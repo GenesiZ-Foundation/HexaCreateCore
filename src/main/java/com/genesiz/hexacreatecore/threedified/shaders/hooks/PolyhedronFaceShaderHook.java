@@ -50,6 +50,9 @@ public final class PolyhedronFaceShaderHook {
   public void renderFaces(PoseStack poseStack, MultiBufferSource bufferSource, List<List<Vec3>> faces, float radius, float timeSeconds) {
     VertexConsumer vc = bufferSource.getBuffer(RawGeometry.DIALOGUE_SOLID);
     Matrix4f mat = poseStack.last().pose();
+    float lod = com.genesiz.hexacreatecore.threedified.ThreedifiedLod.computeScreenLod(mat, 0.0f, 0.0f, 0.0f, radius);
+    if (lod <= 0.0f) return;
+    int activeSubdivs = com.genesiz.hexacreatecore.threedified.ThreedifiedLod.scaleSegments(subdivisions, 1, lod);
 
     for (List<Vec3> face : faces) {
       int sides = face.size();
@@ -63,9 +66,9 @@ public final class PolyhedronFaceShaderHook {
         Vec3 v0 = face.get(s);
         Vec3 v1 = face.get((s + 1) % sides);
 
-        for (int r = 0; subdivisions > r; r++) {
-          float t0 = (float) r / subdivisions;
-          float t1 = (float) (r + 1) / subdivisions;
+        for (int r = 0; activeSubdivs > r; r++) {
+          float t0 = (float) r / activeSubdivs;
+          float t1 = (float) (r + 1) / activeSubdivs;
 
           Vec3 p00 = center.lerp(v0, t0).scale(radius);
           Vec3 p10 = center.lerp(v1, t0).scale(radius);

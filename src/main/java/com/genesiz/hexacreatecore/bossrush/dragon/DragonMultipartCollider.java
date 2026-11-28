@@ -206,9 +206,14 @@ public final class DragonMultipartCollider {
 
   public static PartRig getOrCreateRig(EnderDragon dragon) {
     Map<UUID, PartRig> map = dragon.level().isClientSide() ? CLIENT_RIGS : SERVER_RIGS;
-    PartRig rig = map.computeIfAbsent(dragon.getUUID(), id -> new PartRig(dragon));
+    PartRig rig = map.get(dragon.getUUID());
+    // Rebuild if missing OR if the dragon entity / dimension instance was recreated after dimension change / respawn
+    if (rig == null || rig.all[0].getParent() != dragon || rig.all[0].level() != dragon.level()) {
+      rig = new PartRig(dragon);
+      map.put(dragon.getUUID(), rig);
+    }
     int baseId = dragon.getId();
-    if (baseId > 0 && dragon.tickCount == 0 && rig.all[0].getId() != baseId + 1) {
+    if (baseId > 0 && rig.all[0].getId() != baseId + 1) {
       for (int i = 0; rig.all.length > i; i++) {
         rig.all[i].setId(baseId + i + 1);
       }
@@ -321,6 +326,7 @@ public final class DragonMultipartCollider {
     }
 
     PartRig rig = getOrCreateRig(dragon);
+    ensurePartsRegistered(dragon.level(), rig);
     Vec3 origin = dragon.position();
     float bodyYaw = dragon.yBodyRot;
 
@@ -436,23 +442,21 @@ public final class DragonMultipartCollider {
     syncSpanBox(rig.neckSpan, n0World, n5World, 0.625f);
 
     if (rLegRWorld != null) {
-      syncSpanBox(rig.rearLegSpanR, rLegRWorld, rrWorld.add(0.0D, 0.18D, 0.0D), 0.85f);
+      syncLimbSpanBox(rig.rearLegSpanR, rLegRWorld, rrWorld.add(0.0D, 0.19D, 0.0D), 0.85f);
     }
     if (rLegLWorld != null) {
-      syncSpanBox(rig.rearLegSpanL, rLegLWorld, rlWorld.add(0.0D, 0.18D, 0.0D), 0.85f);
+      syncLimbSpanBox(rig.rearLegSpanL, rLegLWorld, rlWorld.add(0.0D, 0.19D, 0.0D), 0.85f);
     }
     if (fLegRWorld != null) {
-      syncSpanBox(rig.frontLegSpanR, fLegRWorld, frWorld.add(0.0D, 0.12D, 0.0D), 0.50f);
+      syncLimbSpanBox(rig.frontLegSpanR, fLegRWorld, frWorld.add(0.0D, 0.13D, 0.0D), 0.50f);
     }
     if (fLegLWorld != null) {
-      syncSpanBox(rig.frontLegSpanL, fLegLWorld, flWorld.add(0.0D, 0.12D, 0.0D), 0.50f);
+      syncLimbSpanBox(rig.frontLegSpanL, fLegLWorld, flWorld.add(0.0D, 0.13D, 0.0D), 0.50f);
     }
 
     syncSpanBox(rig.tailBase, t0World, t6World, 0.625f);
     syncSpanBox(rig.tailTip,  t6World, t12World, 0.625f);
   }
-
-
 
   private static Vec3 boneModelPos(MhEnderDragonModel<?> model, String boneName) {
     GeoBone bone = model.getBone(boneName).orElse(null);
@@ -529,5 +533,14 @@ public final class DragonMultipartCollider {
       }
     } catch (Throwable ignored) {}
   }
+
+  private static void syncLimbSpanBox(BonePart part, Vec3 topSocket, Vec3 ankleTop, float horizThickness) {
+    Vec3 mid = topSocket.lerp(ankleTop, 0.5D);
+    float sizeX = (float) Math.abs(ankleTop.x - topSocket.x) + horizThickness;
+    float sizeY = Math.max(0.25f, (float) Math.abs(ankleTop.y - topSocket.y));
+    float sizeZ = (float) Math.abs(ankleTop.z - topSocket.z) + horizThickness;
+    part.syncBox(mid, sizeX, sizeY, sizeZ);
+  }
+
 
 }

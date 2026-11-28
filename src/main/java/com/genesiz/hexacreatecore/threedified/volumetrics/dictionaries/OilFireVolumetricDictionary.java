@@ -13,6 +13,15 @@ public final class OilFireVolumetricDictionary implements VolumetricDictionary {
     0.90f
   );
 
+  // Brighter erupting geyser plasma: deep royal purple core -> vivid amethyst -> incandescent lavender-white tips
+  public static final OilFireVolumetricDictionary GEYSER_PLASMA = new OilFireVolumetricDictionary(
+    0xFF3B0764,
+    0xFFA855F7,
+    0xFFF5D0FE,
+    0.96f
+  );
+
+
   private final int darkBase;
   private final int midPurple;
   private final int brightTip;

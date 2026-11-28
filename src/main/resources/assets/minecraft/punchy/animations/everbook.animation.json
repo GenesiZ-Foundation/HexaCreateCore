@@ -1,0 +1,18 @@
+{
+  "item": {
+    "hexacreatecore:everbook": {
+      "customAnimation": [
+        {
+          "type": "idle",
+          "name": "everbook_open_idle",
+          "condition": "hexacreatecore:everbook_open"
+        },
+        {
+          "type": "idle",
+          "name": "everbook_closed_idle"
+        }
+      ]
+    }
+  }
+}
+

@@ -1,11 +1,17 @@
 package com.genesiz.hexacreatecore.threedified.shaders.renderers;
 
 import com.genesiz.hexacreatecore.threedified.RawGeometry;
+import com.genesiz.hexacreatecore.threedified.ThreedifiedLod;
 import com.genesiz.hexacreatecore.threedified.shaders.dictionaries.ShaderDictionary;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import org.joml.Matrix4f;
 
 public final class SuperellipsePortalRenderer {
+
+  private static final int MAX_PORTAL_VERTS = 128 * 32;
+  private static final float[] PORTAL_GRID_X = new float[MAX_PORTAL_VERTS];
+  private static final float[] PORTAL_GRID_Y = new float[MAX_PORTAL_VERTS];
+  private static final int[] PORTAL_GRID_COL = new int[MAX_PORTAL_VERTS];
 
   private SuperellipsePortalRenderer() {}
 
@@ -27,13 +33,18 @@ public final class SuperellipsePortalRenderer {
     float timeSeconds, int angularSegments, int radialRings,
     boolean circular, ShaderDictionary dictionary
   ) {
-    int segs = Math.max(28, angularSegments);
-    int rings = Math.max(5, radialRings);
-    int ringStride = rings + 1;
+    float radius = Math.max(halfWidth, halfHeight);
+    float lod = ThreedifiedLod.computeScreenLod(poseMatrix, centerX, centerY, 0.0f, radius);
+    if (lod <= 0.0f) return;
 
-    float[] gridX = new float[(segs + 1) * ringStride];
-    float[] gridY = new float[(segs + 1) * ringStride];
-    int[] gridCol = new int[(segs + 1) * ringStride];
+    int segs = ThreedifiedLod.scaleSegments(Math.max(12, angularSegments), 10, lod);
+    int rings = ThreedifiedLod.scaleSegments(Math.max(2, radialRings), 2, lod);
+    int ringStride = rings + 1;
+    int totalVerts = (segs + 1) * ringStride;
+
+    float[] gridX = (totalVerts <= MAX_PORTAL_VERTS) ? PORTAL_GRID_X : new float[totalVerts];
+    float[] gridY = (totalVerts <= MAX_PORTAL_VERTS) ? PORTAL_GRID_Y : new float[totalVerts];
+    int[] gridCol = (totalVerts <= MAX_PORTAL_VERTS) ? PORTAL_GRID_COL : new int[totalVerts];
 
     for (int s = 0; segs >= s; s++) {
       double angle = (Math.PI * 2.0D * s) / segs;

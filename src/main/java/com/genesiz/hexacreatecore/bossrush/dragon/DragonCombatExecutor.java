@@ -41,20 +41,20 @@ public final class DragonCombatExecutor {
       player.removeAllEffects();
       player.setInvulnerable(false);
       net.minecraft.world.damagesource.DamageSource trueKillSource =
-        new net.minecraft.world.damagesource.DamageSource(
-          level.damageSources().genericKill().typeHolder(),
-          attacker,
-          attacker
+      new net.minecraft.world.damagesource.DamageSource(
+        level.damageSources().genericKill().typeHolder(),
+        attacker,
+        attacker
+      ) {
+        @Override
+        public net.minecraft.network.chat.Component getLocalizedDeathMessage(
+          net.minecraft.world.entity.LivingEntity victim
         ) {
-          @Override
-          public net.minecraft.network.chat.Component getLocalizedDeathMessage(
-            net.minecraft.world.entity.LivingEntity victim
-          ) {
-            return net.minecraft.network.chat.Component.literal(
-              String.format(messageFormat, victim.getDisplayName().getString())
-            );
-          }
-        };
+          return net.minecraft.network.chat.Component.literal(
+            String.format(messageFormat, victim.getDisplayName().getString())
+          );
+        }
+      };
 
       player.hurt(trueKillSource, 1_000_000.0f);
       if (player.isAlive() || Float.isNaN(player.getHealth())) {
@@ -231,9 +231,10 @@ public final class DragonCombatExecutor {
           level.playSound(null, dragon.getX(), dragon.getY(), dragon.getZ(),
             SoundEvents.ZOMBIE_VILLAGER_CONVERTED, SoundSource.MASTER, 12.5f, 0.5f);
         }
-        if (tick % 10 == 0) {
-          emitNovaFloorBreath(level, dragon);
+        if (tick % 6 == 0) {
+          DragonGeyserManager.spawnNovaGeyserWave(level, dragon);
         }
+
         if (tick % 2 == 0) {
           stepNovaGalaxyWaves(level, dragon, tick);
         }
@@ -246,8 +247,8 @@ public final class DragonCombatExecutor {
           level.playSound(null, dragon.getX(), dragon.getY(), dragon.getZ(),
             SoundEvents.ZOMBIE_VILLAGER_CONVERTED, SoundSource.MASTER, 12.5f, 0.5f);
         }
-        if (tick % 10 == 0) {
-          emitNovaFloorBreath(level, dragon);
+        if (tick % 6 == 0) {
+          DragonGeyserManager.spawnNovaGeyserWave(level, dragon);
         }
         if (tick % 2 == 0) {
           stepNovaGalaxyWaves(level, dragon, 40 + tick);
@@ -278,8 +279,8 @@ public final class DragonCombatExecutor {
                 ), SoundSource.MASTER, 12.5f, 0.8f);
             }
           }
-          if (tick % 10 == 0) {
-            emitNovaFloorBreath(level, dragon);
+          if (tick % 6 == 0) {
+            DragonGeyserManager.spawnNovaGeyserWave(level, dragon);
           }
           if (tick % 2 == 0) {
             stepNovaGalaxyWaves(level, dragon, 320 + tick);
@@ -434,7 +435,7 @@ public final class DragonCombatExecutor {
     Vec3 bodyForward = Vec3.directionFromRotation(0.0f, bodyYaw).normalize();
 
     boolean perched = (dragon instanceof IMhEnderDragon mh
-      && mh.hexacreatecore$getPoseMode() == DragonAnimState.DragonPoseMode.PILLAR_PERCH);
+    && mh.hexacreatecore$getPoseMode() == DragonAnimState.DragonPoseMode.PILLAR_PERCH);
 
     Vec3 neckRoot = dragon.position().add(bodyForward.scale(perched ? 3.9D : 2.4D));
 
@@ -515,50 +516,8 @@ public final class DragonCombatExecutor {
     }
   }
 
-  private static void emitNovaFloorBreath(ServerLevel level, EnderDragon dragon) {
-    double dX = dragon.getX();
-    double dY = dragon.getY();
-    double dZ = dragon.getZ();
-    int maxGroundY = (int) Math.floor(dY) - 1;
-    int minScanY = Math.max(level.getMinBuildHeight(), maxGroundY - 48);
 
-    // 2x2 block grid DRAGON_BREATH under the dragon (200-block perimeter, emitted within 20 blocks of each player)
-    for (Player p : level.players()) {
-      if (!(p instanceof net.minecraft.server.level.ServerPlayer sp) || !sp.isAlive() || sp.isSpectator()) continue;
-
-      int pX = Mth.floor(sp.getX());
-      int pZ = Mth.floor(sp.getZ());
-      int startX = ((pX - 20) >> 1) << 1;
-      int endX = pX + 20;
-      int startZ = ((pZ - 20) >> 1) << 1;
-      int endZ = pZ + 20;
-
-      net.minecraft.core.BlockPos.MutableBlockPos cursor = new net.minecraft.core.BlockPos.MutableBlockPos();
-      for (int gx = startX; endX >= gx; gx += 2) {
-        double dxPlayer = (gx + 0.5D) - sp.getX();
-        double dxDragon = (gx + 0.5D) - dX;
-        if (Math.abs(dxDragon) > 200.0D) continue;
-
-        for (int gz = startZ; endZ >= gz; gz += 2) {
-          double dzPlayer = (gz + 0.5D) - sp.getZ();
-          double dzDragon = (gz + 0.5D) - dZ;
-
-          if ((dxPlayer * dxPlayer + dzPlayer * dzPlayer) > 20.0D * 20.0D) continue;
-          if ((dxDragon * dxDragon + dzDragon * dzDragon) > 200.0D * 200.0D) continue;
-
-          for (int y = Math.min(level.getMaxBuildHeight() - 1, maxGroundY); y >= minScanY; y--) {
-            cursor.set(gx, y, gz);
-            if (!level.getBlockState(cursor).isAir()) {
-              level.sendParticles(sp, ParticleTypes.DRAGON_BREATH, true, gx + 0.5D, y + 1.08D, gz + 0.5D, 1, 0.18D, 0.04D, 0.18D, 0.015D);
-              break;
-            }
-          }
-        }
-      }
-    }
-  }
-
-    private static void stepNovaGalaxyWaves(ServerLevel level, EnderDragon dragon, int currentTick) {
+  private static void stepNovaGalaxyWaves(ServerLevel level, EnderDragon dragon, int currentTick) {
     double dX = dragon.getX();
     double dY = dragon.getY() + 2.5D;
     double dZ = dragon.getZ();

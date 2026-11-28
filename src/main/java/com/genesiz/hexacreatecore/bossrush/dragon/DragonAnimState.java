@@ -110,7 +110,9 @@ public final class DragonAnimState {
     public float footOffsetRR = 0.0f;
     public float footOffsetRL = 0.0f;
 
-
+    public DragonAction prevAction = DragonAction.NONE;
+    public float turnStartYaw = 0.0f;
+    public float oneFrameYawFixDeg = 0.0f;
 
 
     public void pushHistory(float yawDelta, float pitchVal) {

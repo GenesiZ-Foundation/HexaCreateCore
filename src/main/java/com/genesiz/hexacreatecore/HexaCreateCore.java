@@ -72,4 +72,10 @@ public class HexaCreateCore {
   public static void onRegisterRenderers(net.neoforged.neoforge.client.event.EntityRenderersEvent.RegisterRenderers event) {
     event.registerEntityRenderer(net.minecraft.world.entity.EntityType.ENDER_DRAGON, com.genesiz.hexacreatecore.bossrush.dragon.MhEnderDragonRenderer::create);
   }
+
+  @SubscribeEvent(priority = net.neoforged.bus.api.EventPriority.HIGHEST)
+  public static void onLoadCompleteGuard(net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent event) {
+    Thread.currentThread().setContextClassLoader(HexaCreateCore.class.getClassLoader());
+  }
+
 }

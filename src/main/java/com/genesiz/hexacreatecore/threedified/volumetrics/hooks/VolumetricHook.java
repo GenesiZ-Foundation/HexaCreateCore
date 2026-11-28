@@ -124,5 +124,21 @@ public final class VolumetricHook {
       timeSeconds, dictionary, autoFlush
     );
   }
+
+  public void renderGeyserPillar(
+    PoseStack poseStack, MultiBufferSource bufferSource,
+    float baseRadius, float pillarHeight,
+    int radialSegments, int heightSlices,
+    float timeSeconds
+  ) {
+    UnifiedVolumetricEngine.renderGeyserPillarVolume(
+      poseStack, bufferSource,
+      centerX, centerY, centerZ,
+      baseRadius, pillarHeight,
+      radialSegments, heightSlices,
+      timeSeconds, dictionary, autoFlush
+    );
+  }
+
 }
 

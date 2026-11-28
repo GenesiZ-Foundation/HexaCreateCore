@@ -116,10 +116,13 @@ public final class EnderDragonMhBrain {
         return;
       }
 
-      if (nextTick >= dur) {
-        mh.hexacreatecore$triggerAction(DragonAction.NONE, 0);
-        mem.decisionCooldown = 4;
+      int handoffTick = (dur > 6) ? (dur - 2) : dur;
+      if (nextTick >= handoffTick) {
         onActionFinished(level, dragon, mh, mem, active);
+        // Only fall back to NONE if onActionFinished did not immediately chain into a new action
+        if (mh.hexacreatecore$getActiveAction() == active) {
+          mh.hexacreatecore$triggerAction(DragonAction.NONE, 0);
+        }
       }
 
       return;
@@ -462,17 +465,25 @@ public final class EnderDragonMhBrain {
       mem.decisionCooldown = 14;
       return;
     } else if (finished == DragonAction.TURN_LEFT_90 || finished == DragonAction.CLAW_LEFT) {
-      dragon.setYRot(Mth.wrapDegrees(dragon.getYRot() - 90.0f));
-      dragon.yBodyRot = dragon.getYRot();
-      dragon.yHeadRot = dragon.getYRot();
+      float newYaw = Mth.wrapDegrees(dragon.getYRot() - 90.0f);
+      dragon.setYRot(newYaw);
+      dragon.yRotO = newYaw;
+      dragon.yBodyRot = newYaw;
+      dragon.yBodyRotO = newYaw;
+      dragon.yHeadRot = newYaw;
+      dragon.yHeadRotO = newYaw;
       mh.hexacreatecore$setPoseMode(DragonPoseMode.GROUND_IDLE);
-      mem.decisionCooldown = 12;
+      mem.decisionCooldown = 0;
     } else if (finished == DragonAction.TURN_RIGHT_90 || finished == DragonAction.CLAW_RIGHT) {
-      dragon.setYRot(Mth.wrapDegrees(dragon.getYRot() + 90.0f));
-      dragon.yBodyRot = dragon.getYRot();
-      dragon.yHeadRot = dragon.getYRot();
+      float newYaw = Mth.wrapDegrees(dragon.getYRot() + 90.0f);
+      dragon.setYRot(newYaw);
+      dragon.yRotO = newYaw;
+      dragon.yBodyRot = newYaw;
+      dragon.yBodyRotO = newYaw;
+      dragon.yHeadRot = newYaw;
+      dragon.yHeadRotO = newYaw;
       mh.hexacreatecore$setPoseMode(DragonPoseMode.GROUND_IDLE);
-      mem.decisionCooldown = 12;
+      mem.decisionCooldown = 0;
     } else if (finished == DragonAction.FIREBALL_CARPET || finished == DragonAction.FLYING_BREATH_45) {
       mem.isAirborne = true;
     } else if (finished == DragonAction.AIR_DASH || finished == DragonAction.AIR_STOMP) {
@@ -519,10 +530,22 @@ public final class EnderDragonMhBrain {
           return;
         }
       }
-      if (mem.activePatternNode.endCooldownTicks() >= 0) {
-        mem.decisionCooldown = mem.activePatternNode.endCooldownTicks();
-      }
       mem.activePatternNode = null;
+    }
+
+    // Immediately chain into the next opener on the ground (Phase 2 / Phase 3) so there is zero pause between patterns
+    if (!mem.isAirborne && !mem.isLandingToGround && mem.pillarLatchStage == 0 && (mem.phase == 2 || mem.phase == 3)) {
+      Player target = findNearestPlayer(level, dragon, 64.0D);
+      if (target != null) {
+        SpatialContext ctx = DragonSpatialSelector.analyzeTarget(dragon, target);
+        DragonPatternResolver.PatternNode nextOpener = DragonPatternResolver.selectOpener(mem.phase, ctx, dragon.getRandom());
+        if (nextOpener != null) {
+          mem.activePatternNode = nextOpener;
+          mem.decisionCooldown = 0;
+          nextOpener.triggerOn(mh);
+          return;
+        }
+      }
     }
   }
 

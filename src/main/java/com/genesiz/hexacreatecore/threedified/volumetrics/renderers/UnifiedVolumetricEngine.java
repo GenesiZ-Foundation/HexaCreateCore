@@ -134,7 +134,12 @@ public final class UnifiedVolumetricEngine {
     Vector3f viewDir = computeViewDir(poseMat);
 
     int coreArgb = (dictionary instanceof BlackHoleVolumetricDictionary bh) ? bh.coreColor() : 0xFF020205;
-    int shells = Math.max(3, shellCount);
+
+    float maxR = Math.max(coreHalfW, Math.max(coreHalfH, coreHalfD)) + horizonThickness;
+    float lod = com.genesiz.hexacreatecore.threedified.ThreedifiedLod.computeScreenLod(poseMat, 0.0f, 0.0f, 0.0f, maxR);
+    if (lod <= 0.0f) { ps.popPose(); return; }
+    int shells = com.genesiz.hexacreatecore.threedified.ThreedifiedLod.scaleSegments(Math.max(3, shellCount), 2, lod);
+
     VertexConsumer shellVc = bufferSource.getBuffer(RawGeometry.DIALOGUE_SOLID);
 
     for (int i = 1; shells >= i; i++) {
@@ -345,8 +350,23 @@ public final class UnifiedVolumetricEngine {
     ps.translate(centerX, centerY, centerZ);
 
     Matrix4f m = ps.last().pose();
+    float maxR = Math.max(innerHalfW, innerHalfH) + wallThickness + crownDepth;
+    float lod = com.genesiz.hexacreatecore.threedified.ThreedifiedLod.computeScreenLod(m, 0.0f, 0.0f, 0.0f, maxR);
+    if (lod <= 0.0f) {
+      if (autoFlush) {
+        if (bufferSource instanceof MultiBufferSource.BufferSource bs) {
+          bs.endBatch(RawGeometry.DIALOGUE_SOLID);
+        }
+        RenderSystem.depthMask(true);
+        RenderSystem.enableCull();
+      }
+      ps.popPose();
+      return;
+    }
+
     final int segments = CROWN_SEGS;
-    final int slices = Math.max(4, depthSlices);
+    final int segStep = com.genesiz.hexacreatecore.threedified.ThreedifiedLod.gridStep(lod); // 1, 2, or 3
+    final int slices = com.genesiz.hexacreatecore.threedified.ThreedifiedLod.scaleSegments(Math.max(4, depthSlices), 2, lod);
 
     if (autoFlush) {
       RenderSystem.enableDepthTest();
@@ -359,23 +379,26 @@ public final class UnifiedVolumetricEngine {
     VertexConsumer vc = bufferSource.getBuffer(RawGeometry.DIALOGUE_SOLID);
 
     float[] wArr = new float[segments + 1];
-    for (int i = 0; segments >= i; i++) {
+    for (int i = 0; segments > i; i += segStep) {
       float a = CROWN_ANG[i];
       wArr[i] = (float) (Math.sin(timeSeconds * 4.2D + a * 4.0D) * 0.55D + Math.cos(timeSeconds * 2.9D - a * 6.0D) * 0.45D);
     }
+    wArr[segments] = wArr[0];
 
     for (int zStep = 0; slices > zStep; zStep++) {
       float tZ0 = (float) zStep / slices;
       float tZ1 = (float) (zStep + 1) / slices;
 
-      for (int i = 0; segments > i; i++) {
+      for (int i = 0; segments > i; i += segStep) {
+        int iNext = Math.min(segments, i + segStep);
+
         float sx0 = CROWN_SX[i];
         float sy0 = CROWN_SY[i];
-        float sx1 = CROWN_SX[i + 1];
-        float sy1 = CROWN_SY[i + 1];
+        float sx1 = CROWN_SX[iNext];
+        float sy1 = CROWN_SY[iNext];
 
         float w0 = wArr[i];
-        float w1 = wArr[i + 1];
+        float w1 = wArr[iNext];
 
         float z0_a = tZ0 * crownDepth * (0.86f + 0.22f * w0);
         float z0_b = tZ0 * crownDepth * (0.86f + 0.22f * w1);
@@ -402,10 +425,10 @@ public final class UnifiedVolumetricEngine {
         int col0_b = dictionary.sampleShellArgb(sx1, sy1, tZ0, tZ0, timeSeconds);
         int col1_b = dictionary.sampleShellArgb(sx1, sy1, tZ1, tZ1, timeSeconds);
 
-        RawGeometry.vertex(vc, m, sx0 * (inW0 + thick0),       sy0 * (inH0 + thick0),       z0_a, col0);
-        RawGeometry.vertex(vc, m, sx1 * (inW1 + thick0_b),     sy1 * (inH1 + thick0_b),     z0_b, col0_b);
-        RawGeometry.vertex(vc, m, sx1 * (inW1_next + thick1_b), sy1 * (inH1_next + thick1_b), z1_b, col1_b);
-        RawGeometry.vertex(vc, m, sx0 * (inW0_next + thick1),   sy0 * (inH0_next + thick1),   z1_a, col1);
+        RawGeometry.vertex(vc, m, sx0 * (inW0 + thick0),         sy0 * (inH0 + thick0),         z0_a, col0);
+        RawGeometry.vertex(vc, m, sx1 * (inW1 + thick0_b),       sy1 * (inH1 + thick0_b),       z0_b, col0_b);
+        RawGeometry.vertex(vc, m, sx1 * (inW1_next + thick1_b),  sy1 * (inH1_next + thick1_b),  z1_b, col1_b);
+        RawGeometry.vertex(vc, m, sx0 * (inW0_next + thick1),    sy0 * (inH0_next + thick1),    z1_a, col1);
 
         RawGeometry.vertex(vc, m, sx0 * inW0,      sy0 * inH0,      z0_a, col0);
         RawGeometry.vertex(vc, m, sx1 * inW1,      sy1 * inH1,      z0_b, col0_b);
@@ -413,8 +436,8 @@ public final class UnifiedVolumetricEngine {
         RawGeometry.vertex(vc, m, sx0 * inW0_next, sy0 * inH0_next, z1_a, col1);
 
         if (zStep == slices - 1) {
-          RawGeometry.vertex(vc, m, sx0 * inW0_next,            sy0 * inH0_next,            z1_a, col1);
-          RawGeometry.vertex(vc, m, sx1 * inW1_next,            sy1 * inH1_next,            z1_b, col1_b);
+          RawGeometry.vertex(vc, m, sx0 * inW0_next,             sy0 * inH0_next,             z1_a, col1);
+          RawGeometry.vertex(vc, m, sx1 * inW1_next,             sy1 * inH1_next,             z1_b, col1_b);
           RawGeometry.vertex(vc, m, sx1 * (inW1_next + thick1_b), sy1 * (inH1_next + thick1_b), z1_b, col1_b);
           RawGeometry.vertex(vc, m, sx0 * (inW0_next + thick1),   sy0 * (inH0_next + thick1),   z1_a, col1);
         }
@@ -533,9 +556,25 @@ public final class UnifiedVolumetricEngine {
     ps.translate(centerX, centerY, centerZ);
 
     Matrix4f m = ps.last().pose();
+    float lod = com.genesiz.hexacreatecore.threedified.ThreedifiedLod.computeScreenLod(
+      m, 0.0f, 0.0f, 0.0f, Math.max(radius, flameHeight * 0.6f)
+    );
+    if (lod <= 0.0f) {
+      if (autoFlush) {
+        if (bufferSource instanceof MultiBufferSource.BufferSource bs) {
+          bs.endBatch(RawGeometry.DIALOGUE_SOLID);
+        }
+        RenderSystem.depthMask(true);
+        RenderSystem.enableCull();
+      }
+      ps.popPose();
+      return;
+    }
+
     final int grid = OIL_GRID;
     final int stride = OIL_STRIDE;
-    final int layers = 4;
+    final int step = com.genesiz.hexacreatecore.threedified.ThreedifiedLod.gridStep(lod); // 1 (24x24), 2 (12x12), or 3 (8x8)
+    final int layers = (lod < 0.35f) ? 2 : ((lod < 0.70f) ? 3 : 4);
     final float maxSpan = radius * 1.12f;
     final float invGrid = 2.0f / (float) grid;
     final float invRadius = 1.0f / Math.max(0.001f, radius);
@@ -551,7 +590,7 @@ public final class UnifiedVolumetricEngine {
     VertexConsumer vc = bufferSource.getBuffer(RawGeometry.DIALOGUE_SOLID);
 
     for (int layer = 0; layers > layer; layer++) {
-      float layerT = (float) layer / (float) (layers - 1);
+      float layerT = (layers == 1) ? 0.0f : ((float) layer / (float) (layers - 1));
       float freq = 1.15f + layerT * 0.95f;
       float scrollSpeed = 1.65f + layerT * 2.15f;
       float seedOffset = layer * 31.7f;
@@ -563,18 +602,17 @@ public final class UnifiedVolumetricEngine {
       float layerAmp = flameHeight * (0.28f + 0.85f * layerT);
       float cutoutThreshold = 0.18f + layerT * 0.24f;
 
-      for (int gz = 0; stride > gz; gz++) {
+      for (int gz = 0; stride > gz; gz += step) {
         float vz = (gz * invGrid - 1.0f) * maxSpan;
         float nz = vz * invRadius;
         float nz2 = nz * nz;
 
-        for (int gx = 0; stride > gx; gx++) {
+        for (int gx = 0; stride > gx; gx += step) {
           int idx = gz * stride + gx;
           float vx = (gx * invGrid - 1.0f) * maxSpan;
           float nx = vx * invRadius;
           float nx2 = nx * nx;
 
-          // Fast reject corners well outside the rounded square before running any Perlin noise
           if ((nx2 * nx2 + nz2 * nz2) > 1.75f) {
             OIL_GRID_COL[idx] = 0;
             continue;
@@ -602,7 +640,6 @@ public final class UnifiedVolumetricEngine {
             vz * (freq * 2.3f) + timeSeconds * 1.1f
           );
 
-          // Fast algebraic peak sharpening (replaces Math.pow(nHeight, 1.45))
           float spike = nHeight * (0.55f + 0.45f * nHeight) * (0.65f + 0.55f * nDetail);
           float y = (baseOffset + spike * layerAmp) * edgeMask;
 
@@ -629,15 +666,17 @@ public final class UnifiedVolumetricEngine {
         }
       }
 
-      for (int gz = 0; grid > gz; gz++) {
+      for (int gz = 0; grid > gz; gz += step) {
+        int gzNext = Math.min(grid, gz + step);
         float vz0 = (gz * invGrid - 1.0f) * maxSpan;
-        float vz1 = ((gz + 1) * invGrid - 1.0f) * maxSpan;
+        float vz1 = (gzNext * invGrid - 1.0f) * maxSpan;
 
-        for (int gx = 0; grid > gx; gx++) {
+        for (int gx = 0; grid > gx; gx += step) {
+          int gxNext = Math.min(grid, gx + step);
           int i00 = gz * stride + gx;
-          int i10 = i00 + 1;
-          int i01 = i00 + stride;
-          int i11 = i01 + 1;
+          int i10 = gz * stride + gxNext;
+          int i01 = gzNext * stride + gx;
+          int i11 = gzNext * stride + gxNext;
 
           int c00 = OIL_GRID_COL[i00];
           int c10 = OIL_GRID_COL[i10];
@@ -646,7 +685,7 @@ public final class UnifiedVolumetricEngine {
           if (((c00 | c10 | c11 | c01) >>> 24) == 0) continue;
 
           float vx0 = (gx * invGrid - 1.0f) * maxSpan;
-          float vx1 = ((gx + 1) * invGrid - 1.0f) * maxSpan;
+          float vx1 = (gxNext * invGrid - 1.0f) * maxSpan;
 
           RawGeometry.vertex(vc, m, vx0, OIL_GRID_Y[i00], vz0, c00);
           RawGeometry.vertex(vc, m, vx1, OIL_GRID_Y[i10], vz0, c10);
@@ -681,6 +720,195 @@ public final class UnifiedVolumetricEngine {
     return (base & 0x00FFFFFF) | (finalAlpha << 24);
   }
 
+  private static final int MAX_GEYSER_VERTS = 32 * 24;
+  private static final float[] GEYSER_PX = new float[MAX_GEYSER_VERTS];
+  private static final float[] GEYSER_PY = new float[MAX_GEYSER_VERTS];
+  private static final float[] GEYSER_PZ = new float[MAX_GEYSER_VERTS];
+  private static final int[] GEYSER_COL = new int[MAX_GEYSER_VERTS];
+  private static final float[] GEYSER_COS = new float[32];
+  private static final float[] GEYSER_SIN = new float[32];
 
+  public static void renderGeyserPillarVolume(
+    PoseStack ps,
+    MultiBufferSource bufferSource,
+    float centerX, float centerY, float centerZ,
+    float baseRadius,
+    float pillarHeight,
+    int radialSegments,
+    int heightSlices,
+    float timeSeconds,
+    VolumetricDictionary dictionary
+  ) {
+    renderGeyserPillarVolume(
+      ps, bufferSource, centerX, centerY, centerZ,
+      baseRadius, pillarHeight, radialSegments, heightSlices,
+      timeSeconds, dictionary, true
+    );
+  }
+
+  public static void renderGeyserPillarVolume(
+    PoseStack ps,
+    MultiBufferSource bufferSource,
+    float centerX, float centerY, float centerZ,
+    float baseRadius,
+    float pillarHeight,
+    int radialSegments,
+    int heightSlices,
+    float timeSeconds,
+    VolumetricDictionary dictionary,
+    boolean autoFlush
+  ) {
+    if (pillarHeight <= 0.05f || baseRadius <= 0.02f) return;
+
+    ps.pushPose();
+    ps.translate(centerX, centerY, centerZ);
+
+    Matrix4f m = ps.last().pose();
+    float lod = com.genesiz.hexacreatecore.threedified.ThreedifiedLod.computeScreenLod(
+      m, 0.0f, pillarHeight * 0.5f, 0.0f, Math.max(baseRadius, pillarHeight * 0.55f)
+    );
+    if (lod <= 0.0f) {
+      if (autoFlush) {
+        if (bufferSource instanceof MultiBufferSource.BufferSource bs) {
+          bs.endBatch(RawGeometry.DIALOGUE_SOLID);
+        }
+        RenderSystem.depthMask(true);
+        RenderSystem.enableCull();
+      }
+      ps.popPose();
+      return;
+    }
+
+    // 2 shells up close, 1 shell at mid/far distance (cuts overdraw & noise in half)
+    final int shells = (lod >= 0.65f) ? 2 : 1;
+    final int activeSegs = Math.min(28, com.genesiz.hexacreatecore.threedified.ThreedifiedLod.scaleSegments(Math.max(6, radialSegments), 6, lod));
+    final int activeSlices = Math.min(20, com.genesiz.hexacreatecore.threedified.ThreedifiedLod.scaleSegments(Math.max(3, heightSlices), 3, lod));
+
+    if (autoFlush) {
+      RenderSystem.enableDepthTest();
+      RenderSystem.enableBlend();
+      RenderSystem.defaultBlendFunc();
+      RenderSystem.disableCull();
+      RenderSystem.depthMask(false);
+    }
+
+    VertexConsumer vc = bufferSource.getBuffer(RawGeometry.DIALOGUE_SOLID);
+
+    final float twoPi = (float) (Math.PI * 2.0D);
+    final float invSegs = 1.0f / (float) activeSegs;
+    final float invSlices = 1.0f / (float) activeSlices;
+    final int stride = activeSegs + 1;
+
+    // Compute trig table once for all slices and shells
+    for (int ia = 0; activeSegs >= ia; ia++) {
+      float a = (ia * invSegs) * twoPi;
+      GEYSER_COS[ia] = Mth.cos(a);
+      GEYSER_SIN[ia] = Mth.sin(a);
+    }
+
+    for (int s = 0; shells > s; s++) {
+      float shellT = (shells == 1) ? 0.35f : (float) s;
+      float shellRadiusScale = (shells == 1) ? 0.90f : (0.52f + shellT * 0.48f);
+      float shellHeightScale = 1.0f - (shellT * 0.12f);
+      float shellOpacity = (s == 0) ? 0.96f : 0.64f;
+      float freq = 1.35f + (shellT * 1.15f);
+      float riseSpeed = 5.8f + (shellT * 3.2f);
+      float seed = s * 41.3f;
+      float timeOffset = timeSeconds * riseSpeed;
+
+      // 1) Evaluate each shared vertex ONCE
+      for (int iy = 0; activeSlices >= iy; iy++) {
+        float v = iy * invSlices;
+        float y = v * pillarHeight * shellHeightScale;
+        float profile = geyserRadiusProfile(v) * baseRadius * shellRadiusScale;
+        float vAlpha = geyserVerticalAlpha(v) * shellOpacity;
+        float vCoord = (v * 3.4f) - timeOffset;
+        int row = iy * stride;
+
+        for (int ia = 0; activeSegs >= ia; ia++) {
+          float cosA = GEYSER_COS[ia];
+          float sinA = GEYSER_SIN[ia];
+          int idx = row + ia;
+
+          // Use fast 2-octave noise (perlin3D + harmonic) instead of 4-octave fbm3D
+          float n1 = perlin3D(cosA * freq + seed, vCoord, sinA * freq - seed);
+          float n2 = perlin3D(cosA * (freq * 2.1f) - seed, vCoord * 1.8f, sinA * (freq * 2.1f) + seed);
+          float turb = (n1 * 0.68f) + (n2 * 0.32f);
+
+          float r = profile * (0.72f + (turb * 0.68f));
+          float cut = (s == 0) ? 1.0f : Mth.clamp((turb - 0.32f) * 2.8f, 0.0f, 1.0f);
+
+          GEYSER_PX[idx] = cosA * r;
+          GEYSER_PY[idx] = y;
+          GEYSER_PZ[idx] = sinA * r;
+          GEYSER_COL[idx] = sampleGeyserVertexColor(dictionary, cosA, sinA, v, turb, vAlpha * cut, timeSeconds);
+        }
+      }
+
+      // 2) Emit quads from the cached grid
+      for (int iy = 0; activeSlices > iy; iy++) {
+        int r0 = iy * stride;
+        int r1 = (iy + 1) * stride;
+        for (int ia = 0; activeSegs > ia; ia++) {
+          int i00 = r0 + ia;
+          int i10 = i00 + 1;
+          int i01 = r1 + ia;
+          int i11 = i01 + 1;
+
+          int c00 = GEYSER_COL[i00];
+          int c10 = GEYSER_COL[i10];
+          int c11 = GEYSER_COL[i11];
+          int c01 = GEYSER_COL[i01];
+          if (((c00 | c10 | c11 | c01) >>> 24) == 0) continue;
+
+          RawGeometry.vertex(vc, m, GEYSER_PX[i00], GEYSER_PY[i00], GEYSER_PZ[i00], c00);
+          RawGeometry.vertex(vc, m, GEYSER_PX[i10], GEYSER_PY[i10], GEYSER_PZ[i10], c10);
+          RawGeometry.vertex(vc, m, GEYSER_PX[i11], GEYSER_PY[i11], GEYSER_PZ[i11], c11);
+          RawGeometry.vertex(vc, m, GEYSER_PX[i01], GEYSER_PY[i01], GEYSER_PZ[i01], c01);
+        }
+      }
+    }
+
+    if (autoFlush) {
+      if (bufferSource instanceof MultiBufferSource.BufferSource bs) {
+        bs.endBatch(RawGeometry.DIALOGUE_SOLID);
+      }
+      RenderSystem.depthMask(true);
+      RenderSystem.enableCull();
+    }
+    ps.popPose();
+  }
+
+  private static float geyserRadiusProfile(float v) {
+    if (v < 0.25f) {
+      float t = v / 0.25f;
+      return Mth.lerp(t * t, 1.15f, 0.68f);
+    } else if (v < 0.70f) {
+      float t = (v - 0.25f) / 0.45f;
+      return Mth.lerp(Mth.sin(t * (float) (Math.PI * 0.5D)), 0.68f, 0.84f);
+    } else {
+      float t = (v - 0.70f) / 0.30f;
+      return Mth.lerp(t * t, 0.84f, 0.16f);
+    }
+  }
+
+  private static float geyserVerticalAlpha(float v) {
+    float bottomIn = Mth.clamp(v / 0.08f, 0.0f, 1.0f);
+    float topOut = (v > 0.72f) ? Mth.clamp((1.0f - v) / 0.28f, 0.0f, 1.0f) : 1.0f;
+    return bottomIn * (topOut * topOut);
+  }
+
+  private static int sampleGeyserVertexColor(
+    VolumetricDictionary dictionary,
+    float nx, float nz,
+    float v, float turb, float alphaFactor,
+    float timeSeconds
+  ) {
+    float heatT = Mth.clamp((v * 0.65f) + (turb * 0.55f), 0.0f, 1.0f);
+    int sampled = dictionary.sampleShellArgb(nx, nz, heatT, heatT, timeSeconds);
+    int baseAlpha = (sampled >>> 24) & 0xFF;
+    int finalAlpha = Mth.clamp((int) (baseAlpha * alphaFactor), 0, 255);
+    return (sampled & 0x00FFFFFF) | (finalAlpha << 24);
+  }
 
 }
